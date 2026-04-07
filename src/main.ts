@@ -28,7 +28,7 @@ async function bootstrap() {
   // Security
   app.use(helmet());
   app.enableCors({
-    origin: process.env.CORS_ORIGINS?.split(',') || 'http://localhost:3000',
+    origin: process.env.CORS_ORIGINS?.split(','),
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true, // required for cookies to be sent cross-origin
   });
@@ -71,7 +71,7 @@ async function bootstrap() {
     .build();
 
   const document = SwaggerModule.createDocument(app, swaggerConfig);
-  SwaggerModule.setup('docs', app, document);
+  SwaggerModule.setup('api', app, document);
 
   const port = process.env.PORT || 4000;
   await app.listen(port);
