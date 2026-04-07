@@ -8,7 +8,6 @@ Crypto Infrastructure API for Africa, the single API that Nigerian developers us
 - **Database:** Supabase (PostgreSQL)
 - **Hosting:** Railway
 - **Crypto Provider:** Breet
-- **NGN Settlement:** Paystack
 - **KYC/AML:** Kora
 
 ## Quick Start
@@ -23,7 +22,7 @@ pnpm install
 
 ```bash
 cp .env.example .env
-# Fill in your Supabase, Breet, Paystack, Kora credentials
+# Fill in your Supabase, Breet, Kora credentials
 ```
 
 ### 3. Run the database migration
@@ -56,9 +55,8 @@ src/
     ├── dashboard/           # API key management + usage stats (JWT-protected)
     ├── wallets/             # Wallet-as-a-Service via Breet
     ├── offramp/             # Crypto → NGN conversion
-    ├── payouts/             # NGN bank payouts via Paystack
+    ├── payouts/             # NGN bank payouts
     ├── kyc/                 # BVN, NIN, document, liveness via Kora
-    ├── virtual-accounts/    # Dedicated virtual accounts via Paystack
     ├── webhooks/            # Developer webhook management + incoming provider webhooks
     └── ledger/              # Immutable transaction ledger + settlement reports
 ```
@@ -207,4 +205,4 @@ All third-party calls are stubbed. Search `TODO` to find them:
 
 ## License
 
-Confidential — Internal use only.
+Confidential, Internal use only.

@@ -25,7 +25,7 @@ export enum WalletStatus {
 }
 
 @Entity('wallets')
-@Unique(['developer_id', 'external_user_id', 'asset'])
+@Unique(['breet_wallet_id'])
 export class Wallet {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -34,9 +34,9 @@ export class Wallet {
   @Column({ type: 'uuid' })
   developer_id: string;
 
-  @Index()
-  @Column({ type: 'varchar', length: 255 })
-  external_user_id: string;
+  // @Index()
+  // @Column({ type: 'text' })
+  // external_user_id: string;
 
   @Column({ type: 'enum', enum: WalletAsset })
   asset: WalletAsset;
@@ -47,18 +47,18 @@ export class Wallet {
   @Column({ type: 'decimal', precision: 28, scale: 8, default: 0 })
   locked_balance: number;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
+  @Column({ type: 'text', nullable: true })
   deposit_address: string;
 
   @Column({ type: 'enum', enum: WalletStatus, default: WalletStatus.ACTIVE })
   status: WalletStatus;
 
   @Index()
-  @Column({ type: 'varchar', length: 255, nullable: true })
+  @Column({ type: 'text' })
   breet_wallet_id: string;
 
-  @Column({ type: 'jsonb', default: {} })
-  metadata: Record<string, any>;
+  // @Column({ type: 'jsonb', default: {} })
+  // metadata: Record<string, any>;
 
   @CreateDateColumn({ type: 'timestamptz' })
   created_at: Date;

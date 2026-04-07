@@ -8,28 +8,33 @@ import { Repository } from 'typeorm';
 import { Developer, DeveloperStatus } from '../../../database/entities';
 
 /**
- * Extracts JWT access token from http-only cookie named 'access_token'.
+ * Extracts refresh token from http-only cookie named 'refresh_token'.
  */
-function extractFromCookie(req: Request): string | null {
-  return req?.cookies?.access_token || null;
+function extractRefreshFromCookie(req: Request): string | null {
+  return req?.cookies?.refresh_token || null;
 }
 
 @Injectable()
-export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
+export class JwtRefreshStrategy extends PassportStrategy(
+  Strategy,
+  'jwt-refresh',
+) {
   constructor(
     configService: ConfigService,
     @InjectRepository(Developer)
     private readonly developerRepo: Repository<Developer>,
   ) {
     super({
-      jwtFromRequest: extractFromCookie,
+      jwtFromRequest: extractRefreshFromCookie,
       ignoreExpiration: false,
-      secretOrKey: configService.get<string>('jwt.secret') || 'fallback-secret',
+      secretOrKey:
+        configService.get<string>('jwt.refreshSecret') ||
+        'fallback-refresh-secret',
     });
   }
 
   async validate(payload: { sub: string; email: string; type: string }) {
-    if (payload.type !== 'access') {
+    if (payload.type !== 'refresh') {
       throw new UnauthorizedException('Invalid token type.');
     }
 

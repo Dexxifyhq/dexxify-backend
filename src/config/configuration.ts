@@ -1,8 +1,8 @@
 export default () => ({
   app: {
-    nodeEnv: process.env.NODE_ENV || 'development',
+    nodeEnv: process.env.NODE_ENV,
     port: parseInt(process.env.PORT as string, 10) || 4000,
-    apiPrefix: process.env.API_PREFIX || 'api/v1',
+    apiPrefix: process.env.API_PREFIX,
   },
 
   database: {
@@ -11,7 +11,7 @@ export default () => ({
     username: process.env.DB_USERNAME,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_DATABASE,
-    url: process.env.DATABASE_URL, // connection string — takes priority if set
+    pooler: process.env.DATABASE_POOLER,
   },
 
   jwt: {
@@ -22,10 +22,13 @@ export default () => ({
   },
 
   breet: {
-    apiUrl: process.env.BREET_API_URL || 'https://api.breet.com/v1',
-    apiKey: process.env.BREET_API_KEY,
-    secretKey: process.env.BREET_SECRET_KEY,
+    apiUrl: process.env.BREET_API_URL,
     webhookSecret: process.env.BREET_WEBHOOK_SECRET,
+    env: process.env.BREET_ENV,
+    secretKey: process.env.BREET_SECRET_KEY,
+    testSecretKey: process.env.BREET_TEST_SECRET_KEY,
+    appId: process.env.BREET_APP_ID,
+    testAppId: process.env.BREET_TEST_APP_ID,
   },
 
   paystack: {
@@ -59,6 +62,24 @@ export default () => ({
   },
 
   frontend: {
-    url: process.env.FRONTEND_URL || 'http://localhost:5173',
+    url: process.env.FRONTEND_URL,
+  },
+
+  smtp: {
+    host: process.env.SMTP_HOST,
+    port: parseInt(process.env.SMTP_PORT as string, 10) || 587,
+    user: process.env.SMTP_USER,
+    password: process.env.SMTP_KEY,
+    fromName: process.env.SMTP_FROM_NAME,
+    fromEmail: process.env.SMTP_FROM_EMAIL,
+    replyToEmail: process.env.SMTP_REPLY_TO_EMAIL,
+    apiKey: process.env.SMTP_API_KEY,
+  },
+
+  otp: {
+    expiryMinutes: parseInt(process.env.OTP_EXPIRY_MINUTES as string, 10) || 10,
+    maxAttempts: parseInt(process.env.OTP_MAX_ATTEMPTS as string, 10) || 5,
+    resendCooldownSeconds:
+      parseInt(process.env.OTP_RESEND_COOLDOWN as string, 10) || 60,
   },
 });

@@ -61,3 +61,29 @@ export function buildPaginationMeta(
     has_prev: page > 1,
   };
 }
+
+/**
+ * Generate a 6-digit numeric OTP.
+ */
+export function generateOtp(): { code: string; hash: string } {
+  // Cryptographically random 6-digit code
+  const code = String(
+    (parseInt(randomBytes(4).toString('hex'), 16) % 900000) + 100000,
+  );
+  const hash = hashOtp(code);
+  return { code, hash };
+}
+
+/**
+ * Hash an OTP code using SHA-256.
+ */
+export function hashOtp(code: string): string {
+  return createHash('sha256').update(code).digest('hex');
+}
+
+/**
+ * Generate a unique ID using random bytes.
+ */
+export function generateUniqueId(): string {
+  return randomBytes(12).toString('hex'); // 12 bytes = 24 hex chars
+}

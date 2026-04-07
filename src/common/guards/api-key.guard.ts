@@ -8,7 +8,7 @@ import { Reflector } from '@nestjs/core';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ApiKey } from '../../database/entities';
-import { IS_PUBLIC_KEY } from '../decorators';
+import { IS_PUBLIC_KEY, AUTH_TYPE_KEY } from '../decorators';
 import { hashApiKey } from '../utils';
 
 @Injectable()
@@ -20,19 +20,37 @@ export class ApiKeyGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
+    // Skip if route is public
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
       context.getHandler(),
       context.getClass(),
     ]);
     if (isPublic) return true;
 
+    // Skip if route explicitly uses cookie auth (dashboard/auth routes)
+    const authType = this.reflector.getAllAndOverride<string>(AUTH_TYPE_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+    if (authType === 'cookie') return true;
+
+    // This is an API key route — extract from Authorization header
     const request = context.switchToHttp().getRequest();
-    const apiKey = request.headers['x-api-key'];
+    const authHeader = request.headers['authorization'];
+
+    if (!authHeader) {
+      throw new UnauthorizedException(
+        'Missing authorization. Include Authorization: Bearer <api_key> header.',
+      );
+    }
+
+    // Support "Bearer dex_live_..." format
+    const apiKey = authHeader.startsWith('Bearer ')
+      ? authHeader.slice(7)
+      : authHeader;
 
     if (!apiKey) {
-      throw new UnauthorizedException(
-        'Missing API key. Include x-api-key header.',
-      );
+      throw new UnauthorizedException('Invalid authorization header format.');
     }
 
     const keyHash = hashApiKey(apiKey);
@@ -66,6 +84,7 @@ export class ApiKeyGuard implements CanActivate {
     // Fire and forget — update last used
     this.apiKeyRepo.update(keyRecord.id, { last_used_at: new Date() });
 
+    // Attach to request (same property name so @GetDeveloper works for both)
     request.developer = keyRecord.developer;
     request.apiKeyEnvironment = keyRecord.environment;
 

@@ -13,8 +13,9 @@ import {
 import { AuthGuard } from '@nestjs/passport';
 import { DashboardService } from './dashboard.service';
 import { CreateApiKeyDto, UpdateApiKeyDto } from './dto';
-import { GetDeveloper } from '../../common/decorators';
+import { CookieAuth, GetDeveloper } from '../../common/decorators';
 
+@CookieAuth()
 @UseGuards(AuthGuard('jwt'))
 @Controller('dashboard')
 export class DashboardController {

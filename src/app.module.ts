@@ -17,6 +17,7 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
 import { ApiKeyGuard } from './common/guards/api-key.guard';
 
 // Feature modules
+import { MailModule } from './modules/mail/mail.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { WalletsModule } from './modules/wallets/wallets.module';
 import { OfframpModule } from './modules/offramp/offramp.module';
@@ -52,6 +53,7 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
     TypeOrmModule.forFeature([ApiKey]),
 
     // Feature modules
+    MailModule,
     AuthModule,
     WalletsModule,
     OfframpModule,

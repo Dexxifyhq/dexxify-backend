@@ -34,22 +34,25 @@ export class Developer {
   id: string;
 
   @Index({ unique: true })
-  @Column({ type: 'varchar', length: 255, unique: true })
+  @Column({ type: 'text', unique: true })
   email: string;
 
-  @Column({ type: 'varchar', length: 255 })
+  @Column({ type: 'text' })
   password_hash: string;
 
-  @Column({ type: 'varchar', length: 255 })
+  @Column({ type: 'text' })
   business_name: string;
 
-  @Column({ type: 'varchar', length: 100, nullable: true })
+  @Column({ type: 'text', nullable: true })
   business_type: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
-  contact_name: string;
+  @Column({ type: 'text' })
+  first_name: string;
 
-  @Column({ type: 'varchar', length: 50, nullable: true })
+  @Column({ type: 'text' })
+  last_name: string;
+
+  @Column({ type: 'text', nullable: true })
   phone: string;
 
   @Column({
@@ -72,8 +75,8 @@ export class Developer {
   @Column({ type: 'int', default: 500 })
   monthly_api_limit: number;
 
-  @Column({ type: 'jsonb', default: {} })
-  metadata: Record<string, any>;
+  // @Column({ type: 'jsonb', default: {} })
+  // metadata: Record<string, any>;
 
   @Column({ type: 'timestamptz', nullable: true })
   email_verified_at: Date;

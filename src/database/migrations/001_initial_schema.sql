@@ -63,6 +63,24 @@ CREATE INDEX idx_api_keys_key_hash ON api_keys(key_hash);
 CREATE INDEX idx_api_keys_developer ON api_keys(developer_id);
 CREATE INDEX idx_api_keys_prefix ON api_keys(key_prefix);
 
+-- ── OTP CODES ───────────────────────────────────────────────
+
+CREATE TYPE otp_type AS ENUM ('email_verification', 'password_reset');
+
+CREATE TABLE otp_codes (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    developer_id UUID NOT NULL REFERENCES developers(id) ON DELETE CASCADE,
+    code_hash VARCHAR(255) NOT NULL,
+    type otp_type NOT NULL,
+    expires_at TIMESTAMPTZ NOT NULL,
+    is_used BOOLEAN DEFAULT false,
+    attempts INTEGER DEFAULT 0,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX idx_otp_developer ON otp_codes(developer_id);
+CREATE INDEX idx_otp_lookup ON otp_codes(developer_id, type, is_used, expires_at);
+
 -- ── WALLETS ─────────────────────────────────────────────────
 
 CREATE TABLE wallets (
@@ -293,6 +311,7 @@ CREATE TRIGGER set_updated_at BEFORE UPDATE ON webhook_endpoints
 -- Supabase RLS — only service role key bypasses; API handles auth
 
 ALTER TABLE developers ENABLE ROW LEVEL SECURITY;
+ALTER TABLE otp_codes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE api_keys ENABLE ROW LEVEL SECURITY;
 ALTER TABLE wallets ENABLE ROW LEVEL SECURITY;
 ALTER TABLE offramp_transactions ENABLE ROW LEVEL SECURITY;
@@ -305,6 +324,7 @@ ALTER TABLE ledger_entries ENABLE ROW LEVEL SECURITY;
 
 -- Service role bypass policies (our API server uses service role key)
 CREATE POLICY "Service role full access" ON developers FOR ALL USING (true);
+CREATE POLICY "Service role full access" ON otp_codes FOR ALL USING (true);
 CREATE POLICY "Service role full access" ON api_keys FOR ALL USING (true);
 CREATE POLICY "Service role full access" ON wallets FOR ALL USING (true);
 CREATE POLICY "Service role full access" ON offramp_transactions FOR ALL USING (true);
