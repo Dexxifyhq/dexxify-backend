@@ -45,7 +45,7 @@ async function bootstrap() {
 
   // Swagger / OpenAPI docs
   const swaggerConfig = new DocumentBuilder()
-    .setTitle('Dexxify Africa API')
+    .setTitle('Dexxify API')
     .setDescription(
       'Crypto Infrastructure API for Africa (Wallets, Payouts, Offramp, Onramp, KYC, KYB)',
     )

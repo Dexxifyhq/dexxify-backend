@@ -34,7 +34,7 @@ export const ApiKeyAuth = () => SetMetadata(AUTH_TYPE_KEY, 'apiKey');
 export const GetDeveloper = createParamDecorator(
   (data: string, ctx: ExecutionContext) => {
     const request = ctx.switchToHttp().getRequest();
-    console.log('request', request);
+    // console.log('request', request);
     const developer = request.developer || request.user;
     console.log('developer', developer);
     console.log('data', data);
