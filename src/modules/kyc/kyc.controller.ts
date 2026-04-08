@@ -8,7 +8,7 @@ import {
 } from './dto';
 import { GetDeveloper } from '../../common/decorators';
 
-@Controller('v1/kyc')
+@Controller('kyc')
 export class KycController {
   constructor(private readonly kycService: KycService) {}
 

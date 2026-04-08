@@ -16,7 +16,7 @@ import { WebhooksService } from './webhooks.service';
 import { CreateWebhookDto } from './dto';
 import { GetDeveloper, Public } from '../../common/decorators';
 
-@Controller('v1/webhooks')
+@Controller('webhooks')
 export class WebhooksController {
   constructor(private readonly webhooksService: WebhooksService) {}
 

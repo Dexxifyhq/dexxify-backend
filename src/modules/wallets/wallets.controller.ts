@@ -11,7 +11,7 @@ import { WalletsService } from './wallets.service';
 import { CreateWalletDto, TransferDto, WalletQueryDto } from './dto';
 import { GetDeveloper } from '../../common/decorators';
 
-@Controller('v1/wallets')
+@Controller('wallets')
 export class WalletsController {
   constructor(private readonly walletsService: WalletsService) {}
 

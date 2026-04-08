@@ -11,7 +11,7 @@ import { PayoutsService } from './payouts.service';
 import { CreatePayoutDto, BatchPayoutDto, ResolveAccountDto } from './dto';
 import { GetDeveloper } from '../../common/decorators';
 
-@Controller('v1/payouts')
+@Controller('payouts')
 export class PayoutsController {
   constructor(private readonly payoutsService: PayoutsService) {}
 

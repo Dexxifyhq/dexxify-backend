@@ -3,7 +3,7 @@ import { LedgerService } from './ledger.service';
 import { LedgerQueryDto } from './dto';
 import { GetDeveloper } from '../../common/decorators';
 
-@Controller('v1')
+@Controller()
 export class LedgerController {
   constructor(private readonly ledgerService: LedgerService) {}
 

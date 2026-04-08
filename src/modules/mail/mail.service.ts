@@ -2,18 +2,30 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
 
+interface BrevoEmailPayload {
+  sender: { name: string; email: string };
+  to: { email: string }[];
+  replyTo?: { email: string };
+  subject: string;
+  htmlContent: string;
+}
+
 @Injectable()
 export class MailService {
   private readonly logger = new Logger(MailService.name);
   private transporter: nodemailer.Transporter;
+  private readonly brevoApiUrl = 'https://api.brevo.com/v3/smtp/email';
   private readonly fromName: string;
   private readonly fromEmail: string;
+  private readonly apiKey: string;
+  private readonly replyToEmail: string;
 
   constructor(private readonly config: ConfigService) {
     this.fromName = this.config.get<string>('smtp.fromName') || 'Dexxify';
     this.fromEmail =
-      this.config.get<string>('smtp.fromEmail') || 'noreply@dexxify.com';
-
+      this.config.get<string>('smtp.fromEmail') || 'hello@dexxify.com';
+    this.apiKey = this.config.get<string>('smtp.apiKey') || '';
+    this.replyToEmail = this.config.get<string>('smtp.replyToEmail') || '';
     const host = this.config.get<string>('smtp.host');
     const port = this.config.get<number>('smtp.port');
     const user = this.config.get<string>('smtp.user');
@@ -33,7 +45,7 @@ export class MailService {
     }
   }
 
-  async sendOtpEmail(to: string, otp: string, name?: string): Promise<void> {
+  async sendOtpEmail(to: string, otp: string, name?: string): Promise<boolean> {
     const subject = `${otp} is your Dexxify verification code`;
 
     const html = `
@@ -68,7 +80,7 @@ export class MailService {
 
     const text = `Your Dexxify verification code is: ${otp}\n\nThis code expires in 10 minutes.`;
 
-    await this.send(to, subject, html, text);
+    return await this.send(to, subject, html, text);
   }
 
   private async send(
@@ -76,7 +88,7 @@ export class MailService {
     subject: string,
     html: string,
     text: string,
-  ): Promise<void> {
+  ): Promise<boolean> {
     const mailOptions = {
       from: `"${this.fromName}" <${this.fromEmail}>`,
       to,
@@ -91,15 +103,54 @@ export class MailService {
       this.logger.log(`To: ${to}`);
       this.logger.log(`Subject: ${subject}`);
       this.logger.log(`Body: ${text}`);
-      return;
+      return false;
     }
 
     try {
-      const info = await this.transporter.sendMail(mailOptions);
-      this.logger.log(`Email sent to ${to}: ${info.messageId}`);
-    } catch (err: any) {
-      this.logger.error(`Failed to send email to ${to}: ${err.message}`);
-      throw err;
+      //   const info = await this.transporter.sendMail(mailOptions);
+      //   this.logger.log(`Email sent to ${to}: ${info.messageId}`);
+
+      const payload: BrevoEmailPayload = {
+        sender: {
+          name: this.fromName,
+          email: this.fromEmail,
+        },
+        to: [{ email: to }],
+        subject,
+        htmlContent: html,
+      };
+
+      if (this.replyToEmail) {
+        payload.replyTo = { email: this.replyToEmail };
+      }
+
+      const response = await fetch(this.brevoApiUrl, {
+        method: 'POST',
+        headers: {
+          accept: 'application/json',
+          'api-key': this.apiKey,
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorBody = await response.json();
+        this.logger.error(
+          `Failed to send email to ${to}: [${response.status}] ${JSON.stringify(errorBody)}`,
+        );
+        return false;
+      }
+
+      this.logger.log(`✅ Email sent to ${to}: ${subject}`);
+      return true;
+    } catch (error) {
+      this.logger.error(`Failed to send email to ${to}:`, error.message);
+      return false;
     }
+    // } catch (err: any) {
+    //   this.logger.error(`Failed to send email to ${to}: ${err.message}`);
+    //   throw err;
+    // }
   }
 }

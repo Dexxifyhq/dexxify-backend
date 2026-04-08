@@ -10,7 +10,7 @@ import { OnrampService } from './onramp.service';
 import { CreateOnrampDto } from './dto';
 import { GetDeveloper } from '../../common/decorators';
 
-@Controller('v1/onramp')
+@Controller('onramp')
 export class OnrampController {
   constructor(private readonly onrampService: OnrampService) {}
 

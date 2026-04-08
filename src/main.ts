@@ -78,6 +78,6 @@ async function bootstrap() {
 
   const logger = new Logger('Bootstrap');
   logger.log(`💵 Dexxify API running on port ${port}`);
-  logger.log(`📄 Swagger docs available at http://localhost:${port}/docs`);
+  logger.log(`📄 Swagger docs available at http://localhost:${port}/api`);
 }
 bootstrap();

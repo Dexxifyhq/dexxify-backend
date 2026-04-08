@@ -10,7 +10,7 @@ import { OfframpService } from './offramp.service';
 import { CreateOfframpDto } from './dto';
 import { GetDeveloper } from '../../common/decorators';
 
-@Controller('v1')
+@Controller()
 export class OfframpController {
   constructor(private readonly offrampService: OfframpService) {}
 
