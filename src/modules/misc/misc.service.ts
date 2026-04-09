@@ -70,7 +70,7 @@ export class MiscService {
       }
 
       const data = await response.json();
-      console.log('data', data);
+      // console.log('data', data);
       return data;
     } catch (error) {
       this.logger.error(`Failed to fetch deposit assets: ${error.message}`);
@@ -130,40 +130,40 @@ export class MiscService {
 
   // ── Exchange Rates ────────────────────────────────────
 
-  async getRates(source?: string, target?: string) {
-    // If specific pair requested
-    if (source && target) {
-      const rate = await this.fetchBreetRate(
-        source.toUpperCase(),
-        target.toUpperCase(),
-      );
-      return {
-        pair: `${source.toUpperCase()}/${target.toUpperCase()}`,
-        buy_rate: rate.buy,
-        sell_rate: rate.sell,
-        timestamp: new Date().toISOString(),
-      };
-    }
+  // async getRates(source?: string, target?: string) {
+  //   // If specific pair requested
+  //   if (source && target) {
+  //     const rate = await this.fetchBreetRate(
+  //       source.toUpperCase(),
+  //       target.toUpperCase(),
+  //     );
+  //     return {
+  //       pair: `${source.toUpperCase()}/${target.toUpperCase()}`,
+  //       buy_rate: rate.buy,
+  //       sell_rate: rate.sell,
+  //       timestamp: new Date().toISOString(),
+  //     };
+  //   }
 
-    // Return all supported rates
-    const pairs = ['BTC_NGN', 'USDT_NGN', 'ETH_NGN', 'USDC_NGN'];
-    const rates = await Promise.all(
-      pairs.map(async (pair) => {
-        const [src, tgt] = pair.split('_');
-        const rate = await this.fetchBreetRate(src, tgt);
-        return {
-          pair: `${src}/${tgt}`,
-          buy_rate: rate.buy,
-          sell_rate: rate.sell,
-        };
-      }),
-    );
+  //   // Return all supported rates
+  //   const pairs = ['BTC_NGN', 'USDT_NGN', 'ETH_NGN', 'USDC_NGN'];
+  //   const rates = await Promise.all(
+  //     pairs.map(async (pair) => {
+  //       const [src, tgt] = pair.split('_');
+  //       const rate = await this.fetchBreetRate(src, tgt);
+  //       return {
+  //         pair: `${src}/${tgt}`,
+  //         buy_rate: rate.buy,
+  //         sell_rate: rate.sell,
+  //       };
+  //     }),
+  //   );
 
-    return {
-      rates,
-      timestamp: new Date().toISOString(),
-    };
-  }
+  //   return {
+  //     rates,
+  //     timestamp: new Date().toISOString(),
+  //   };
+  // }
 
   // ── Health Check ──────────────────────────────────────
 
@@ -241,22 +241,184 @@ export class MiscService {
     // ];
   }
 
-  private async fetchBreetRate(
-    source: string,
-    _target: string,
-  ): Promise<{ buy: number; sell: number }> {
-    // TODO: Implement actual Breet API call
-    // GET ${this.breetApiUrl}/rates?source=${source}&target=${target}
-    // Headers: { Authorization: `Bearer ${this.breetApiKey}` }
-    this.logger.warn('Using stub Breet rate — implement actual API call');
+  // 1. Get crypto prices (global market prices)
+  async getCryptoPrices(options: {
+    to: number;
+    from: number;
+  }): Promise<{ price: any }> {
+    const params = new URLSearchParams();
+    params.append('to', options.to.toString());
+    params.append('from', options.from.toString());
 
-    const stubRates: Record<string, { buy: number; sell: number }> = {
-      BTC: { buy: 69500000, sell: 68000000 },
-      USDT: { buy: 1620, sell: 1580 },
-      ETH: { buy: 5850000, sell: 5700000 },
-      USDC: { buy: 1620, sell: 1580 },
+    const url = `${this.breetApiUrl}/v1/trades/pbc/sell/assets/market/converter?${params.toString()}`;
+    const headers = {
+      'x-app-id': this.breetAppId,
+      'x-app-secret': this.breetApiKey,
+      'X-Breet-Env': this.breetEnv,
+      'Content-Type': 'application/json',
     };
 
-    return stubRates[source] || { buy: 0, sell: 0 };
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers,
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(
+          `Breet API error: ${error.message || response.statusText}`,
+        );
+      }
+
+      const price = await response.json();
+      console.log('price', price);
+
+      if (!price) {
+        throw new Error(`Price not found for ${options.to}-${options.from}`);
+      }
+
+      return {
+        price,
+      };
+    } catch (error) {
+      this.logger.error(
+        `Failed to fetch crypto price for ${options.to}-${options.from}: ${error.message}`,
+      );
+      throw error;
+    }
+  }
+
+  // 2. Get rate calculator (Breet's actual conversion rates)
+  async getRateCalculator(
+    assetId: string,
+    amountInUSD: number,
+    currency: string,
+  ): Promise<any> {
+    const url = `${this.breetApiUrl}/v1/trades/pbc/sell/rate-calculator/${assetId}`;
+    const headers = {
+      'x-app-id': this.breetAppId,
+      'x-app-secret': this.breetApiKey,
+      'X-Breet-Env': this.breetEnv,
+      'Content-Type': 'application/json',
+    };
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          assetId,
+          amountInUSD,
+          currency,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(
+          `Breet API error: ${error.message || response.statusText}`,
+        );
+      }
+
+      return await response.json();
+    } catch (error) {
+      this.logger.error(
+        `Failed to calculate rate for ${assetId}: ${error.message}`,
+      );
+      throw error;
+    }
+  }
+
+  // 3. Convert USD to Fiat
+  async convertUsdToFiat(
+    amountInUSD: number,
+    pin: string,
+    bankId: string,
+  ): Promise<any> {
+    const url = `${this.breetApiUrl}/v1/payments/convert`;
+    const headers = {
+      'x-app-id': this.breetAppId,
+      'x-app-secret': this.breetApiKey,
+      'X-Breet-Env': this.breetEnv,
+      'Content-Type': 'application/json',
+    };
+
+    const payload: any = {
+      amount: amountInUSD,
+      bank: bankId,
+      pin,
+    };
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(
+          `Breet API error: ${error.message || response.statusText}`,
+        );
+      }
+
+      const result = await response.json();
+
+      this.logger.log(
+        `Converted $${amountInUSD} USD to ${result.data.amount} ${result.data.currency}`,
+      );
+      return result;
+    } catch (error) {
+      this.logger.error(`Failed to convert USD to ${bankId}: ${error.message}`);
+      throw error;
+    }
+  }
+
+  // 4. Convert Fiat to USD
+  async convertFiatToUsd(
+    amountInLocalFiat: number,
+    pin: string,
+    withdrawalAddressId: string,
+  ): Promise<any> {
+    const url = `${this.breetApiUrl}/v1/payments/fiat-to-usd`;
+    const headers = {
+      'x-app-id': this.breetAppId,
+      'x-app-secret': this.breetApiKey,
+      'X-Breet-Env': this.breetEnv,
+      'Content-Type': 'application/json',
+    };
+
+    const payload: any = {
+      amount: amountInLocalFiat,
+      withdrawalAddressId,
+      pin,
+    };
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(
+          `Breet API error: ${error.message || response.statusText}`,
+        );
+      }
+
+      const result = await response.json();
+
+      this.logger.log(
+        `Converted ${amountInLocalFiat} to $${result.data.amount} USD`,
+      );
+      return result;
+    } catch (error) {
+      this.logger.error(`Failed to convert to USD: ${error.message}`);
+      throw error;
+    }
   }
 }

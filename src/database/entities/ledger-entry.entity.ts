@@ -6,6 +6,7 @@ import {
   ManyToOne,
   JoinColumn,
   Index,
+  Unique,
 } from 'typeorm';
 import { Developer } from './developer.entity';
 
@@ -32,11 +33,11 @@ export class LedgerEntry {
   @Column({ type: 'enum', enum: TxType })
   tx_type: TxType;
 
-  @Column({ type: 'varchar', length: 50 })
+  @Column({ type: 'text' })
   reference_type: string;
 
   @Index()
-  @Column({ type: 'uuid' })
+  @Column({ type: 'text' })
   reference_id: string;
 
   @Column({ type: 'decimal', precision: 28, scale: 8, default: 0 })
@@ -46,11 +47,8 @@ export class LedgerEntry {
   credit: number;
 
   @Index()
-  @Column({ type: 'varchar', length: 10 })
+  @Column({ type: 'text' })
   currency: string;
-
-  @Column({ type: 'decimal', precision: 28, scale: 8, nullable: true })
-  balance_after: number;
 
   @Column({ type: 'text', nullable: true })
   description: string;

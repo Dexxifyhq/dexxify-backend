@@ -109,3 +109,66 @@ export class WalletQueryDto {
   @IsNumber()
   limit?: number;
 }
+
+export class MockTradeDto {
+  @ApiProperty({
+    description: 'Wallet deposit address to credit (Must match the asset)',
+    example: '5WEWHj6U44LVifRSVuGY4YPGfL4hPjKL4nmEQpzrJPK1',
+  })
+  @IsString()
+  @IsNotEmpty()
+  walletAddress: string;
+
+  @ApiProperty({
+    description: 'Asset',
+    example: 'SOL_TEST',
+  })
+  @IsString()
+  @IsNotEmpty()
+  asset: string;
+
+  @ApiProperty({ description: 'Amount in USD', example: 5, minimum: 1 })
+  @IsNumber()
+  @Min(1)
+  amountInUSD: number;
+
+  @ApiProperty({
+    description: 'Crypto amount received',
+    example: 10,
+    minimum: 0.00000001,
+  })
+  @IsNumber()
+  @Min(0.00000001)
+  cryptoReceived: number;
+
+  @ApiPropertyOptional({
+    description: 'Unique reference for the mock transaction',
+    example: '',
+  })
+  @IsOptional()
+  @IsString()
+  reference?: string;
+
+  @ApiPropertyOptional({ description: 'Mock transaction hash', example: '' })
+  @IsOptional()
+  @IsString()
+  txHash?: string;
+
+  @ApiPropertyOptional({
+    description: 'Source wallet address',
+    example: 'TSource1234567890AbCdEfGhIjKlMnOpQr',
+  })
+  @IsOptional()
+  @IsString()
+  sourceAddress?: string;
+
+  @ApiPropertyOptional({
+    description: 'Number of confirmations',
+    example: 2,
+    minimum: 1,
+  })
+  @IsOptional()
+  @IsNumber()
+  @Min(1)
+  confirmations?: number;
+}

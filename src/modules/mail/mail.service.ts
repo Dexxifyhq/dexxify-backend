@@ -83,6 +83,48 @@ export class MailService {
     return await this.send(to, subject, html, text);
   }
 
+  async sendPasswordResetEmail(
+    to: string,
+    otp: string,
+    name?: string,
+  ): Promise<void> {
+    const subject = `${otp} is your Dexxify password reset code`;
+
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto;">
+        <h2 style="color: #1a1a1a;">Reset your password</h2>
+        <p>Hi${name ? ` ${name}` : ''},</p>
+        <p>We received a request to reset your Dexxify account password. Use the code below:</p>
+        <div style="
+          background: #f4f4f5;
+          border-radius: 8px;
+          padding: 24px;
+          text-align: center;
+          margin: 24px 0;
+        ">
+          <span style="
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: 6px;
+            color: #1a1a1a;
+          ">${otp}</span>
+        </div>
+        <p style="color: #6b7280; font-size: 14px;">
+          This code expires in 10 minutes. If you didn't request a password reset, 
+          you can safely ignore this email — your password will not be changed.
+        </p>
+        <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;" />
+        <p style="color: #9ca3af; font-size: 12px;">
+          Dexxify - Crypto Infrastructure API
+        </p>
+      </div>
+    `;
+
+    const text = `Your Dexxify password reset code is: ${otp}\n\nThis code expires in 10 minutes. If you didn't request this, ignore this email.`;
+
+    await this.send(to, subject, html, text);
+  }
+
   private async send(
     to: string,
     subject: string,

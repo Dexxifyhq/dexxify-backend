@@ -95,3 +95,40 @@ export class ResendOtpDto {
   @IsEmail()
   email: string;
 }
+
+export class ForgotPasswordDto {
+  @ApiProperty({
+    description: 'User email address',
+    example: 'jones@life.com',
+  })
+  @IsEmail()
+  email: string;
+}
+
+export class ResetPasswordDto {
+  @ApiProperty({
+    description: 'User email address',
+    example: 'jones@life.com',
+  })
+  @IsEmail()
+  email: string;
+
+  @ApiProperty({
+    description: '6-digit OTP code',
+    example: '123456',
+    minLength: 6,
+    maxLength: 6,
+  })
+  @IsString()
+  @Length(6, 6, { message: 'OTP must be exactly 6 digits.' })
+  code: string;
+
+  @ApiProperty({
+    description: 'New password',
+    example: 'newpassword123',
+    minLength: 8,
+  })
+  @IsString()
+  @MinLength(8)
+  new_password: string;
+}

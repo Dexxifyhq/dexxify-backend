@@ -17,7 +17,14 @@ import {
   OtpCode,
   OtpType,
 } from '../../database/entities';
-import { RegisterDto, LoginDto, VerifyOtpDto, ResendOtpDto } from './dto';
+import {
+  RegisterDto,
+  LoginDto,
+  VerifyOtpDto,
+  ResendOtpDto,
+  ForgotPasswordDto,
+  ResetPasswordDto,
+} from './dto';
 import { generateApiKey, generateOtp, hashOtp } from '../../common/utils';
 import { MailService } from '../mail/mail.service';
 
@@ -226,6 +233,119 @@ export class AuthService {
     };
   }
 
+  // ── Forgot Password — sends password reset OTP ────────
+
+  async forgotPassword(dto: ForgotPasswordDto) {
+    const developer = await this.developerRepo.findOne({
+      where: { email: dto.email },
+    });
+
+    // Always return same message — don't reveal whether account exists
+    if (!developer) {
+      return {
+        message:
+          'If an account with this email exists, a password reset code has been sent.',
+      };
+    }
+
+    // Only allow password reset for active, verified accounts
+    if (developer.status !== DeveloperStatus.ACTIVE) {
+      return {
+        message:
+          'If an account with this email exists, a password reset code has been sent.',
+      };
+    }
+
+    // Check cooldown
+    const recentOtp = await this.otpRepo.findOne({
+      where: { developer_id: developer.id, type: OtpType.PASSWORD_RESET },
+      order: { created_at: 'DESC' },
+    });
+
+    if (recentOtp) {
+      const elapsed =
+        (Date.now() - new Date(recentOtp.created_at).getTime()) / 1000;
+      if (elapsed < this.otpResendCooldown) {
+        const wait = Math.ceil(this.otpResendCooldown - elapsed);
+        throw new BadRequestException(
+          `Please wait ${wait} seconds before requesting a new code.`,
+        );
+      }
+    }
+
+    // Invalidate old password reset OTPs and send new one
+    await this.invalidateOldOtps(developer.id, OtpType.PASSWORD_RESET);
+    await this.createAndSendOtp(developer, OtpType.PASSWORD_RESET);
+
+    return {
+      message:
+        'If an account with this email exists, a password reset code has been sent.',
+    };
+  }
+
+  // ── Reset Password — verify OTP + set new password ────
+
+  async resetPassword(dto: ResetPasswordDto) {
+    const developer = await this.developerRepo.findOne({
+      where: { email: dto.email },
+    });
+
+    if (!developer) {
+      throw new BadRequestException('Invalid request.');
+    }
+
+    // Find latest unused, unexpired password reset OTP
+    const otpRecord = await this.otpRepo.findOne({
+      where: {
+        developer_id: developer.id,
+        type: OtpType.PASSWORD_RESET,
+        is_used: false,
+        expires_at: MoreThan(new Date()),
+      },
+      order: { created_at: 'DESC' },
+    });
+
+    if (!otpRecord) {
+      throw new BadRequestException(
+        'Reset code has expired or is invalid. Please request a new one.',
+      );
+    }
+
+    if (otpRecord.attempts >= this.otpMaxAttempts) {
+      throw new BadRequestException(
+        'Too many failed attempts. Please request a new reset code.',
+      );
+    }
+
+    // Increment attempts
+    otpRecord.attempts += 1;
+    await this.otpRepo.save(otpRecord);
+
+    // Verify code
+    const codeHash = hashOtp(dto.code);
+    if (codeHash !== otpRecord.code_hash) {
+      const remaining = this.otpMaxAttempts - otpRecord.attempts;
+      throw new BadRequestException(
+        `Invalid reset code. ${remaining} attempt${remaining !== 1 ? 's' : ''} remaining.`,
+      );
+    }
+
+    // Success — update password
+    otpRecord.is_used = true;
+    await this.otpRepo.save(otpRecord);
+
+    developer.password_hash = await bcrypt.hash(dto.new_password, 12);
+    await this.developerRepo.save(developer);
+
+    // Invalidate any remaining password reset OTPs
+    await this.invalidateOldOtps(developer.id, OtpType.PASSWORD_RESET);
+
+    return {
+      message:
+        'Password reset successfully. You can now log in with your new password.',
+    };
+  }
+
   // ── Login — blocks unverified accounts ────────────────
 
   async login(dto: LoginDto, res: Response) {
@@ -300,12 +420,17 @@ export class AuthService {
       }),
     );
 
-    await this.mailService.sendOtpEmail(
-      developer.email,
-      code,
-      `${developer.first_name} ${developer.last_name}` ||
-        developer.business_name,
-    );
+    const name = `${developer.first_name} ${developer.last_name}`;
+
+    if (type === OtpType.PASSWORD_RESET) {
+      await this.mailService.sendPasswordResetEmail(
+        developer.email,
+        code,
+        name,
+      );
+    } else {
+      await this.mailService.sendOtpEmail(developer.email, code, name);
+    }
   }
 
   private async invalidateOldOtps(developerId: string, type: OtpType) {

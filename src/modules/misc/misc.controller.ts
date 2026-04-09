@@ -44,11 +44,11 @@ export class MiscController {
    * GET /v1/misc/rates?source=USDT&target=NGN
    * Returns live exchange rates — all pairs or a specific pair.
    */
-  @ApiBearerAuth('api-key')
-  @Get('rates')
-  async getRates(@Query() query: GetRateQueryDto) {
-    return this.miscService.getRates(query.source, query.target);
-  }
+  // @ApiBearerAuth('api-key')
+  // @Get('rates')
+  // async getRates(@Query() query: GetRateQueryDto) {
+  //   return this.miscService.getRates(query.source, query.target);
+  // }
 }
 
 /**

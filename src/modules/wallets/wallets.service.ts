@@ -82,7 +82,7 @@ export class WalletsService {
 
   async findOne(developerId: string, walletId: string) {
     const wallet = await this.walletRepo.findOne({
-      where: { id: walletId, developer_id: developerId },
+      where: { breet_wallet_id: walletId, developer_id: developerId },
     });
 
     if (!wallet) throw new NotFoundException('Wallet not found.');
@@ -161,8 +161,32 @@ export class WalletsService {
     }
   }
 
-  async getTransactions(developerId: string, walletId: string, query: any) {
-    await this.findOne(developerId, walletId);
+  async getAllTransactions(developerId: string, query: any) {
+    const { offset, limit, page } = parsePagination(query);
+
+    const [entries, total] = await this.ledgerRepo.findAndCount({
+      where: { developer_id: developerId },
+      order: { created_at: 'DESC' },
+      skip: offset,
+      take: limit,
+    });
+
+    return {
+      data: entries,
+      meta: buildPaginationMeta(total, page, limit),
+    };
+  }
+
+  async getTransactionsByWalletId(
+    developerId: string,
+    walletId: string,
+    query: any,
+  ) {
+    const wallet = await this.findOne(developerId, walletId);
+
+    if (!wallet.breet_wallet_id) {
+      throw new BadRequestException('Wallet is not linked to Breet.');
+    }
 
     const { offset, limit, page } = parsePagination(query);
 
@@ -221,7 +245,6 @@ export class WalletsService {
           debit: dto.amount,
           credit: 0,
           currency: fromWallet.asset_id,
-          balance_after: Number(fromWallet.balance) - dto.amount,
           description:
             dto.narration || `Transfer to wallet ${dto.to_wallet_id}`,
           metadata: { transfer_group: txId },
@@ -234,7 +257,6 @@ export class WalletsService {
           debit: 0,
           credit: dto.amount,
           currency: toWallet.asset_id,
-          balance_after: Number(toWallet.balance) + dto.amount,
           description:
             dto.narration || `Transfer from wallet ${dto.from_wallet_id}`,
           metadata: { transfer_group: txId },
@@ -367,18 +389,156 @@ export class WalletsService {
     };
   }
 
-  async getBreetTransactions(
-    developerId: string,
-    walletId: string,
-    options?: { limit?: number; offset?: number },
-  ) {
-    const wallet = await this.findOne(developerId, walletId);
+  // async getBreetWalletTransactions(
+  //   options?: { limit?: number; offset?: number },
+  // ) {
+  //
+  // }
 
-    if (!wallet.breet_wallet_id) {
-      throw new BadRequestException('Wallet is not linked to Breet.');
+  // async getBreetWalletTransactionsById(
+  //   breetWalletId: string,
+  //   options?: { limit?: number; offset?: number },
+  // ) {
+  //   // const params = new URLSearchParams();
+  //   // if (options?.limit) params.append('limit', options.limit.toString());
+  //   // if (options?.offset) params.append('offset', options.offset.toString());
+
+  //   const url = `${this.breetApiUrl}/v1/trades/transactions/${breetWalletId}`;
+  //   const headers = {
+  //     'x-app-id': this.breetAppId,
+  //     'x-app-secret': this.breetApiKey,
+  //     'X-Breet-Env': this.breetEnv,
+  //     'Content-Type': 'application/json',
+  //   };
+
+  //   try {
+  //     const response = await fetch(url, {
+  //       method: 'GET',
+  //       headers,
+  //     });
+
+  //     if (!response.ok) {
+  //       const error = await response.json();
+  //       throw new Error(
+  //         `Breet API error: ${error.message || response.statusText}`,
+  //       );
+  //     }
+
+  //     return await response.json();
+  //   } catch (error) {
+  //     this.logger.error(
+  //       `Failed to fetch wallet transactions: ${error.message}`,
+  //     );
+  //     throw error;
+  //   }
+  // }
+
+  async mockBreetTrade(
+    developerId: string,
+    // walletId: string,
+    mockData: {
+      walletAddress: string;
+      asset: string;
+      amountInUSD: number;
+      cryptoReceived: number;
+      reference?: string;
+      txHash?: string;
+      sourceAddress?: string;
+      confirmations?: number;
+    },
+  ) {
+    // const wallet = await this.findOne(developerId, walletId);
+
+    // if (!wallet.breet_wallet_id) {
+    //   throw new BadRequestException('Wallet is not linked to Breet.');
+    // }
+
+    // Check if we're in development environment
+    if (this.breetEnv !== 'development') {
+      throw new BadRequestException(
+        'Mock trades are only available in development environment.',
+      );
     }
 
-    return this.getBreetWalletTransactions(wallet.breet_wallet_id, options);
+    const url = `${this.breetApiUrl}/v1/trades/sell/mock-trade`;
+    const headers = {
+      'x-app-id': this.breetAppId,
+      'x-app-secret': this.breetApiKey,
+      'X-Breet-Env': this.breetEnv,
+      'Content-Type': 'application/json',
+    };
+
+    // Generate unique reference and txHash if not provided
+    const payload = {
+      walletAddress: mockData.walletAddress,
+      asset: mockData.asset,
+      amountInUSD: mockData.amountInUSD,
+      cryptoReceived: mockData.cryptoReceived,
+      reference:
+        mockData.reference ||
+        `mock-ref-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+      txHash:
+        mockData.txHash ||
+        `0xmock${Date.now()}${Math.random().toString(36).slice(2, 9)}`,
+      ...(mockData.sourceAddress && { sourceAddress: mockData.sourceAddress }),
+      ...(mockData.confirmations && { confirmations: mockData.confirmations }),
+    };
+
+    try {
+      this.logger.log(
+        `Mocking trade for wallet ${mockData.walletAddress}: ${JSON.stringify(payload)}`,
+      );
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(
+          `Breet API error: ${error.message || response.statusText}`,
+        );
+      }
+
+      const result = await response.json();
+
+      this.logger.log(
+        `Mock trade accepted for wallet ${mockData.walletAddress}. Trade will be processed asynchronously.`,
+      );
+
+      // Log the mock trade in ledger for tracking
+      await this.ledgerRepo.save(
+        this.ledgerRepo.create({
+          developer_id: developerId,
+          tx_type: TxType.DEPOSIT,
+          reference_type: 'mock_trade',
+          reference_id: mockData.walletAddress,
+          debit: 0,
+          credit: mockData.cryptoReceived,
+          currency: mockData.asset,
+          description: `Mock trade: ${mockData.cryptoReceived} ${mockData.asset} (${mockData.amountInUSD} USD)`,
+        }),
+      );
+
+      return {
+        success: true,
+        message: 'Mock trade accepted and will be processed asynchronously',
+        trade: {
+          walletAddress: payload.walletAddress,
+          asset: payload.asset,
+          amountInUSD: payload.amountInUSD,
+          cryptoReceived: payload.cryptoReceived,
+          reference: payload.reference,
+          txHash: payload.txHash,
+        },
+        breet_response: result,
+      };
+    } catch (error) {
+      this.logger.error(`Failed to mock trade: ${error.message}`);
+      throw error;
+    }
   }
 
   async getBreetWalletBalance(
@@ -409,44 +569,6 @@ export class WalletsService {
       return data;
     } catch (error) {
       this.logger.error(`Failed to fetch wallet balance: ${error.message}`);
-      throw error;
-    }
-  }
-
-  async getBreetWalletTransactions(
-    breetWalletId: string,
-    options?: { limit?: number; offset?: number },
-  ) {
-    const params = new URLSearchParams();
-    if (options?.limit) params.append('limit', options.limit.toString());
-    if (options?.offset) params.append('offset', options.offset.toString());
-
-    const url = `${this.breetApiUrl}/v1/wallets/${breetWalletId}/transactions?${params}`;
-    const headers = {
-      'x-app-id': this.breetAppId,
-      'x-app-secret': this.breetApiKey,
-      'X-Breet-Env': this.breetEnv,
-      'Content-Type': 'application/json',
-    };
-
-    try {
-      const response = await fetch(url, {
-        method: 'GET',
-        headers,
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(
-          `Breet API error: ${error.message || response.statusText}`,
-        );
-      }
-
-      return await response.json();
-    } catch (error) {
-      this.logger.error(
-        `Failed to fetch wallet transactions: ${error.message}`,
-      );
       throw error;
     }
   }
