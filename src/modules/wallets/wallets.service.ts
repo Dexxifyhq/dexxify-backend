@@ -47,14 +47,13 @@ export class WalletsService {
     const existing = await this.walletRepo.findOne({
       where: {
         developer_id: developerId,
-        breet_wallet_id: dto.wallet_id,
-        asset: dto.asset,
+        label: dto.label,
       },
     });
 
     if (existing) {
       throw new BadRequestException(
-        `Wallet for user ${dto.wallet_id} with asset ${dto.asset} already exists.`,
+        `Wallet with label "${dto.label}" already exists for this developer.`,
       );
     }
 
@@ -70,15 +69,15 @@ export class WalletsService {
       );
     }
 
-    // const wallet = this.walletRepo.create({
-    //   developer_id: developerId,
-    //   breet_wallet_id: breetWallet.id,
-    //   asset: dto.asset,
-    //   deposit_address: breetWallet.address,
-    // });
+    const wallet = this.walletRepo.create({
+      developer_id: developerId,
+      breet_wallet_id: breetWallet.data.id,
+      asset_id: dto.asset_id,
+      deposit_address: breetWallet.data.address,
+      label: dto.label,
+    });
 
-    // return this.walletRepo.save(wallet);
-    return;
+    return this.walletRepo.save(wallet);
   }
 
   async findOne(developerId: string, walletId: string) {
@@ -103,8 +102,8 @@ export class WalletsService {
     if (query.wallet_id) {
       qb.andWhere('w.breet_wallet_id = :uid', { uid: query.wallet_id });
     }
-    if (query.asset) {
-      qb.andWhere('w.asset = :asset', { asset: query.asset });
+    if (query.asset_id) {
+      qb.andWhere('w.asset_id = :assetId', { assetId: query.asset_id });
     }
 
     const [wallets, total] = await qb.getManyAndCount();
@@ -120,17 +119,46 @@ export class WalletsService {
 
     if (!wallet.deposit_address) {
       try {
-        const address = await this.fetchBreetDepositAddress(
+        const addressData = await this.getBreetWalletDetails(
           wallet.breet_wallet_id,
         );
-        await this.walletRepo.update(walletId, { deposit_address: address });
-        return { address, asset: wallet.asset };
+        await this.walletRepo.update(walletId, {
+          deposit_address: addressData.data.address,
+        });
+        return {
+          deposit_address: addressData.data.address,
+          asset: wallet.asset_id,
+        };
       } catch {
         throw new BadRequestException('Failed to generate deposit address.');
       }
     }
 
-    return { address: wallet.deposit_address, asset: wallet.asset };
+    return { deposit_address: wallet.deposit_address, asset: wallet.asset_id };
+  }
+
+  async getWalletDetails(breetWalletId: string): Promise<any> {
+    try {
+      const breetWallet = await this.getBreetWalletDetails(breetWalletId);
+      return breetWallet.data;
+    } catch (err) {
+      this.logger.error(`Breet wallet retrieval failed: ${err.message}`);
+      throw new BadRequestException(
+        'Failed to retrieve wallet with crypto provider.',
+      );
+    }
+  }
+
+  async getAllWalletDetails() {
+    try {
+      const breetWallets = await this.fetchAllBreetWalletDetails();
+      return breetWallets.data;
+    } catch (err) {
+      this.logger.error(`Breet wallet retrieval failed: ${err.message}`);
+      throw new BadRequestException(
+        'Failed to retrieve wallet with crypto provider.',
+      );
+    }
   }
 
   async getTransactions(developerId: string, walletId: string, query: any) {
@@ -155,7 +183,7 @@ export class WalletsService {
     const fromWallet = await this.findOne(developerId, dto.from_wallet_id);
     const toWallet = await this.findOne(developerId, dto.to_wallet_id);
 
-    if (fromWallet.asset !== toWallet.asset) {
+    if (fromWallet.asset_id !== toWallet.asset_id) {
       throw new BadRequestException(
         'Cannot transfer between different asset types.',
       );
@@ -192,7 +220,7 @@ export class WalletsService {
           reference_id: dto.from_wallet_id,
           debit: dto.amount,
           credit: 0,
-          currency: fromWallet.asset,
+          currency: fromWallet.asset_id,
           balance_after: Number(fromWallet.balance) - dto.amount,
           description:
             dto.narration || `Transfer to wallet ${dto.to_wallet_id}`,
@@ -205,7 +233,7 @@ export class WalletsService {
           reference_id: dto.to_wallet_id,
           debit: 0,
           credit: dto.amount,
-          currency: toWallet.asset,
+          currency: toWallet.asset_id,
           balance_after: Number(toWallet.balance) + dto.amount,
           description:
             dto.narration || `Transfer from wallet ${dto.from_wallet_id}`,
@@ -219,7 +247,7 @@ export class WalletsService {
       from_wallet_id: dto.from_wallet_id,
       to_wallet_id: dto.to_wallet_id,
       amount: dto.amount,
-      asset: fromWallet.asset,
+      asset: fromWallet.asset_id,
       status: 'completed',
     };
   }
@@ -229,7 +257,7 @@ export class WalletsService {
     dto: CreateWalletDto,
     uniqueId: string,
   ): Promise<any> {
-    const url = `${this.breetApiUrl}/v1/trades/sell/assets/${dto.asset}/generate-address`;
+    const url = `${this.breetApiUrl}/v1/trades/sell/assets/${dto.asset_id}/generate-address`;
     const headers = {
       'x-app-id': this.breetAppId,
       'x-app-secret': this.breetApiKey,
@@ -238,7 +266,6 @@ export class WalletsService {
     };
 
     const body = {
-      asset: dto.asset.toLowerCase(), // Breet expects lowercase (btc, usdt, eth, usdc)
       label: uniqueId,
       narration: 'Breet Payout',
       bankId: dto.bank_id,
@@ -252,7 +279,7 @@ export class WalletsService {
         headers,
         body: JSON.stringify(body),
       });
-      console.log('response', response);
+      // console.log('response', response);
 
       if (!response.ok) {
         const error = await response.json();
@@ -263,7 +290,7 @@ export class WalletsService {
 
       const data = await response.json();
       console.log('data', data);
-      this.logger.log(`Created Breet wallet: ${data.id}`);
+      this.logger.log(`Created Breet wallet: ${data.data.id}`);
       return data;
     } catch (error) {
       this.logger.error(`Failed to create Breet wallet: ${error.message}`);
@@ -271,12 +298,12 @@ export class WalletsService {
     }
   }
 
-  private async fetchBreetDepositAddress(
-    breetWalletId: string,
-  ): Promise<string> {
-    const url = `${this.breetApiUrl}/wallets/${breetWalletId}/address`;
+  private async getBreetWalletDetails(breetWalletId: string): Promise<any> {
+    const url = `${this.breetApiUrl}/v1/trades/wallets/${breetWalletId}`;
     const headers = {
-      Authorization: `Bearer ${this.breetApiKey}`,
+      'x-app-id': this.breetAppId,
+      'x-app-secret': this.breetApiKey,
+      'X-Breet-Env': this.breetEnv,
       'Content-Type': 'application/json',
     };
 
@@ -295,7 +322,7 @@ export class WalletsService {
 
       const data = await response.json();
       this.logger.log(`Fetched deposit address for wallet ${breetWalletId}`);
-      return data.address;
+      return data;
     } catch (error) {
       this.logger.error(`Failed to fetch deposit address: ${error.message}`);
       throw error;
@@ -327,14 +354,14 @@ export class WalletsService {
         reference_id: walletId,
         debit: 0,
         credit: parseFloat(breetBalance.balance),
-        currency: wallet.asset,
-        description: `Balance sync from Breet: ${breetBalance.balance} ${wallet.asset}`,
+        currency: wallet.asset_id,
+        description: `Balance sync from Breet: ${breetBalance.balance} ${wallet.asset_id}`,
       }),
     );
 
     return {
       wallet_id: walletId,
-      asset: wallet.asset,
+      asset: wallet.asset_id,
       balance: breetBalance.balance,
       synced_at: new Date(),
     };
@@ -357,9 +384,11 @@ export class WalletsService {
   async getBreetWalletBalance(
     breetWalletId: string,
   ): Promise<{ asset: string; balance: string }> {
-    const url = `${this.breetApiUrl}/wallets/${breetWalletId}/balance`;
+    const url = `${this.breetApiUrl}/v1/wallets/${breetWalletId}/balance`;
     const headers = {
-      Authorization: `Bearer ${this.breetApiKey}`,
+      'x-app-id': this.breetAppId,
+      'x-app-secret': this.breetApiKey,
+      'X-Breet-Env': this.breetEnv,
       'Content-Type': 'application/json',
     };
 
@@ -392,9 +421,11 @@ export class WalletsService {
     if (options?.limit) params.append('limit', options.limit.toString());
     if (options?.offset) params.append('offset', options.offset.toString());
 
-    const url = `${this.breetApiUrl}/wallets/${breetWalletId}/transactions?${params}`;
+    const url = `${this.breetApiUrl}/v1/wallets/${breetWalletId}/transactions?${params}`;
     const headers = {
-      Authorization: `Bearer ${this.breetApiKey}`,
+      'x-app-id': this.breetAppId,
+      'x-app-secret': this.breetApiKey,
+      'X-Breet-Env': this.breetEnv,
       'Content-Type': 'application/json',
     };
 
@@ -415,6 +446,39 @@ export class WalletsService {
     } catch (error) {
       this.logger.error(
         `Failed to fetch wallet transactions: ${error.message}`,
+      );
+      throw error;
+    }
+  }
+
+  protected async fetchAllBreetWalletDetails(): Promise<any> {
+    const url = `${this.breetApiUrl}/v1/trades/wallets`;
+    const headers = {
+      'x-app-id': this.breetAppId,
+      'x-app-secret': this.breetApiKey,
+      'X-Breet-Env': this.breetEnv,
+      'Content-Type': 'application/json',
+    };
+
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers,
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(
+          `Breet API error: ${error.message || response.statusText}`,
+        );
+      }
+
+      const data = await response.json();
+      this.logger.log(`Fetched all Breet wallet details`);
+      return data;
+    } catch (error) {
+      this.logger.error(
+        `Failed to fetch all Breet wallet details: ${error.message}`,
       );
       throw error;
     }

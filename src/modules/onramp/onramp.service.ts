@@ -37,7 +37,7 @@ export class OnrampService {
       dto.wallet_id,
     );
 
-    if (wallet.asset !== dto.crypto_asset) {
+    if (wallet.asset_id !== dto.crypto_asset) {
       throw new BadRequestException(
         'Wallet asset does not match requested crypto asset.',
       );

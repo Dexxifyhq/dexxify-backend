@@ -18,32 +18,38 @@ export enum WalletAsset {
 }
 
 export class CreateWalletDto {
-  @ApiProperty({ description: 'Wallet ID', example: 'wallet_123' })
+  // @ApiProperty({ description: 'Wallet ID', example: 'wallet_123' })
+  // @IsString()
+  // @IsNotEmpty()
+  // wallet_id: string;
+
+  @ApiProperty({ description: 'Wallet label', example: 'Chicken Rep Wallet' })
   @IsString()
   @IsNotEmpty()
-  wallet_id: string;
+  label: string;
 
-  @ApiProperty({ description: 'Bank ID', example: 'bank_456' })
+  @ApiProperty({ description: 'Bank ID', example: '033' })
   @IsString()
   @IsNotEmpty()
   bank_id: string;
 
-  @ApiProperty({ description: 'Account number', example: '1234567890' })
+  @ApiProperty({ description: 'Account number', example: '2249098732' })
   @IsString()
   @IsNotEmpty()
   account_number: string;
 
   @ApiPropertyOptional({
     description: 'Enable auto settlement',
-    example: false,
+    example: true,
   })
   @IsOptional()
   @IsBoolean()
   auto_settlement?: boolean;
 
-  @ApiProperty({ description: 'Asset type', enum: WalletAsset })
-  @IsEnum(WalletAsset)
-  asset: WalletAsset;
+  @ApiProperty({ description: 'Asset ID', example: '67063f653b4a1f6c7a60ec57' })
+  @IsString()
+  @IsNotEmpty()
+  asset_id: string;
 }
 
 export class TransferDto {
@@ -80,15 +86,18 @@ export class TransferDto {
 }
 
 export class WalletQueryDto {
-  @ApiPropertyOptional({ description: 'Wallet ID', example: 'wallet_123' })
+  @ApiPropertyOptional({ description: 'Wallet ID' })
   @IsOptional()
   @IsString()
   wallet_id?: string;
 
-  @ApiPropertyOptional({ description: 'Asset type', enum: WalletAsset })
+  @ApiPropertyOptional({
+    description: 'Asset ID',
+    // example: '67063f653b4a1f6c7a60ec57',
+  })
   @IsOptional()
-  @IsEnum(WalletAsset)
-  asset?: WalletAsset;
+  @IsString()
+  asset_id?: string;
 
   @ApiPropertyOptional({ description: 'Page number', example: 1 })
   @IsOptional()

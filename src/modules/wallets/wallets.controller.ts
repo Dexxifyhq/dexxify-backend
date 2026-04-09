@@ -10,7 +10,9 @@ import {
 import { WalletsService } from './wallets.service';
 import { CreateWalletDto, TransferDto, WalletQueryDto } from './dto';
 import { GetDeveloper } from '../../common/decorators';
+import { ApiBearerAuth } from '@nestjs/swagger';
 
+@ApiBearerAuth('api-key')
 @Controller('wallets')
 export class WalletsController {
   constructor(private readonly walletsService: WalletsService) {}
@@ -37,6 +39,16 @@ export class WalletsController {
     @Param('wallet_id', ParseUUIDPipe) walletId: string,
   ) {
     return this.walletsService.findOne(developerId, walletId);
+  }
+
+  @Get(':wallet_id/details')
+  async getWalletDetails(@Param('wallet_id') walletId: string) {
+    return this.walletsService.getWalletDetails(walletId);
+  }
+
+  @Get('details/all')
+  async getAllWalletDetails() {
+    return this.walletsService.getAllWalletDetails();
   }
 
   @Get(':wallet_id/address')

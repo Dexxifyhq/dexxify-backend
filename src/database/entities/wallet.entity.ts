@@ -25,7 +25,7 @@ export enum WalletStatus {
 }
 
 @Entity('wallets')
-@Unique(['breet_wallet_id'])
+@Unique(['breet_wallet_id', 'label'])
 export class Wallet {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -38,8 +38,11 @@ export class Wallet {
   // @Column({ type: 'text' })
   // external_user_id: string;
 
-  @Column({ type: 'enum', enum: WalletAsset })
-  asset: WalletAsset;
+  @Column({ type: 'text' })
+  label: string;
+
+  @Column({ type: 'text' })
+  asset_id: string;
 
   @Column({ type: 'decimal', precision: 28, scale: 8, default: 0 })
   balance: number;

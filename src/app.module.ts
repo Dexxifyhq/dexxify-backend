@@ -27,6 +27,7 @@ import { KycModule } from './modules/kyc/kyc.module';
 import { WebhooksModule } from './modules/webhooks/webhooks.module';
 import { LedgerModule } from './modules/ledger/ledger.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { MiscModule } from './modules/misc/misc.module';
 
 @Module({
   imports: [
@@ -63,6 +64,7 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
     WebhooksModule,
     LedgerModule,
     DashboardModule,
+    MiscModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ApiKeyGuard },

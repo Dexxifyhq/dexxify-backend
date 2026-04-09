@@ -55,19 +55,22 @@ async function bootstrap() {
       {
         type: 'http',
         scheme: 'bearer',
+        bearerFormat: 'JWT',
+        name: 'JWT',
+        in: 'header',
         description: 'API key for /v1/* endpoints',
       },
       'api-key',
     )
-    .addCookieAuth(
-      'access_token',
-      {
-        type: 'apiKey',
-        in: 'cookie',
-        description: 'HTTP-only cookie for dashboard/auth',
-      },
-      'cookie-auth',
-    )
+    // .addCookieAuth(
+    //   'access_token',
+    //   {
+    //     type: 'apiKey',
+    //     in: 'cookie',
+    //     description: 'HTTP-only cookie for dashboard/auth',
+    //   },
+    //   'cookie-auth',
+    // )
     .build();
 
   const document = SwaggerModule.createDocument(app, swaggerConfig);
