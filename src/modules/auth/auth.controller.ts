@@ -20,18 +20,29 @@ import {
   ResetPasswordDto,
 } from './dto';
 import { Public, CookieAuth, GetDeveloper } from '../../common/decorators';
+import { ApiOperation, ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 
+@ApiTags('Authentication')
 @CookieAuth()
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  @ApiOperation({
+    summary: 'Register new developer',
+    description: 'Register a new developer account with email verification',
+  })
   @Public()
   @Post('register')
   async register(@Body() dto: RegisterDto) {
     return this.authService.register(dto);
   }
 
+  @ApiOperation({
+    summary: 'Verify OTP',
+    description:
+      'Verify email using one-time password sent during registration',
+  })
   @Public()
   @Post('verify-otp')
   @HttpCode(HttpStatus.OK)
@@ -42,6 +53,10 @@ export class AuthController {
     return this.authService.verifyOtp(dto, res);
   }
 
+  @ApiOperation({
+    summary: 'Resend OTP',
+    description: 'Resend one-time password for email verification',
+  })
   @Public()
   @Post('resend-otp')
   @HttpCode(HttpStatus.OK)
@@ -49,6 +64,10 @@ export class AuthController {
     return this.authService.resendOtp(dto);
   }
 
+  @ApiOperation({
+    summary: 'Forgot password',
+    description: 'Request password reset link via email',
+  })
   @Public()
   @Post('forgot-password')
   @HttpCode(HttpStatus.OK)
@@ -56,6 +75,10 @@ export class AuthController {
     return this.authService.forgotPassword(dto);
   }
 
+  @ApiOperation({
+    summary: 'Reset password',
+    description: 'Reset password using token from forgot password email',
+  })
   @Public()
   @Post('reset-password')
   @HttpCode(HttpStatus.OK)
@@ -63,6 +86,10 @@ export class AuthController {
     return this.authService.resetPassword(dto);
   }
 
+  @ApiOperation({
+    summary: 'Login',
+    description: 'Authenticate developer and set refresh token cookie',
+  })
   @Public()
   @Post('login')
   @HttpCode(HttpStatus.OK)
@@ -73,6 +100,10 @@ export class AuthController {
     return this.authService.login(dto, res);
   }
 
+  @ApiOperation({
+    summary: 'Refresh token',
+    description: 'Get new access token using refresh token cookie',
+  })
   @Public()
   @UseGuards(AuthGuard('jwt-refresh'))
   @Post('refresh')
@@ -84,6 +115,11 @@ export class AuthController {
     return this.authService.refresh(developer, res);
   }
 
+  @ApiOperation({
+    summary: 'Logout',
+    description: 'Clear authentication cookies and logout developer',
+  })
+  // @ApiBearerAuth('api-key')
   @UseGuards(AuthGuard('jwt'))
   @Post('logout')
   @HttpCode(HttpStatus.OK)
@@ -91,6 +127,11 @@ export class AuthController {
     return this.authService.logout(res);
   }
 
+  @ApiOperation({
+    summary: 'Get profile',
+    description: 'Get authenticated developer profile information',
+  })
+  // @ApiBearerAuth('api-key')
   @UseGuards(AuthGuard('jwt'))
   @Get('profile')
   async getProfile(@GetDeveloper('id') developerId: string) {

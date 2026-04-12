@@ -573,6 +573,126 @@ export class WalletsService {
     }
   }
 
+  // 1. Add withdrawal address
+  async addWithdrawalAddress(withdrawalData: {
+    address: string;
+    network: string;
+    token: string;
+    label: string;
+  }) {
+    const url = `${this.breetApiUrl}/v1/payments/withdrawal-addresses`;
+    const headers = {
+      'x-app-id': this.breetAppId,
+      'x-app-secret': this.breetApiKey,
+      'X-Breet-Env': this.breetEnv,
+      'Content-Type': 'application/json',
+    };
+
+    const payload = {
+      address: withdrawalData.address,
+      network: withdrawalData.network,
+      token: withdrawalData.token,
+      label: withdrawalData.label,
+    };
+
+    try {
+      this.logger.log(`Adding withdrawal address: ${JSON.stringify(payload)}`);
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(
+          `Breet API error: ${error.message || response.statusText}`,
+        );
+      }
+
+      const result = await response.json();
+      this.logger.log(`Withdrawal address added successfully`);
+
+      return result;
+    } catch (error) {
+      this.logger.error(`Failed to add withdrawal address: ${error.message}`);
+      throw error;
+    }
+  }
+
+  // 2. Fetch withdrawal addresses
+  async getWithdrawalAddresses() {
+    const url = `${this.breetApiUrl}/v1/payments/withdrawal-addresses`;
+    const headers = {
+      'x-app-id': this.breetAppId,
+      'x-app-secret': this.breetApiKey,
+      'X-Breet-Env': this.breetEnv,
+      'Content-Type': 'application/json',
+    };
+
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers,
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(
+          `Breet API error: ${error.message || response.statusText}`,
+        );
+      }
+
+      const addresses = await response.json();
+      this.logger.log(`Fetched ${addresses.length} withdrawal addresses`);
+
+      return addresses;
+    } catch (error) {
+      this.logger.error(
+        `Failed to fetch withdrawal addresses: ${error.message}`,
+      );
+      throw error;
+    }
+  }
+
+  // 3. Remove withdrawal address
+  async removeWithdrawalAddress(addressId: string) {
+    const url = `${this.breetApiUrl}/v1/payments/withdrawal-addresses/${addressId}`;
+    const headers = {
+      'x-app-id': this.breetAppId,
+      'x-app-secret': this.breetApiKey,
+      'X-Breet-Env': this.breetEnv,
+      'Content-Type': 'application/json',
+    };
+
+    try {
+      this.logger.log(`Removing withdrawal address: ${addressId}`);
+
+      const response = await fetch(url, {
+        method: 'DELETE',
+        headers,
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(
+          `Breet API error: ${error.message || response.statusText}`,
+        );
+      }
+
+      const result = await response.json();
+      this.logger.log(`Withdrawal address removed successfully`);
+
+      return result;
+    } catch (error) {
+      this.logger.error(
+        `Failed to remove withdrawal address: ${error.message}`,
+      );
+      throw error;
+    }
+  }
+
   protected async fetchAllBreetWalletDetails(): Promise<any> {
     const url = `${this.breetApiUrl}/v1/trades/wallets`;
     const headers = {

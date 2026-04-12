@@ -4,6 +4,7 @@ export {
   SubscriptionPlan,
 } from './developer.entity';
 export { ApiKey } from './api-key.entity';
+export { Bank } from './bank.entity';
 export { Wallet, WalletAsset, WalletStatus } from './wallet.entity';
 export { OfframpTransaction, TxStatus } from './offramp-transaction.entity';
 export { OnrampTransaction } from './onramp-transaction.entity';

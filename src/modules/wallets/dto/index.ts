@@ -17,6 +17,19 @@ export enum WalletAsset {
   USDC = 'USDC',
 }
 
+export enum WithdrawalNetwork {
+  ERC20 = 'ERC20',
+  TRC20 = 'TRC20',
+  SOL = 'SOL',
+  BSC = 'BSC',
+  TON = 'TON',
+}
+
+export enum WithdrawalToken {
+  USDT = 'USDT',
+  USDC = 'USDC',
+}
+
 export class CreateWalletDto {
   // @ApiProperty({ description: 'Wallet ID', example: 'wallet_123' })
   // @IsString()
@@ -171,4 +184,38 @@ export class MockTradeDto {
   @IsNumber()
   @Min(1)
   confirmations?: number;
+}
+
+export class AddWithdrawalAddressDto {
+  @ApiProperty({
+    description: 'Withdrawal wallet address',
+    example: '0x742d35Cc6634C0532925a3b8D4C9db96c4b4Db45',
+  })
+  @IsString()
+  @IsNotEmpty()
+  address: string;
+
+  @ApiProperty({
+    description: 'Blockchain network',
+    example: WithdrawalNetwork.TRC20,
+  })
+  @IsEnum(WithdrawalNetwork)
+  @IsNotEmpty()
+  network: WithdrawalNetwork;
+
+  @ApiProperty({
+    description: 'Token symbol',
+    example: WithdrawalToken.USDT,
+  })
+  @IsEnum(WithdrawalToken)
+  @IsNotEmpty()
+  token: string;
+
+  @ApiProperty({
+    description: 'Label for the address',
+    example: 'My USDT Wallet',
+  })
+  @IsString()
+  @IsNotEmpty()
+  label: string;
 }

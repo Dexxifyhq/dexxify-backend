@@ -1,5 +1,8 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Bank } from '../../database/entities/bank.entity';
 
 @Injectable()
 export class MiscService {
@@ -13,7 +16,11 @@ export class MiscService {
   private bankListCache: { data: any[]; fetchedAt: number } | null = null;
   private readonly BANK_CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
-  constructor(private readonly config: ConfigService) {
+  constructor(
+    private readonly config: ConfigService,
+    @InjectRepository(Bank)
+    private readonly bankRepo: Repository<Bank>,
+  ) {
     const isProduction =
       this.config.get<string>('app.nodeEnv') === 'production';
     this.breetApiUrl = this.config.get<string>('breet.apiUrl') || '';
@@ -42,6 +49,252 @@ export class MiscService {
     this.bankListCache = { data: banks, fetchedAt: Date.now() };
 
     return { banks, cached: false };
+  }
+
+  // 1. Add Bank
+  async addBank(
+    developerId: string,
+    bankData: {
+      accountNumber: string;
+      bankId: string;
+      narration?: string;
+    },
+  ) {
+    const url = `${this.breetApiUrl}/v1/payments/banks/add`;
+    const headers = {
+      'x-app-id': this.breetAppId,
+      'x-app-secret': this.breetApiKey,
+      'X-Breet-Env': this.breetEnv,
+      'Content-Type': 'application/json',
+    };
+
+    const payload = {
+      accountNumber: bankData.accountNumber,
+      id: bankData.bankId,
+      ...(bankData.narration && { narration: bankData.narration }),
+    };
+
+    try {
+      this.logger.log(`Adding bank account: ${JSON.stringify(payload)}`);
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(
+          `Breet API error: ${error.message || response.statusText}`,
+        );
+      }
+
+      const result = await response.json();
+      this.logger.log(`Bank account added successfully on Breet`);
+
+      // Save to local database
+      const bank = this.bankRepo.create({
+        id: result.data.id,
+        breet_bank_id: result.data.bankId,
+        developer_id: developerId,
+        account_name: result.data.accountName,
+        account_number: result.data.accountNumber,
+        auto_settlement: result.data.autoSettlement || false,
+        bank_name: result.data.bankName,
+        currency: result.data.currency || 'ngn',
+        disabled: result.data.disabled || false,
+        avatar: result.data.avatar,
+        integration_id: result.data.integration,
+        is_business: result.data.isBusiness || false,
+        narration: result.data.narration || bankData.narration,
+        type: result.data.type || 'nuban',
+      });
+
+      const savedBank = await this.bankRepo.save(bank);
+      this.logger.log(`Bank account saved to local database: ${savedBank.id}`);
+
+      return {
+        ...result,
+        local_id: savedBank.id,
+      };
+    } catch (error) {
+      this.logger.error(`Failed to add bank account: ${error.message}`);
+      throw error;
+    }
+  }
+
+  async getSavedBanks(developerId: string) {
+    return this.bankRepo.find({
+      where: {
+        developer_id: developerId,
+      },
+    });
+  }
+
+  async getSavedBanksById(developerId: string, accountNumber: string) {
+    return this.bankRepo.findOne({
+      where: {
+        developer_id: developerId,
+        account_number: accountNumber,
+      },
+    });
+  }
+
+  // 2. Fetch Bank by ID
+  async getBreetBankById(bankId: string) {
+    const url = `${this.breetApiUrl}/v1/payments/integration-banks/${bankId}`;
+    const headers = {
+      'x-app-id': this.breetAppId,
+      'x-app-secret': this.breetApiKey,
+      'X-Breet-Env': this.breetEnv,
+      'Content-Type': 'application/json',
+    };
+
+    try {
+      this.logger.log(`Fetching bank by ID: ${bankId}`);
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers,
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(
+          `Breet API error: ${error.message || response.statusText}`,
+        );
+      }
+
+      const result = await response.json();
+      this.logger.log(`Bank fetched successfully`);
+
+      return result;
+    } catch (error) {
+      this.logger.error(`Failed to fetch bank by ID: ${error.message}`);
+      throw error;
+    }
+  }
+
+  // Fetch Saved Integration Bank
+  async getBreetBankIntegration() {
+    const url = `${this.breetApiUrl}/v1/payments/integration-banks?page=1&size=10`;
+    const headers = {
+      'x-app-id': this.breetAppId,
+      'x-app-secret': this.breetApiKey,
+      'X-Breet-Env': this.breetEnv,
+      'Content-Type': 'application/json',
+    };
+
+    try {
+      this.logger.log(`Fetching saved integration bank`);
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers,
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(
+          `Breet API error: ${error.message || response.statusText}`,
+        );
+      }
+
+      const result = await response.json();
+      this.logger.log(`Bank fetched successfully`);
+
+      return result;
+    } catch (error) {
+      this.logger.error(`Failed to fetch bank integrations: ${error.message}`);
+      throw error;
+    }
+  }
+
+  // 3. Delete Bank
+  async deleteBank(bankId: string) {
+    const url = `${this.breetApiUrl}/v1/payments/banks/${bankId}`;
+    const headers = {
+      'x-app-id': this.breetAppId,
+      'x-app-secret': this.breetApiKey,
+      'X-Breet-Env': this.breetEnv,
+      // 'Content-Type': 'application/json',
+    };
+
+    const selectedBank = await this.bankRepo.findOne({
+      where: { id: bankId },
+    });
+
+    if (!selectedBank) {
+      throw new NotFoundException('Bank not found');
+    }
+
+    try {
+      this.logger.log(`Deleting bank account: ${bankId}`);
+
+      const response = await fetch(url, {
+        method: 'DELETE',
+        headers,
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(
+          `Breet API error: ${error.message || response.statusText}`,
+        );
+      }
+
+      const result = await response.json();
+      this.logger.log(`Bank account deleted successfully`);
+
+      await this.bankRepo.delete(bankId);
+
+      return result;
+    } catch (error) {
+      this.logger.error(`Failed to delete bank account: ${error.message}`);
+      throw error;
+    }
+  }
+
+  // 4. Verify Bank Account
+  async verifyBankAccount(bankData: { accountNumber: string; bankId: string }) {
+    const url = `${this.breetApiUrl}/v1/payments/banks/validate`;
+    const headers = {
+      'x-app-id': this.breetAppId,
+      'x-app-secret': this.breetApiKey,
+      'X-Breet-Env': this.breetEnv,
+      'Content-Type': 'application/json',
+    };
+
+    const payload = {
+      accountNumber: bankData.accountNumber,
+      id: bankData.bankId,
+    };
+
+    try {
+      this.logger.log(`Verifying bank account: ${JSON.stringify(payload)}`);
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(
+          `Breet API error: ${error.message || response.statusText}`,
+        );
+      }
+
+      const result = await response.json();
+      this.logger.log(`Bank account verified successfully`);
+
+      return result;
+    } catch (error) {
+      this.logger.error(`Failed to verify bank account: ${error.message}`);
+      throw error;
+    }
   }
 
   // ── Supported Assets & Currencies ─────────────────────
@@ -128,43 +381,6 @@ export class MiscService {
     // };
   }
 
-  // ── Exchange Rates ────────────────────────────────────
-
-  // async getRates(source?: string, target?: string) {
-  //   // If specific pair requested
-  //   if (source && target) {
-  //     const rate = await this.fetchBreetRate(
-  //       source.toUpperCase(),
-  //       target.toUpperCase(),
-  //     );
-  //     return {
-  //       pair: `${source.toUpperCase()}/${target.toUpperCase()}`,
-  //       buy_rate: rate.buy,
-  //       sell_rate: rate.sell,
-  //       timestamp: new Date().toISOString(),
-  //     };
-  //   }
-
-  //   // Return all supported rates
-  //   const pairs = ['BTC_NGN', 'USDT_NGN', 'ETH_NGN', 'USDC_NGN'];
-  //   const rates = await Promise.all(
-  //     pairs.map(async (pair) => {
-  //       const [src, tgt] = pair.split('_');
-  //       const rate = await this.fetchBreetRate(src, tgt);
-  //       return {
-  //         pair: `${src}/${tgt}`,
-  //         buy_rate: rate.buy,
-  //         sell_rate: rate.sell,
-  //       };
-  //     }),
-  //   );
-
-  //   return {
-  //     rates,
-  //     timestamp: new Date().toISOString(),
-  //   };
-  // }
-
   // ── Health Check ──────────────────────────────────────
 
   getHealth() {
@@ -243,8 +459,8 @@ export class MiscService {
 
   // 1. Get crypto prices (global market prices)
   async getCryptoPrices(options: {
-    to: number;
-    from: number;
+    to: string;
+    from: string;
   }): Promise<{ price: any }> {
     const params = new URLSearchParams();
     params.append('to', options.to.toString());
@@ -272,15 +488,12 @@ export class MiscService {
       }
 
       const price = await response.json();
-      console.log('price', price);
 
       if (!price) {
         throw new Error(`Price not found for ${options.to}-${options.from}`);
       }
 
-      return {
-        price,
-      };
+      return price;
     } catch (error) {
       this.logger.error(
         `Failed to fetch crypto price for ${options.to}-${options.from}: ${error.message}`,
