@@ -393,8 +393,8 @@ export class AuthService {
   }
 
   async logout(res: Response) {
-    res.clearCookie('access_token', this.cookieOptions());
-    res.clearCookie('refresh_token', this.cookieOptions());
+    res.clearCookie('access_token');
+    res.clearCookie('refresh_token');
     return { message: 'Logged out successfully.' };
   }
 
@@ -453,27 +453,20 @@ export class AuthService {
     } as any);
 
     res.cookie('access_token', accessToken, {
-      ...this.cookieOptions(),
+      httpOnly: true as const,
+      secure: this.isProduction,
+      sameSite: this.isProduction ? 'lax' : 'none',
+      domain: this.isProduction ? '.dexxify.com' : undefined,
       maxAge: this.parseExpiryToMs(this.jwtExpiresIn),
     });
     res.cookie('refresh_token', refreshToken, {
-      ...this.cookieOptions(),
+      httpOnly: true as const,
+      secure: this.isProduction,
+      sameSite: this.isProduction ? 'lax' : 'none',
+      domain: this.isProduction ? '.dexxify.com' : undefined,
       maxAge: this.parseExpiryToMs(this.refreshExpiresIn),
       // path: '/auth/refresh',
     });
-  }
-
-  private cookieOptions() {
-    // console.log(this.isProduction);
-    return {
-      httpOnly: true as const,
-      secure: this.isProduction,
-      sameSite: (this.isProduction ? 'none' : 'lax') as
-        | 'strict'
-        | 'lax'
-        | 'none',
-      // domain: this.isProduction ? '.dexxify.com' : undefined,
-    };
   }
 
   private parseExpiryToMs(expiry: string): number {
