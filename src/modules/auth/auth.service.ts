@@ -457,14 +457,14 @@ export class AuthService {
       secure: this.isProduction,
       sameSite: this.isProduction ? 'none' : 'lax',
       maxAge: this.parseExpiryToMs(this.jwtExpiresIn),
-      // domain: this.isProduction ? '.dexxify.com' : undefined,
+      domain: this.isProduction ? '.dexxify.com' : undefined,
     });
     res.cookie('refresh_token', refreshToken, {
       httpOnly: true,
       secure: this.isProduction,
       sameSite: this.isProduction ? 'none' : 'lax',
       maxAge: this.parseExpiryToMs(this.refreshExpiresIn),
-      // domain: this.isProduction ? '.dexxify.com' : undefined,
+      domain: this.isProduction ? '.dexxify.com' : undefined,
       // path: '/auth/refresh',
     });
   }
