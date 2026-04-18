@@ -459,7 +459,7 @@ export class AuthService {
     res.cookie('refresh_token', refreshToken, {
       ...this.cookieOptions(),
       maxAge: this.parseExpiryToMs(this.refreshExpiresIn),
-      path: 'api/v1/auth/refresh',
+      // path: '/auth/refresh',
     });
   }
 
@@ -467,7 +467,11 @@ export class AuthService {
     return {
       httpOnly: true as const,
       secure: this.isProduction,
-      sameSite: (this.isProduction ? 'strict' : 'lax') as 'strict' | 'lax',
+      sameSite: (this.isProduction ? 'none' : 'lax') as
+        | 'strict'
+        | 'lax'
+        | 'none',
+      domain: this.isProduction ? '.dexxify.com' : undefined,
     };
   }
 
