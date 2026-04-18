@@ -456,15 +456,15 @@ export class AuthService {
       httpOnly: true,
       secure: this.isProduction,
       sameSite: this.isProduction ? 'none' : 'lax',
-      maxAge: this.parseExpiryToMs(this.jwtExpiresIn),
       domain: this.isProduction ? '.dexxify.com' : undefined,
+      maxAge: this.parseExpiryToMs(this.jwtExpiresIn),
     });
     res.cookie('refresh_token', refreshToken, {
       httpOnly: true,
       secure: this.isProduction,
       sameSite: this.isProduction ? 'none' : 'lax',
-      maxAge: this.parseExpiryToMs(this.refreshExpiresIn),
       domain: this.isProduction ? '.dexxify.com' : undefined,
+      maxAge: this.parseExpiryToMs(this.refreshExpiresIn),
       // path: '/auth/refresh',
     });
   }
