@@ -464,7 +464,7 @@ export class AuthService {
   }
 
   private cookieOptions() {
-    console.log(this.isProduction);
+    // console.log(this.isProduction);
     return {
       httpOnly: true as const,
       secure: this.isProduction,
@@ -472,7 +472,7 @@ export class AuthService {
         | 'strict'
         | 'lax'
         | 'none',
-      domain: this.isProduction ? '.dexxify.com' : undefined,
+      // domain: this.isProduction ? '.dexxify.com' : undefined,
     };
   }
 
