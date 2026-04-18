@@ -451,6 +451,7 @@ export class AuthService {
       secret: this.refreshSecret,
       expiresIn: this.refreshExpiresIn,
     } as any);
+    console.log(accessToken);
 
     res.cookie('access_token', accessToken, {
       httpOnly: true,
