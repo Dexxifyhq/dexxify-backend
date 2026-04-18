@@ -29,7 +29,7 @@ async function bootstrap() {
   app.use(helmet());
   app.enableCors({
     origin: process.env.CORS_ORIGINS?.split(','),
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE'],
     credentials: true, // required for cookies to be sent cross-origin
   });
 

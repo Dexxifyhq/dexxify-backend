@@ -464,6 +464,7 @@ export class AuthService {
   }
 
   private cookieOptions() {
+    console.log(this.isProduction);
     return {
       httpOnly: true as const,
       secure: this.isProduction,
