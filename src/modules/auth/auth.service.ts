@@ -452,20 +452,21 @@ export class AuthService {
       expiresIn: this.refreshExpiresIn,
     } as any);
 
+    console.log('isProduction', this.isProduction);
     res.cookie('access_token', accessToken, {
       httpOnly: true,
       secure: this.isProduction,
-      sameSite: this.isProduction ? 'none' : 'lax',
+      // sameSite: this.isProduction ? 'none' : 'lax',
       maxAge: this.parseExpiryToMs(this.jwtExpiresIn),
-      // sameSite: 'lax',
+      sameSite: 'lax',
       // domain: this.isProduction ? '.dexxify.com' : undefined,
     });
     res.cookie('refresh_token', refreshToken, {
       httpOnly: true,
       secure: this.isProduction,
-      sameSite: this.isProduction ? 'none' : 'lax',
+      // sameSite: this.isProduction ? 'none' : 'lax',
       maxAge: this.parseExpiryToMs(this.refreshExpiresIn),
-      // sameSite: 'lax',
+      sameSite: 'lax',
       // domain: this.isProduction ? '.dexxify.com' : undefined,
       // path: '/auth/refresh',
     });
