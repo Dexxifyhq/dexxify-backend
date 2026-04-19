@@ -381,15 +381,25 @@ export class AuthService {
       throw new UnauthorizedException('Account is suspended. Contact support.');
     }
 
-    this.setTokenCookies(res, developer);
-    return { developer: this.sanitizeDeveloper(developer) };
+    const { access_token, refresh_token } = this.setTokenCookies(
+      res,
+      developer,
+    );
+    return {
+      developer: this.sanitizeDeveloper(developer),
+      access_token,
+      refresh_token,
+    };
   }
 
   // ── Refresh, Logout, Profile ──────────────────────────
 
   async refresh(developer: Developer, res: Response) {
-    this.setTokenCookies(res, developer);
-    return { developer: this.sanitizeDeveloper(developer) };
+    const { access_token } = this.setTokenCookies(res, developer);
+    return {
+      developer: this.sanitizeDeveloper(developer),
+      access_token,
+    };
   }
 
   async logout(res: Response) {
@@ -452,24 +462,23 @@ export class AuthService {
       expiresIn: this.refreshExpiresIn,
     } as any);
 
-    console.log('isProduction', this.isProduction);
     res.cookie('access_token', accessToken, {
       httpOnly: true,
       secure: this.isProduction,
-      // sameSite: this.isProduction ? 'none' : 'lax',
+      sameSite: this.isProduction ? 'none' : 'lax',
       maxAge: this.parseExpiryToMs(this.jwtExpiresIn),
-      sameSite: 'lax',
       // domain: this.isProduction ? '.dexxify.com' : undefined,
     });
     res.cookie('refresh_token', refreshToken, {
       httpOnly: true,
       secure: this.isProduction,
-      // sameSite: this.isProduction ? 'none' : 'lax',
+      sameSite: this.isProduction ? 'none' : 'lax',
       maxAge: this.parseExpiryToMs(this.refreshExpiresIn),
-      sameSite: 'lax',
       // domain: this.isProduction ? '.dexxify.com' : undefined,
       // path: '/auth/refresh',
     });
+
+    return { access_token: accessToken, refresh_token: refreshToken };
   }
 
   private parseExpiryToMs(expiry: string): number {
