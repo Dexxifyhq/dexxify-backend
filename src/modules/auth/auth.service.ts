@@ -381,24 +381,18 @@ export class AuthService {
       throw new UnauthorizedException('Account is suspended. Contact support.');
     }
 
-    const { access_token, refresh_token } = this.setTokenCookies(
-      res,
-      developer,
-    );
+    this.setTokenCookies(res, developer);
     return {
       developer: this.sanitizeDeveloper(developer),
-      access_token,
-      refresh_token,
     };
   }
 
   // ── Refresh, Logout, Profile ──────────────────────────
 
   async refresh(developer: Developer, res: Response) {
-    const { access_token } = this.setTokenCookies(res, developer);
+    this.setTokenCookies(res, developer);
     return {
       developer: this.sanitizeDeveloper(developer),
-      access_token,
     };
   }
 
@@ -467,14 +461,14 @@ export class AuthService {
       secure: this.isProduction,
       sameSite: this.isProduction ? 'none' : 'lax',
       maxAge: this.parseExpiryToMs(this.jwtExpiresIn),
-      // domain: this.isProduction ? '.dexxify.com' : undefined,
+      domain: this.isProduction ? '.dexxify.com' : undefined,
     });
     res.cookie('refresh_token', refreshToken, {
       httpOnly: true,
       secure: this.isProduction,
       sameSite: this.isProduction ? 'none' : 'lax',
       maxAge: this.parseExpiryToMs(this.refreshExpiresIn),
-      // domain: this.isProduction ? '.dexxify.com' : undefined,
+      domain: this.isProduction ? '.dexxify.com' : undefined,
       // path: '/auth/refresh',
     });
 
