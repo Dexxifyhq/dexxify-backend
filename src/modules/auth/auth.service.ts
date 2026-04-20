@@ -462,6 +462,7 @@ export class AuthService {
       sameSite: this.isProduction ? 'none' : 'lax',
       maxAge: this.parseExpiryToMs(this.jwtExpiresIn),
       domain: this.isProduction ? '.dexxify.com' : undefined,
+      path: '/',
     });
     res.cookie('refresh_token', refreshToken, {
       httpOnly: true,
@@ -469,7 +470,7 @@ export class AuthService {
       sameSite: this.isProduction ? 'none' : 'lax',
       maxAge: this.parseExpiryToMs(this.refreshExpiresIn),
       domain: this.isProduction ? '.dexxify.com' : undefined,
-      // path: '/auth/refresh',
+      path: '/',
     });
 
     return { access_token: accessToken, refresh_token: refreshToken };
