@@ -397,8 +397,21 @@ export class AuthService {
   }
 
   async logout(res: Response) {
-    res.clearCookie('access_token');
-    res.clearCookie('refresh_token');
+    const cookieOptions: {
+      httpOnly: boolean;
+      secure: boolean;
+      sameSite: boolean | 'none' | 'lax' | 'strict' | undefined;
+      domain: string | undefined;
+      path: string;
+    } = {
+      httpOnly: true,
+      secure: this.isProduction,
+      sameSite: this.isProduction ? 'none' : 'lax',
+      domain: this.isProduction ? '.dexxify.com' : undefined,
+      path: '/',
+    };
+    res.clearCookie('access_token', cookieOptions);
+    res.clearCookie('refresh_token', cookieOptions);
     return { message: 'Logged out successfully.' };
   }
 
