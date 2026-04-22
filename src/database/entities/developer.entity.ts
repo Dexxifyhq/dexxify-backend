@@ -15,6 +15,7 @@ import { KycVerification } from './kyc-verification.entity';
 import { WebhookEndpoint } from './webhook.entity';
 import { LedgerEntry } from './ledger-entry.entity';
 import { Bank } from './bank.entity';
+import { WithdrawalWallet } from './withdrawal-wallet.entity';
 
 export enum DeveloperStatus {
   ACTIVE = 'active',
@@ -112,4 +113,7 @@ export class Developer {
 
   @OneToMany(() => Bank, (bank) => bank.developer)
   banks: Bank[];
+
+  @OneToMany(() => WithdrawalWallet, (w) => w.developer)
+  withdrawal_wallets: WithdrawalWallet[];
 }

@@ -70,8 +70,8 @@ export class WalletsService {
     }
 
     const wallet = this.walletRepo.create({
+      id: breetWallet.data.id,
       developer_id: developerId,
-      breet_wallet_id: breetWallet.data.id,
       asset_id: dto.asset_id,
       deposit_address: breetWallet.data.address,
       label: dto.label,
@@ -82,7 +82,7 @@ export class WalletsService {
 
   async findOne(developerId: string, walletId: string) {
     const wallet = await this.walletRepo.findOne({
-      where: { breet_wallet_id: walletId, developer_id: developerId },
+      where: { id: walletId, developer_id: developerId },
     });
 
     if (!wallet) throw new NotFoundException('Wallet not found.');
@@ -100,7 +100,7 @@ export class WalletsService {
       .take(limit);
 
     if (query.wallet_id) {
-      qb.andWhere('w.breet_wallet_id = :uid', { uid: query.wallet_id });
+      qb.andWhere('w.id = :uid', { uid: query.wallet_id });
     }
     if (query.asset_id) {
       qb.andWhere('w.asset_id = :assetId', { assetId: query.asset_id });
@@ -119,9 +119,7 @@ export class WalletsService {
 
     if (!wallet.deposit_address) {
       try {
-        const addressData = await this.getBreetWalletDetails(
-          wallet.breet_wallet_id,
-        );
+        const addressData = await this.getBreetWalletDetails(wallet.id);
         await this.walletRepo.update(walletId, {
           deposit_address: addressData.data.address,
         });
@@ -184,7 +182,7 @@ export class WalletsService {
   ) {
     const wallet = await this.findOne(developerId, walletId);
 
-    if (!wallet.breet_wallet_id) {
+    if (!wallet.id) {
       throw new BadRequestException('Wallet is not linked to Breet.');
     }
 
@@ -354,13 +352,11 @@ export class WalletsService {
   async syncWalletBalance(developerId: string, walletId: string) {
     const wallet = await this.findOne(developerId, walletId);
 
-    if (!wallet.breet_wallet_id) {
+    if (!wallet.id) {
       throw new BadRequestException('Wallet is not linked to Breet.');
     }
 
-    const breetBalance = await this.getBreetWalletBalance(
-      wallet.breet_wallet_id,
-    );
+    const breetBalance = await this.getBreetWalletBalance(wallet.id);
 
     // Update local wallet balance
     await this.walletRepo.update(walletId, {
@@ -449,7 +445,7 @@ export class WalletsService {
   ) {
     // const wallet = await this.findOne(developerId, walletId);
 
-    // if (!wallet.breet_wallet_id) {
+    // if (!wallet.id) {
     //   throw new BadRequestException('Wallet is not linked to Breet.');
     // }
 

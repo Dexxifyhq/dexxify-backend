@@ -92,7 +92,7 @@ CREATE TABLE wallets (
     locked_balance DECIMAL(28, 8) DEFAULT 0,  -- funds in pending txns
     deposit_address VARCHAR(255),
     status wallet_status DEFAULT 'active',
-    breet_wallet_id VARCHAR(255),  -- reference to Breet
+    -- breet_wallet_id VARCHAR(255),  -- reference to Breet
     metadata JSONB DEFAULT '{}',
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW(),
@@ -102,7 +102,7 @@ CREATE TABLE wallets (
 
 CREATE INDEX idx_wallets_developer ON wallets(developer_id);
 CREATE INDEX idx_wallets_ext_user ON wallets(external_user_id);
-CREATE INDEX idx_wallets_breet ON wallets(breet_wallet_id);
+-- CREATE INDEX idx_wallets_breet ON wallets(breet_wallet_id);
 
 -- ── OFFRAMP TRANSACTIONS (Crypto → NGN) ────────────────────
 

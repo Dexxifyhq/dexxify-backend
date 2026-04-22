@@ -1,6 +1,5 @@
 import {
   Entity,
-  PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
   UpdateDateColumn,
@@ -8,6 +7,7 @@ import {
   JoinColumn,
   Unique,
   Index,
+  PrimaryColumn,
 } from 'typeorm';
 import { Developer } from './developer.entity';
 
@@ -25,9 +25,9 @@ export enum WalletStatus {
 }
 
 @Entity('wallets')
-@Unique(['breet_wallet_id', 'label'])
+@Unique(['label'])
 export class Wallet {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryColumn('text')
   id: string;
 
   @Index()
@@ -56,9 +56,9 @@ export class Wallet {
   @Column({ type: 'enum', enum: WalletStatus, default: WalletStatus.ACTIVE })
   status: WalletStatus;
 
-  @Index()
-  @Column({ type: 'text' })
-  breet_wallet_id: string;
+  // @Index()
+  // @Column({ type: 'text' })
+  // breet_wallet_id: string;
 
   // @Column({ type: 'jsonb', default: {} })
   // metadata: Record<string, any>;

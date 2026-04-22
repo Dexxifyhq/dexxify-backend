@@ -2,7 +2,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export enum RateTo {
-  NGN = 'NGN',
+  NGN = 'ngn',
   GHS = 'ghs',
   USD = 'usd',
   CAD = 'cad',

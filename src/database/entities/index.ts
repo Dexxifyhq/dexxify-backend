@@ -17,3 +17,8 @@ export {
 } from './webhook.entity';
 export { LedgerEntry, TxType } from './ledger-entry.entity';
 export { OtpCode, OtpType } from './otp-code.entity';
+export {
+  WithdrawalWallet,
+  WithdrawalWalletNetwork,
+  WithdrawalWalletToken,
+} from './withdrawal-wallet.entity';

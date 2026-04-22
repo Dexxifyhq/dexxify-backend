@@ -247,7 +247,7 @@ export class MiscService {
       const result = await response.json();
       this.logger.log(`Bank account deleted successfully`);
 
-      await this.bankRepo.delete(bankId);
+      await this.bankRepo.delete({ id: bankId });
 
       return result;
     } catch (error) {
@@ -521,7 +521,6 @@ export class MiscService {
         method: 'POST',
         headers,
         body: JSON.stringify({
-          assetId,
           amountInUSD,
           currency,
         }),

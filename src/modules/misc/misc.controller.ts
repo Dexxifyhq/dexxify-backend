@@ -160,7 +160,7 @@ export class MiscController {
     description: 'Get global market prices for crypto-fiat pairs from Breet',
   })
   @ApiBearerAuth('api-key')
-  @Get('crypto-prices')
+  @Post('crypto-prices')
   async getCryptoPrices(@Body() query: GetRateQueryDto) {
     return this.miscService.getCryptoPrices(query);
   }
@@ -176,18 +176,18 @@ export class MiscController {
     schema: {
       type: 'object',
       properties: {
-        asset: { type: 'string', example: 'USDT' },
+        assetId: { type: 'string', example: '69b3e33d5aef202395e800e1' },
         amountInUSD: { type: 'number', example: 100 },
         currency: { type: 'string', example: 'ngn' },
       },
-      required: ['asset', 'amountInUSD', 'currency'],
+      required: ['assetId', 'amountInUSD', 'currency'],
     },
   })
   async getRateCalculator(
-    @Body() body: { asset: string; amountInUSD: number; currency: string },
+    @Body() body: { assetId: string; amountInUSD: number; currency: string },
   ) {
     return this.miscService.getRateCalculator(
-      body.asset,
+      body.assetId,
       body.amountInUSD,
       body.currency,
     );
@@ -204,9 +204,9 @@ export class MiscController {
     schema: {
       type: 'object',
       properties: {
-        amount: { type: 'number', example: 100 },
-        pin: { type: 'string', example: '123456' },
-        bankId: { type: 'string', example: 'bank_123' },
+        amount: { type: 'number', example: 10 },
+        pin: { type: 'string', example: '1234' },
+        bankId: { type: 'string', example: '69e941d9eda0df83cc847d8a' },
       },
       required: ['amount', 'bankId', 'pin'],
     },
@@ -232,8 +232,8 @@ export class MiscController {
     schema: {
       type: 'object',
       properties: {
-        localAmount: { type: 'number', example: 50000 },
-        pin: { type: 'string', example: '123456' },
+        localAmount: { type: 'number', example: 20000 },
+        pin: { type: 'string', example: '1234' },
         withdrawalAddressId: { type: 'string', example: 'address_123' },
       },
       required: ['localAmount', 'pin', 'withdrawalAddressId'],
