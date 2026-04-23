@@ -7,8 +7,21 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
-import { Wallet, LedgerEntry, TxType } from '../../database/entities';
-import { CreateWalletDto, TransferDto, WalletQueryDto } from './dto';
+import {
+  Wallet,
+  LedgerEntry,
+  TxType,
+  WithdrawalWallet,
+} from '../../database/entities';
+import {
+  CreateWalletDto,
+  InitiateFiatWithdrawalDto,
+  InitiateStableCoinWithdrawalDto,
+  TransferDto,
+  WalletQueryDto,
+  WithdrawalNetwork,
+  WithdrawalToken,
+} from './dto';
 import {
   parsePagination,
   buildPaginationMeta,
@@ -26,6 +39,8 @@ export class WalletsService {
   constructor(
     @InjectRepository(Wallet)
     private readonly walletRepo: Repository<Wallet>,
+    @InjectRepository(WithdrawalWallet)
+    private readonly withdrawalWalletRepo: Repository<WithdrawalWallet>,
     @InjectRepository(LedgerEntry)
     private readonly ledgerRepo: Repository<LedgerEntry>,
     private readonly dataSource: DataSource,
@@ -570,13 +585,16 @@ export class WalletsService {
   }
 
   // 1. Add withdrawal address
-  async addWithdrawalAddress(withdrawalData: {
-    address: string;
-    network: string;
-    token: string;
-    label: string;
-  }) {
-    const url = `${this.breetApiUrl}/v1/payments/withdrawal-addresses`;
+  async addWithdrawalAddress(
+    withdrawalData: {
+      address: string;
+      network: string;
+      token: string;
+      label: string;
+    },
+    developerId: string,
+  ) {
+    const url = `${this.breetApiUrl}/v1/payments/wallet-addresses`;
     const headers = {
       'x-app-id': this.breetAppId,
       'x-app-secret': this.breetApiKey,
@@ -610,6 +628,19 @@ export class WalletsService {
       const result = await response.json();
       this.logger.log(`Withdrawal address added successfully`);
 
+      const savedWithdrawalAddress = await this.withdrawalWalletRepo.save({
+        id: result.data._id,
+        developer_id: developerId,
+        address: result.data.address,
+        network: result.data.network,
+        token: result.data.token,
+        label: result.data.label,
+        avatar: result.data.avatar,
+      });
+      this.logger.log(
+        `Withdrawal address saved to local database: ${savedWithdrawalAddress.id}`,
+      );
+
       return result;
     } catch (error) {
       this.logger.error(`Failed to add withdrawal address: ${error.message}`);
@@ -617,9 +648,18 @@ export class WalletsService {
     }
   }
 
-  // 2. Fetch withdrawal addresses
+  // Get saved withdrawal address
+  async getSavedWithdrawalAddresses(developerId: string) {
+    return this.withdrawalWalletRepo.find({
+      where: {
+        developer_id: developerId,
+      },
+    });
+  }
+
+  // 2. Fetch breet withdrawal addresses
   async getWithdrawalAddresses() {
-    const url = `${this.breetApiUrl}/v1/payments/withdrawal-addresses`;
+    const url = `${this.breetApiUrl}/v1/payments/wallet-addresses`;
     const headers = {
       'x-app-id': this.breetAppId,
       'x-app-secret': this.breetApiKey,
@@ -641,7 +681,7 @@ export class WalletsService {
       }
 
       const addresses = await response.json();
-      this.logger.log(`Fetched ${addresses.length} withdrawal addresses`);
+      this.logger.log(`Fetched ${addresses.data.length} withdrawal addresses`);
 
       return addresses;
     } catch (error) {
@@ -654,13 +694,21 @@ export class WalletsService {
 
   // 3. Remove withdrawal address
   async removeWithdrawalAddress(addressId: string) {
-    const url = `${this.breetApiUrl}/v1/payments/withdrawal-addresses/${addressId}`;
+    const url = `${this.breetApiUrl}/v1/payments/wallet-addresses/${addressId}`;
     const headers = {
       'x-app-id': this.breetAppId,
       'x-app-secret': this.breetApiKey,
       'X-Breet-Env': this.breetEnv,
       'Content-Type': 'application/json',
     };
+
+    const selectedWithdrawalAddress = await this.withdrawalWalletRepo.findOne({
+      where: { address: addressId },
+    });
+
+    // if (!selectedWithdrawalAddress) {
+    //   throw new NotFoundException('Withdrawal address not found');
+    // }
 
     try {
       this.logger.log(`Removing withdrawal address: ${addressId}`);
@@ -680,11 +728,151 @@ export class WalletsService {
       const result = await response.json();
       this.logger.log(`Withdrawal address removed successfully`);
 
+      await this.withdrawalWalletRepo.delete({ address: addressId });
+
       return result;
     } catch (error) {
       this.logger.error(
         `Failed to remove withdrawal address: ${error.message}`,
       );
+      throw error;
+    }
+  }
+
+  // Initiate and fetch withdrawals
+  async initiateStableCoinWithdrawal(
+    withdrawalDto: InitiateStableCoinWithdrawalDto,
+  ) {
+    const url = `${this.breetApiUrl}/v1/payments/withdraw/address`;
+    const headers = {
+      'x-app-id': this.breetAppId,
+      'x-app-secret': this.breetApiKey,
+      'X-Breet-Env': this.breetEnv,
+      'Content-Type': 'application/json',
+    };
+
+    if (
+      withdrawalDto.network === WithdrawalNetwork.TON &&
+      withdrawalDto.token === WithdrawalToken.USDC
+    ) {
+      throw new BadRequestException('USDC is not supported on TON');
+    }
+
+    const uniqueId = generateUniqueId();
+
+    const payload = {
+      walletAddress: withdrawalDto.address,
+      network: withdrawalDto.network,
+      token: withdrawalDto.token,
+      amount: withdrawalDto.amount,
+      pin: withdrawalDto?.pin || this.config.get<string>('app.pin'),
+      externalId: withdrawalDto.externalId || uniqueId,
+    };
+
+    try {
+      this.logger.log(
+        `Initiating stablecoin withdrawal: ${JSON.stringify(payload)}`,
+      );
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(
+          `Breet API error: ${error.message || response.statusText}`,
+        );
+      }
+
+      const result = await response.json();
+      this.logger.log(`Stablecoin withdrawal initiated successfully`);
+
+      return result;
+    } catch (error) {
+      this.logger.error(
+        `Failed to initiate stablecoin withdrawal: ${error.message}`,
+      );
+      throw error;
+    }
+  }
+
+  async initiateFiatWithdrawal(withdrawalDto: InitiateFiatWithdrawalDto) {
+    const url = `${this.breetApiUrl}/v1/payments/withdraw/bank/${withdrawalDto.bank_id}`;
+    const headers = {
+      'x-app-id': this.breetAppId,
+      'x-app-secret': this.breetApiKey,
+      'X-Breet-Env': this.breetEnv,
+      'Content-Type': 'application/json',
+    };
+
+    const payload = {
+      amount: withdrawalDto.amountInUSD,
+      narration: withdrawalDto.narration,
+      pin: withdrawalDto?.pin || this.config.get<string>('app.pin'),
+    };
+
+    try {
+      this.logger.log(`Initiating fiat withdrawal: ${JSON.stringify(payload)}`);
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(
+          `Breet API error: ${error.message || response.statusText}`,
+        );
+      }
+
+      const result = await response.json();
+      this.logger.log(`Fiat withdrawal initiated successfully`);
+
+      return result;
+    } catch (error) {
+      this.logger.error(`Failed to initiate fiat withdrawal: ${error.message}`);
+      throw error;
+    }
+  }
+
+  async getBreetWithdrawals(options: { page: string; size: string }) {
+    const params = new URLSearchParams();
+    params.append('page', options.page);
+    params.append('size', options.size);
+    const url = `${this.breetApiUrl}/v1/payments/withdrawals?${params.toString()}`;
+    const headers = {
+      'x-app-id': this.breetAppId,
+      'x-app-secret': this.breetApiKey,
+      'X-Breet-Env': this.breetEnv,
+      'Content-Type': 'application/json',
+    };
+
+    try {
+      this.logger.log(`Getting Breet withdrawals`);
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers,
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(
+          `Breet API error: ${error.message || response.statusText}`,
+        );
+      }
+
+      const result = await response.json();
+      this.logger.log(`Breet withdrawals retrieved successfully`);
+
+      return result;
+    } catch (error) {
+      this.logger.error(`Failed to get Breet withdrawals: ${error.message}`);
       throw error;
     }
   }

@@ -189,7 +189,7 @@ export class MockTradeDto {
 export class AddWithdrawalAddressDto {
   @ApiProperty({
     description: 'Withdrawal wallet address',
-    example: '0x742d35Cc6634C0532925a3b8D4C9db96c4b4Db45',
+    example: 'UQCvj9LMypzHShhTvO1qSLE0XiWxopEMweLh8MFnY3mxzLvi',
   })
   @IsString()
   @IsNotEmpty()
@@ -197,7 +197,7 @@ export class AddWithdrawalAddressDto {
 
   @ApiProperty({
     description: 'Blockchain network',
-    example: WithdrawalNetwork.TRC20,
+    example: WithdrawalNetwork.TON,
   })
   @IsEnum(WithdrawalNetwork)
   @IsNotEmpty()
@@ -218,4 +218,86 @@ export class AddWithdrawalAddressDto {
   @IsString()
   @IsNotEmpty()
   label: string;
+}
+
+// Note for withdrawals, USDC is not supported on TON
+export class InitiateStableCoinWithdrawalDto {
+  @ApiProperty({
+    description: 'Withdrawal wallet address',
+    example: 'UQCvj9LMypzHShhTvO1qSLE0XiWxopEMweLh8MFnY3mxzLvi',
+  })
+  @IsString()
+  @IsNotEmpty()
+  address: string;
+
+  @ApiProperty({ description: 'Amount to withdraw', example: 5, minimum: 1 })
+  @IsNumber()
+  @Min(1)
+  @IsNotEmpty()
+  amount: number;
+
+  @ApiPropertyOptional({
+    description: 'Pin on the dashboard',
+    example: '1234',
+  })
+  @IsString()
+  @IsOptional()
+  pin?: string;
+
+  @ApiProperty({
+    description: 'Blockchain network',
+    example: WithdrawalNetwork.TON,
+  })
+  @IsEnum(WithdrawalNetwork)
+  @IsNotEmpty()
+  network: WithdrawalNetwork;
+
+  @ApiProperty({
+    description: 'Token symbol',
+    example: WithdrawalToken.USDT,
+  })
+  @IsEnum(WithdrawalToken)
+  @IsNotEmpty()
+  token: string;
+
+  @ApiProperty({
+    description: 'Unique Reference for later withdrawals',
+    example: '53439454689865453',
+  })
+  @IsString()
+  @IsNotEmpty()
+  externalId: string;
+}
+
+export class InitiateFiatWithdrawalDto {
+  @ApiProperty({ description: 'Bank ID', example: '69e941d9eda0df83cc847d8a' })
+  @IsString()
+  @IsNotEmpty()
+  bank_id: string;
+
+  @ApiProperty({
+    description: 'Amount to withdraw in USD',
+    example: 5,
+    minimum: 1,
+  })
+  @IsNumber()
+  @Min(1)
+  @IsNotEmpty()
+  amountInUSD: number;
+
+  @ApiPropertyOptional({
+    description: 'Optional note that appears on bank statement',
+    example: 'Dexxify Payout',
+  })
+  @IsString()
+  @IsOptional()
+  narration?: string;
+
+  @ApiPropertyOptional({
+    description: 'Pin on the dashboard',
+    example: '1234',
+  })
+  @IsString()
+  @IsOptional()
+  pin?: string;
 }

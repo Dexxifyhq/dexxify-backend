@@ -225,9 +225,9 @@ export class MiscService {
       where: { id: bankId },
     });
 
-    if (!selectedBank) {
-      throw new NotFoundException('Bank not found');
-    }
+    // if (!selectedBank) {
+    //   throw new NotFoundException('Bank not found');
+    // }
 
     try {
       this.logger.log(`Deleting bank account: ${bankId}`);

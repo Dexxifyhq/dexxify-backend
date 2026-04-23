@@ -3,6 +3,7 @@ export default () => ({
     nodeEnv: process.env.NODE_ENV,
     port: parseInt(process.env.PORT as string, 10) || 4000,
     apiPrefix: process.env.API_PREFIX,
+    pin: process.env.APP_PIN,
   },
 
   database: {

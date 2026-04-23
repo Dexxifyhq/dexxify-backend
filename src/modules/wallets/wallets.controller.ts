@@ -14,6 +14,8 @@ import {
   WalletQueryDto,
   MockTradeDto,
   AddWithdrawalAddressDto,
+  InitiateStableCoinWithdrawalDto,
+  InitiateFiatWithdrawalDto,
 } from './dto';
 import { GetDeveloper } from '../../common/decorators';
 import {
@@ -220,31 +222,101 @@ export class WalletsController {
     description: 'Add a withdrawal (payout) wallet address for stable coins',
   })
   @ApiBody({ type: AddWithdrawalAddressDto })
-  async addWithdrawalAddress(@Body() dto: AddWithdrawalAddressDto) {
-    return this.walletsService.addWithdrawalAddress(dto);
+  async addWithdrawalAddress(
+    @Body() dto: AddWithdrawalAddressDto,
+    @GetDeveloper('id') developerId: string,
+  ) {
+    return this.walletsService.addWithdrawalAddress(dto, developerId);
   }
 
-  @Get('withdrawal-addresses')
+  @Get('withdrawal-addresses/saved')
+  @ApiOperation({
+    summary: 'Get saved withdrawal addresses',
+    description: 'Fetch all saved withdrawal (payout) wallet addresses',
+  })
+  async getSavedWithdrawalAddresses(@GetDeveloper('id') developerId: string) {
+    return this.walletsService.getSavedWithdrawalAddresses(developerId);
+  }
+
+  @Get('withdrawal-addresses/breet')
   @ApiOperation({
     summary: 'Get withdrawal addresses',
-    description: 'Fetch all saved withdrawal (payout) wallet addresses',
+    description: 'Fetch all breet withdrawal (payout) wallet addresses',
   })
   async getWithdrawalAddresses() {
     return this.walletsService.getWithdrawalAddresses();
   }
 
-  @Delete('withdrawal-addresses/:withdrwalAddressId')
+  @Delete('withdrawal-addresses/:withdrawalAddressId')
   @ApiOperation({
     summary: 'Remove withdrawal address',
     description: 'Remove a saved withdrawal address by its ID',
   })
   @ApiParam({
-    name: 'withdrwalAddressId',
+    name: 'withdrawalAddressId',
     description: 'Withdrawal address unique identifier',
   })
   async removeWithdrawalAddress(
-    @Param('withdrwalAddressId') withdrwalAddressId: string,
+    @Param('withdrawalAddressId') withdrawalAddressId: string,
   ) {
-    return this.walletsService.removeWithdrawalAddress(withdrwalAddressId);
+    return this.walletsService.removeWithdrawalAddress(withdrawalAddressId);
   }
+
+  // Initiate withdrawals and fetch withdrawals
+  @Post('withdrawals/stable-coins')
+  @ApiOperation({
+    summary: 'Initiate stable coin withdrawal',
+    description: 'Initiate a stable coin withdrawal from a wallet',
+  })
+  @ApiBody({ type: InitiateStableCoinWithdrawalDto })
+  async initiateStableCoinWithdrawal(
+    @Body() dto: InitiateStableCoinWithdrawalDto,
+  ) {
+    return this.walletsService.initiateStableCoinWithdrawal(dto);
+  }
+
+  @Post('withdrawals/local-currencies')
+  @ApiOperation({
+    summary: 'Initiate withdrawal for local currencies',
+    description: 'Initiate a withdrawal for local currencies from a wallet',
+  })
+  @ApiBody({ type: InitiateFiatWithdrawalDto })
+  async initiateFiattWithdrawal(@Body() dto: InitiateFiatWithdrawalDto) {
+    return this.walletsService.initiateFiatWithdrawal(dto);
+  }
+
+  @Get('withdrawals/breet')
+  @ApiOperation({
+    summary: 'Get breet withdrawals',
+    description: 'Fetch all breet withdrawals',
+  })
+  @ApiParam({
+    name: 'page',
+    description: 'Page number',
+    example: 1,
+  })
+  @ApiParam({
+    name: 'size',
+    description: 'Number of items per page',
+    example: 10,
+  })
+  async getBreetWithdrawals(
+    @Query('page') page: string,
+    @Query('size') size: string,
+  ) {
+    return this.walletsService.getBreetWithdrawals({ page, size });
+  }
+
+  // @Get('withdrawals/:withdrawalId')
+  // @ApiOperation({
+  //   summary: 'Get withdrawal by ID',
+  //   description: 'Fetch a specific withdrawal by ID',
+  // })
+  // @ApiParam({
+  //   name: 'withdrawalId',
+  //   description: 'Withdrawal unique identifier',
+  // })
+  // async getWithdrawalsById() {
+  //   return this.walletsService.getWithdrawalsById();
+  // }
 }
