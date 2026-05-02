@@ -165,7 +165,7 @@ export class DashboardService {
         developer_id: developerId,
         created_at: MoreThanOrEqual(since),
       },
-      select: ['tx_type', 'currency', 'debit', 'credit', 'created_at'],
+      select: ['tx_type', 'asset', 'debit', 'credit', 'created_at'],
       order: { created_at: 'ASC' },
     });
 

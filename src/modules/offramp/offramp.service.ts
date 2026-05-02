@@ -66,10 +66,10 @@ export class OfframpService {
       );
     }
 
-    const available = Number(wallet.balance) - Number(wallet.locked_balance);
-    if (available < dto.crypto_amount) {
-      throw new BadRequestException('Insufficient wallet balance.');
-    }
+    // const available = Number(wallet.balance) - Number(wallet.locked_balance);
+    // if (available < dto.crypto_amount) {
+    //   throw new BadRequestException('Insufficient wallet balance.');
+    // }
 
     const rate = await this.fetchBreetRate(dto.crypto_asset, 'NGN');
     const spreadRate = rate * (1 - this.SPREAD_PERCENT / 100);
@@ -112,7 +112,7 @@ export class OfframpService {
         reference_id: saved.id,
         debit: dto.crypto_amount,
         credit: 0,
-        currency: dto.crypto_asset,
+        asset: dto.crypto_asset,
         description: `Offramp ${dto.crypto_amount} ${dto.crypto_asset} → ₦${netNgn.toFixed(2)}`,
       }),
     );

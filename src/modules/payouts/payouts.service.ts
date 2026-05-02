@@ -65,18 +65,18 @@ export class PayoutsService {
 
     const saved = await this.payoutRepo.save(payout);
 
-    await this.ledgerRepo.save(
-      this.ledgerRepo.create({
-        developer_id: developerId,
-        tx_type: TxType.PAYOUT,
-        reference_type: 'payout',
-        reference_id: saved.id,
-        debit: dto.amount + this.PAYOUT_FEE,
-        credit: 0,
-        currency: 'NGN',
-        description: `Payout ₦${dto.amount} to ${dto.account_number}`,
-      }),
-    );
+    // await this.ledgerRepo.save(
+    //   this.ledgerRepo.create({
+    //     developer_id: developerId,
+    //     tx_type: TxType.PAYOUT,
+    //     reference_type: 'payout',
+    //     reference_id: saved.id,
+    //     debit: dto.amount + this.PAYOUT_FEE,
+    //     credit: 0,
+    //     asset: 'NGN',
+    //     description: `Payout ₦${dto.amount} to ${dto.account_number}`,
+    //   }),
+    // );
 
     return saved;
   }

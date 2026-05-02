@@ -47,6 +47,24 @@ export class CustomQueryDto {
 export class WalletsController {
   constructor(private readonly walletsService: WalletsService) {}
 
+  // Wallet Balance
+  @Post('/balance')
+  @ApiOperation({
+    summary: 'Get wallet balance',
+    description: 'Retrieve the current balance for a specific wallet',
+  })
+  @ApiParam({
+    name: 'wallet_id',
+    description: 'Wallet unique identifier',
+    example: '69d6fd3fb0a5cf7a0e793b18',
+  })
+  async getBalance(
+    @GetDeveloper('id') developerId: string,
+    @Param('wallet_id') walletId: string,
+  ) {
+    return this.walletsService.getWalletBalance(developerId, walletId);
+  }
+
   @Post()
   @ApiOperation({
     summary: 'Create a new wallet',
@@ -188,18 +206,18 @@ export class WalletsController {
   //   );
   // }
 
-  @Post('transfer')
-  @ApiOperation({
-    summary: 'Transfer between wallets',
-    description: 'Transfer funds between two wallets owned by the developer',
-  })
-  @ApiBody({ type: TransferDto })
-  async transfer(
-    @GetDeveloper('id') developerId: string,
-    @Body() dto: TransferDto,
-  ) {
-    return this.walletsService.transfer(developerId, dto);
-  }
+  // @Post('transfer')
+  // @ApiOperation({
+  //   summary: 'Transfer between wallets',
+  //   description: 'Transfer funds between two wallets owned by the developer',
+  // })
+  // @ApiBody({ type: TransferDto })
+  // async transfer(
+  //   @GetDeveloper('id') developerId: string,
+  //   @Body() dto: TransferDto,
+  // ) {
+  //   return this.walletsService.transfer(developerId, dto);
+  // }
 
   @Post('/mock-trade')
   @ApiOperation({

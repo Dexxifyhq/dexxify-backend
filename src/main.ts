@@ -27,10 +27,30 @@ async function bootstrap() {
 
   // Security
   app.use(helmet());
+
+  // CORS
+  const allowedOrigins =
+    process.env.CORS_ORIGINS?.split(',').map((o) => o.trim()) || [];
+  // console.log('allowedOrigins', allowedOrigins);
   app.enableCors({
-    origin: process.env.CORS_ORIGINS?.split(','),
-    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE'],
-    credentials: true, // required for cookies to be sent cross-origin
+    origin: (
+      origin: string | undefined,
+      callback: (error: Error | null, allow?: boolean) => void,
+    ) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      callback(new Error(`Origin ${origin} not allowed by CORS`));
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+    exposedHeaders: [
+      'X-RateLimit-Limit',
+      'X-RateLimit-Remaining',
+      'X-RateLimit-Reset',
+    ],
+    maxAge: 3600, // Cache preflight for 1 hour
   });
 
   // Validation

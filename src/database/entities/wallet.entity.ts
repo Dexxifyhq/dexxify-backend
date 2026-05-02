@@ -44,11 +44,11 @@ export class Wallet {
   @Column({ type: 'text' })
   asset_id: string;
 
-  @Column({ type: 'decimal', precision: 28, scale: 8, default: 0 })
-  balance: number;
+  // @Column({ type: 'decimal', precision: 28, scale: 8, default: 0 })
+  // balance: number;
 
-  @Column({ type: 'decimal', precision: 28, scale: 8, default: 0 })
-  locked_balance: number;
+  // @Column({ type: 'decimal', precision: 28, scale: 8, default: 0 })
+  // locked_balance: number;
 
   @Column({ type: 'text', nullable: true })
   deposit_address: string;

@@ -51,7 +51,7 @@ export class LedgerService {
   async getBalance(developerId: string) {
     const entries = await this.ledgerRepo.find({
       where: { developer_id: developerId },
-      select: ['currency', 'debit', 'credit'],
+      select: ['asset', 'debit', 'credit'],
     });
 
     const balances: Record<
@@ -60,14 +60,13 @@ export class LedgerService {
     > = {};
 
     for (const entry of entries) {
-      if (!balances[entry.currency]) {
-        balances[entry.currency] = { total_credit: 0, total_debit: 0, net: 0 };
+      if (!balances[entry.asset]) {
+        balances[entry.asset] = { total_credit: 0, total_debit: 0, net: 0 };
       }
-      balances[entry.currency].total_credit += Number(entry.credit);
-      balances[entry.currency].total_debit += Number(entry.debit);
-      balances[entry.currency].net =
-        balances[entry.currency].total_credit -
-        balances[entry.currency].total_debit;
+      balances[entry.asset].total_credit += Number(entry.credit);
+      balances[entry.asset].total_debit += Number(entry.debit);
+      balances[entry.asset].net =
+        balances[entry.asset].total_credit - balances[entry.asset].total_debit;
     }
 
     return { balances };

@@ -27,6 +27,7 @@ import {
   buildPaginationMeta,
   generateUniqueId,
 } from '../../common/utils';
+import { LedgerEntryStatus } from 'src/database/entities/ledger-entry.entity';
 
 @Injectable()
 export class WalletsService {
@@ -204,7 +205,7 @@ export class WalletsService {
     const { offset, limit, page } = parsePagination(query);
 
     const [entries, total] = await this.ledgerRepo.findAndCount({
-      where: { developer_id: developerId, reference_id: walletId },
+      where: { developer_id: developerId, wallet_address: walletId },
       order: { created_at: 'DESC' },
       skip: offset,
       take: limit,
@@ -216,76 +217,76 @@ export class WalletsService {
     };
   }
 
-  async transfer(developerId: string, dto: TransferDto) {
-    const fromWallet = await this.findOne(developerId, dto.from_wallet_id);
-    const toWallet = await this.findOne(developerId, dto.to_wallet_id);
+  // async transfer(developerId: string, dto: TransferDto) {
+  //   const fromWallet = await this.findOne(developerId, dto.from_wallet_id);
+  //   const toWallet = await this.findOne(developerId, dto.to_wallet_id);
 
-    if (fromWallet.asset_id !== toWallet.asset_id) {
-      throw new BadRequestException(
-        'Cannot transfer between different asset types.',
-      );
-    }
+  //   if (fromWallet.asset_id !== toWallet.asset_id) {
+  //     throw new BadRequestException(
+  //       'Cannot transfer between different asset types.',
+  //     );
+  //   }
 
-    const available =
-      Number(fromWallet.balance) - Number(fromWallet.locked_balance);
-    if (available < dto.amount) {
-      throw new BadRequestException('Insufficient balance for transfer.');
-    }
+  //   const available =
+  //     Number(fromWallet.balance) - Number(fromWallet.locked_balance);
+  //   if (available < dto.amount) {
+  //     throw new BadRequestException('Insufficient balance for transfer.');
+  //   }
 
-    // Use transaction for atomicity
-    const txId = crypto.randomUUID();
+  //   // Use transaction for atomicity
+  //   const txId = crypto.randomUUID();
 
-    await this.dataSource.transaction(async (manager) => {
-      await manager.decrement(
-        Wallet,
-        { id: dto.from_wallet_id },
-        'balance',
-        dto.amount,
-      );
-      await manager.increment(
-        Wallet,
-        { id: dto.to_wallet_id },
-        'balance',
-        dto.amount,
-      );
+  //   await this.dataSource.transaction(async (manager) => {
+  //     await manager.decrement(
+  //       Wallet,
+  //       { id: dto.from_wallet_id },
+  //       'balance',
+  //       dto.amount,
+  //     );
+  //     await manager.increment(
+  //       Wallet,
+  //       { id: dto.to_wallet_id },
+  //       'balance',
+  //       dto.amount,
+  //     );
 
-      await manager.save(LedgerEntry, [
-        this.ledgerRepo.create({
-          developer_id: developerId,
-          tx_type: TxType.TRANSFER,
-          reference_type: 'wallet_transfer',
-          reference_id: dto.from_wallet_id,
-          debit: dto.amount,
-          credit: 0,
-          currency: fromWallet.asset_id,
-          description:
-            dto.narration || `Transfer to wallet ${dto.to_wallet_id}`,
-          metadata: { transfer_group: txId },
-        }),
-        this.ledgerRepo.create({
-          developer_id: developerId,
-          tx_type: TxType.TRANSFER,
-          reference_type: 'wallet_transfer',
-          reference_id: dto.to_wallet_id,
-          debit: 0,
-          credit: dto.amount,
-          currency: toWallet.asset_id,
-          description:
-            dto.narration || `Transfer from wallet ${dto.from_wallet_id}`,
-          metadata: { transfer_group: txId },
-        }),
-      ]);
-    });
+  //     await manager.save(LedgerEntry, [
+  //       this.ledgerRepo.create({
+  //         developer_id: developerId,
+  //         tx_type: TxType.TRANSFER,
+  //         reference_type: 'wallet_transfer',
+  //         wallet_address: dto.from_wallet_id,
+  //         debit: dto.amount,
+  //         credit: 0,
+  //         asset: fromWallet.asset_id,
+  //         description:
+  //           dto.narration || `Transfer to wallet ${dto.to_wallet_id}`,
+  //         metadata: { transfer_group: txId },
+  //       }),
+  //       this.ledgerRepo.create({
+  //         developer_id: developerId,
+  //         tx_type: TxType.TRANSFER,
+  //         reference_type: 'wallet_transfer',
+  //         wallet_address: dto.to_wallet_id,
+  //         debit: 0,
+  //         credit: dto.amount,
+  //         asset: toWallet.asset_id,
+  //         description:
+  //           dto.narration || `Transfer from wallet ${dto.from_wallet_id}`,
+  //         metadata: { transfer_group: txId },
+  //       }),
+  //     ]);
+  //   });
 
-    return {
-      transfer_id: txId,
-      from_wallet_id: dto.from_wallet_id,
-      to_wallet_id: dto.to_wallet_id,
-      amount: dto.amount,
-      asset: fromWallet.asset_id,
-      status: 'completed',
-    };
-  }
+  //   return {
+  //     transfer_id: txId,
+  //     from_wallet_id: dto.from_wallet_id,
+  //     to_wallet_id: dto.to_wallet_id,
+  //     amount: dto.amount,
+  //     asset: fromWallet.asset_id,
+  //     status: 'completed',
+  //   };
+  // }
 
   // ── Breet Wallet API Integration ────────────────────────
   private async createBreetWallet(
@@ -364,38 +365,25 @@ export class WalletsService {
     }
   }
 
-  async syncWalletBalance(developerId: string, walletId: string) {
+  async getWalletBalance(developerId: string, walletId: string) {
     const wallet = await this.findOne(developerId, walletId);
 
     if (!wallet.id) {
       throw new BadRequestException('Wallet is not linked to Breet.');
     }
 
-    const breetBalance = await this.getBreetWalletBalance(wallet.id);
-
-    // Update local wallet balance
-    await this.walletRepo.update(walletId, {
-      balance: parseFloat(breetBalance.balance),
-    });
-
-    // Log the balance sync
-    await this.ledgerRepo.save(
-      this.ledgerRepo.create({
-        developer_id: developerId,
-        tx_type: TxType.DEPOSIT,
-        reference_type: 'balance_sync',
-        reference_id: walletId,
-        debit: 0,
-        credit: parseFloat(breetBalance.balance),
-        currency: wallet.asset_id,
-        description: `Balance sync from Breet: ${breetBalance.balance} ${wallet.asset_id}`,
-      }),
-    );
+    const calculatedBalance = await this.ledgerRepo
+      .createQueryBuilder('ledger')
+      .select('SUM(ledger.credit) - SUM(ledger.debit)', 'balance')
+      .where('ledger.wallet_address = :walletId', {
+        walletId: wallet.deposit_address,
+      })
+      .getRawOne();
 
     return {
       wallet_id: walletId,
       asset: wallet.asset_id,
-      balance: breetBalance.balance,
+      balance: calculatedBalance.balance,
       synced_at: new Date(),
     };
   }
@@ -471,6 +459,9 @@ export class WalletsService {
       );
     }
 
+    console.log('appId', this.breetAppId);
+    console.log('apiKey', this.breetApiKey);
+
     const url = `${this.breetApiUrl}/v1/trades/sell/mock-trade`;
     const headers = {
       'x-app-id': this.breetAppId,
@@ -519,20 +510,6 @@ export class WalletsService {
         `Mock trade accepted for wallet ${mockData.walletAddress}. Trade will be processed asynchronously.`,
       );
 
-      // Log the mock trade in ledger for tracking
-      await this.ledgerRepo.save(
-        this.ledgerRepo.create({
-          developer_id: developerId,
-          tx_type: TxType.DEPOSIT,
-          reference_type: 'mock_trade',
-          reference_id: mockData.walletAddress,
-          debit: 0,
-          credit: mockData.cryptoReceived,
-          currency: mockData.asset,
-          description: `Mock trade: ${mockData.cryptoReceived} ${mockData.asset} (${mockData.amountInUSD} USD)`,
-        }),
-      );
-
       return {
         success: true,
         message: 'Mock trade accepted and will be processed asynchronously',
@@ -548,38 +525,6 @@ export class WalletsService {
       };
     } catch (error) {
       this.logger.error(`Failed to mock trade: ${error.message}`);
-      throw error;
-    }
-  }
-
-  async getBreetWalletBalance(
-    breetWalletId: string,
-  ): Promise<{ asset: string; balance: string }> {
-    const url = `${this.breetApiUrl}/v1/wallets/${breetWalletId}/balance`;
-    const headers = {
-      'x-app-id': this.breetAppId,
-      'x-app-secret': this.breetApiKey,
-      'X-Breet-Env': this.breetEnv,
-      'Content-Type': 'application/json',
-    };
-
-    try {
-      const response = await fetch(url, {
-        method: 'GET',
-        headers,
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(
-          `Breet API error: ${error.message || response.statusText}`,
-        );
-      }
-
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      this.logger.error(`Failed to fetch wallet balance: ${error.message}`);
       throw error;
     }
   }

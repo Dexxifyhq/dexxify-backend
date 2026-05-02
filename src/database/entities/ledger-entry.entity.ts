@@ -20,6 +20,13 @@ export enum TxType {
   FEE = 'fee',
 }
 
+export enum LedgerEntryStatus {
+  INITIATED = 'initiated',
+  PENDING = 'pending',
+  COMPLETED = 'completed',
+  FLAGGED = 'flagged',
+}
+
 @Entity('ledger_entries')
 export class LedgerEntry {
   @PrimaryGeneratedColumn('uuid')
@@ -32,6 +39,10 @@ export class LedgerEntry {
   @Index()
   @Column({ type: 'enum', enum: TxType })
   tx_type: TxType;
+
+  @Index()
+  @Column({ type: 'text' })
+  wallet_address: string;
 
   @Column({ type: 'text' })
   reference_type: string;
@@ -46,9 +57,18 @@ export class LedgerEntry {
   @Column({ type: 'decimal', precision: 28, scale: 8, default: 0 })
   credit: number;
 
-  @Index()
   @Column({ type: 'text' })
-  currency: string;
+  asset: string;
+
+  @Column({
+    type: 'enum',
+    enum: LedgerEntryStatus,
+    default: LedgerEntryStatus.INITIATED,
+  })
+  status: LedgerEntryStatus;
+
+  @Column({ type: 'decimal', precision: 28, scale: 8, nullable: true })
+  amount_usd: number; // amount in USD
 
   @Column({ type: 'text', nullable: true })
   description: string;

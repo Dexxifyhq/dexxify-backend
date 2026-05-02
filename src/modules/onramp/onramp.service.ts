@@ -68,18 +68,18 @@ export class OnrampService {
     // TODO: Queue async — verify payment, trigger Breet crypto purchase, credit wallet
     this.logger.log(`Onramp ${saved.id} created — queue Breet crypto purchase`);
 
-    await this.ledgerRepo.save(
-      this.ledgerRepo.create({
-        developer_id: developerId,
-        tx_type: TxType.ONRAMP,
-        reference_type: 'onramp',
-        reference_id: saved.id,
-        debit: dto.ngn_amount,
-        credit: 0,
-        currency: 'NGN',
-        description: `Onramp ₦${dto.ngn_amount} → ${cryptoAmount.toFixed(8)} ${dto.crypto_asset}`,
-      }),
-    );
+    // await this.ledgerRepo.save(
+    //   this.ledgerRepo.create({
+    //     developer_id: developerId,
+    //     tx_type: TxType.ONRAMP,
+    //     reference_type: 'onramp',
+    //     reference_id: saved.id,
+    //     debit: dto.ngn_amount,
+    //     credit: 0,
+    //     asset: 'NGN',
+    //     description: `Onramp ₦${dto.ngn_amount} → ${cryptoAmount.toFixed(8)} ${dto.crypto_asset}`,
+    //   }),
+    // );
 
     return saved;
   }

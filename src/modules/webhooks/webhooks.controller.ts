@@ -10,8 +10,10 @@ import {
   Req,
   ParseUUIDPipe,
   HttpCode,
+  Logger,
 } from '@nestjs/common';
 import { WebhooksService } from './webhooks.service';
+import { BreetWebhooksService } from './breet-webhooks.service';
 import { CreateWebhookDto } from './dto';
 import { GetDeveloper, Public } from '../../common/decorators';
 import {
@@ -22,6 +24,7 @@ import {
   ApiBody,
   ApiHeader,
 } from '@nestjs/swagger';
+import type { Request } from 'express';
 
 @ApiTags('Webhooks')
 @ApiBearerAuth('api-key')
@@ -73,56 +76,82 @@ export class WebhooksController {
 @ApiTags('Incoming Webhooks')
 @Controller('webhooks/incoming')
 export class IncomingWebhooksController {
-  constructor(private readonly webhooksService: WebhooksService) {}
+  private readonly logger = new Logger(IncomingWebhooksController.name);
+
+  constructor(
+    private readonly webhooksService: WebhooksService,
+    private readonly breetWebhooksService: BreetWebhooksService,
+  ) {}
 
   @ApiOperation({
     summary: 'Handle Breet webhooks',
     description:
-      'Receive webhook events from Breet (deposits, offramps, payouts). Signature verified automatically.',
+      'Receive webhook events from Breet (deposits, withdrawals). IP whitelisted and secret verified.',
   })
   @ApiHeader({
-    name: 'x-breet-signature',
-    description: 'Breet webhook signature for verification',
+    name: 'x-webhook-secret',
+    description: 'Breet webhook secret for verification',
   })
   @Public()
   @Post('breet')
   @HttpCode(200)
   async handleBreet(
     @Body() body: any,
-    @Headers('x-breet-signature') signature: string,
+    @Headers('x-webhook-secret') secret: string,
+    @Req() req: Request,
   ) {
-    // TODO: Verify Breet webhook signature
-    // TODO: Route events:
-    //   - wallet.deposit → credit wallet balance, dispatch wallet.deposit.confirmed
-    //   - offramp.completed → update offramp tx, dispatch offramp.completed
-    //   - payout.success → update payout status, dispatch payout.success
-    //   - payout.failed → update payout status, dispatch payout.failed
-    //   - onramp.completed → credit wallet, dispatch onramp.completed
-    // TODO: Dispatch to developer webhooks via webhooksService.dispatch()
-    return { received: true };
+    // Verify webhook request (IP + secret)
+    const verification = this.breetWebhooksService.verifyWebhookRequest(req);
+    if (!verification.isValid) {
+      this.logger.warn(`Webhook verification failed: ${verification.error}`);
+      return { received: false, error: verification.error };
+    }
+
+    // Extract client IP
+    const ip =
+      (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ||
+      (req.headers['x-real-ip'] as string) ||
+      req.socket.remoteAddress ||
+      '';
+
+    // Respond immediately to Breet
+    const eventId = body.id;
+    this.logger.log(`Webhook received: ${eventId}, processing asynchronously`);
+
+    // Process asynchronously (fire and forget)
+    setImmediate(async () => {
+      try {
+        const result = await this.breetWebhooksService.processWebhook(body, ip);
+        this.logger.log(`Webhook processed successfully: ${result.eventId}`);
+      } catch (error: any) {
+        this.logger.error(`Webhook processing failed: ${error.message}`);
+      }
+    });
+
+    return { received: true, eventId };
   }
 
-  @ApiOperation({
-    summary: 'Handle Kora webhooks',
-    description:
-      'Receive webhook events from Kora (KYC verification). Signature verified automatically.',
-  })
-  @ApiHeader({
-    name: 'x-korapay-signature',
-    description: 'Kora webhook signature for verification',
-  })
-  @Public()
-  @Post('kora')
-  @HttpCode(200)
-  async handleKora(
-    @Body() body: any,
-    @Headers('x-korapay-signature') signature: string,
-  ) {
-    // TODO: Verify Kora webhook signature
-    // TODO: Route events:
-    //   - identity.verified → update KYC status, dispatch kyc.approved
-    //   - identity.failed → update KYC status, dispatch kyc.failed
-    // TODO: Dispatch to developer webhooks via webhooksService.dispatch()
-    return { received: true };
-  }
+  // @ApiOperation({
+  //   summary: 'Handle Kora webhooks',
+  //   description:
+  //     'Receive webhook events from Kora (KYC verification). Signature verified automatically.',
+  // })
+  // @ApiHeader({
+  //   name: 'x-korapay-signature',
+  //   description: 'Kora webhook signature for verification',
+  // })
+  // @Public()
+  // @Post('kora')
+  // @HttpCode(200)
+  // async handleKora(
+  //   @Body() body: any,
+  //   @Headers('x-korapay-signature') signature: string,
+  // ) {
+  //   // TODO: Verify Kora webhook signature
+  //   // TODO: Route events:
+  //   //   - identity.verified → update KYC status, dispatch kyc.approved
+  //   //   - identity.failed → update KYC status, dispatch kyc.failed
+  //   // TODO: Dispatch to developer webhooks via webhooksService.dispatch()
+  //   return { received: true };
+  // }
 }

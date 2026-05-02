@@ -166,18 +166,18 @@ export class KycService {
     const saved = await this.kycRepo.save(verification);
 
     // Record fee
-    await this.ledgerRepo.save(
-      this.ledgerRepo.create({
-        developer_id: developerId,
-        tx_type: TxType.FEE,
-        reference_type: 'kyc',
-        reference_id: saved.id,
-        debit: params.fee,
-        credit: 0,
-        currency: 'NGN',
-        description: `KYC ${params.type} verification fee`,
-      }),
-    );
+    // await this.ledgerRepo.save(
+    //   this.ledgerRepo.create({
+    //     developer_id: developerId,
+    //     tx_type: TxType.FEE,
+    //     reference_type: 'kyc',
+    //     reference_id: saved.id,
+    //     debit: params.fee,
+    //     credit: 0,
+    //     asset: 'NGN',
+    //     description: `KYC ${params.type} verification fee`,
+    //   }),
+    // );
 
     return saved;
   }
