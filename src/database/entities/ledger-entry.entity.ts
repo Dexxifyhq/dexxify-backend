@@ -25,6 +25,10 @@ export enum LedgerEntryStatus {
   PENDING = 'pending',
   COMPLETED = 'completed',
   FLAGGED = 'flagged',
+  PROCESSING = 'processing',
+  REJECTED = 'rejected',
+  REVERSED = 'reversed',
+  AUTO_SETTLED = 'auto_settled',
 }
 
 @Entity('ledger_entries')
@@ -41,7 +45,7 @@ export class LedgerEntry {
   tx_type: TxType;
 
   @Index()
-  @Column({ type: 'text' })
+  @Column({ type: 'text', nullable: true })
   wallet_address: string;
 
   @Column({ type: 'text' })
@@ -52,12 +56,12 @@ export class LedgerEntry {
   reference_id: string;
 
   @Column({ type: 'decimal', precision: 28, scale: 8, default: 0 })
-  debit: number;
+  debit_ngn: number;
 
   @Column({ type: 'decimal', precision: 28, scale: 8, default: 0 })
-  credit: number;
+  credit_ngn: number;
 
-  @Column({ type: 'text' })
+  @Column({ type: 'text', nullable: true })
   asset: string;
 
   @Column({
@@ -69,6 +73,9 @@ export class LedgerEntry {
 
   @Column({ type: 'decimal', precision: 28, scale: 8, nullable: true })
   amount_usd: number; // amount in USD
+
+  @Column({ type: 'decimal', precision: 28, scale: 8, nullable: true })
+  amount_crypto: number; // amount in crypto
 
   @Column({ type: 'text', nullable: true })
   description: string;

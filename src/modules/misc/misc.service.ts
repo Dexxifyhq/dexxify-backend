@@ -24,7 +24,9 @@ export class MiscService {
     const isProduction =
       this.config.get<string>('app.nodeEnv') === 'production';
     this.breetApiUrl = this.config.get<string>('breet.apiUrl') || '';
-    this.breetEnv = this.config.get<string>('breet.env') || '';
+    this.breetEnv = isProduction
+      ? this.config.get<string>('breet.env') || ''
+      : this.config.get<string>('breet.testEnv') || '';
     this.breetAppId = isProduction
       ? this.config.get<string>('breet.appId') || ''
       : this.config.get<string>('breet.testAppId') || '';

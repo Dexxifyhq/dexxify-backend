@@ -58,11 +58,8 @@ export class WalletsController {
     description: 'Wallet unique identifier',
     example: '69d6fd3fb0a5cf7a0e793b18',
   })
-  async getBalance(
-    @GetDeveloper('id') developerId: string,
-    @Param('wallet_id') walletId: string,
-  ) {
-    return this.walletsService.getWalletBalance(developerId, walletId);
+  async getBalance(@GetDeveloper('id') developerId: string) {
+    return this.walletsService.getWalletBalance(developerId);
   }
 
   @Post()
@@ -299,8 +296,11 @@ export class WalletsController {
     description: 'Initiate a withdrawal for local currencies from a wallet',
   })
   @ApiBody({ type: InitiateFiatWithdrawalDto })
-  async initiateFiattWithdrawal(@Body() dto: InitiateFiatWithdrawalDto) {
-    return this.walletsService.initiateFiatWithdrawal(dto);
+  async initiateFiattWithdrawal(
+    @Body() dto: InitiateFiatWithdrawalDto,
+    @GetDeveloper('id') developerId: string,
+  ) {
+    return this.walletsService.initiateFiatWithdrawal(dto, developerId);
   }
 
   @Get('withdrawals/breet')

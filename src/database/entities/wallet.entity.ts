@@ -56,6 +56,9 @@ export class Wallet {
   @Column({ type: 'enum', enum: WalletStatus, default: WalletStatus.ACTIVE })
   status: WalletStatus;
 
+  @Column({ type: 'boolean', default: false })
+  auto_settled: boolean;
+
   // @Index()
   // @Column({ type: 'text' })
   // breet_wallet_id: string;

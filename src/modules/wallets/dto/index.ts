@@ -41,7 +41,7 @@ export class CreateWalletDto {
   @IsNotEmpty()
   label: string;
 
-  @ApiProperty({ description: 'Bank ID', example: '033' })
+  @ApiProperty({ description: 'Bank ID', example: '39' })
   @IsString()
   @IsNotEmpty()
   bank_id: string;
@@ -238,7 +238,7 @@ export class InitiateStableCoinWithdrawalDto {
 
   @ApiPropertyOptional({
     description: 'Pin on the dashboard',
-    example: '1234',
+    example: '3847',
   })
   @IsString()
   @IsOptional()
@@ -270,20 +270,20 @@ export class InitiateStableCoinWithdrawalDto {
 }
 
 export class InitiateFiatWithdrawalDto {
-  @ApiProperty({ description: 'Bank ID', example: '69e941d9eda0df83cc847d8a' })
+  @ApiProperty({ description: 'Bank ID', example: '6a0ce75269321c4cb5eafe7d' })
   @IsString()
   @IsNotEmpty()
   bank_id: string;
 
   @ApiProperty({
-    description: 'Amount to withdraw in USD',
-    example: 5,
-    minimum: 1,
+    description: 'Amount to withdraw in NGN/GHS',
+    example: 2000,
+    minimum: 2000,
   })
   @IsNumber()
   @Min(1)
   @IsNotEmpty()
-  amountInUSD: number;
+  amount: number;
 
   @ApiPropertyOptional({
     description: 'Optional note that appears on bank statement',
@@ -295,7 +295,7 @@ export class InitiateFiatWithdrawalDto {
 
   @ApiPropertyOptional({
     description: 'Pin on the dashboard',
-    example: '1234',
+    example: '3847',
   })
   @IsString()
   @IsOptional()

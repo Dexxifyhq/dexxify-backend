@@ -12,6 +12,8 @@ import {
   LedgerEntry,
   TxType,
   WithdrawalWallet,
+  OfframpTransaction,
+  TxStatus,
 } from '../../database/entities';
 import {
   CreateWalletDto,
@@ -44,13 +46,17 @@ export class WalletsService {
     private readonly withdrawalWalletRepo: Repository<WithdrawalWallet>,
     @InjectRepository(LedgerEntry)
     private readonly ledgerRepo: Repository<LedgerEntry>,
+    @InjectRepository(OfframpTransaction)
+    private readonly offrampRepo: Repository<OfframpTransaction>,
     private readonly dataSource: DataSource,
     private readonly config: ConfigService,
   ) {
     const isProduction =
       this.config.get<string>('app.nodeEnv') === 'production';
     this.breetApiUrl = this.config.get<string>('breet.apiUrl') || '';
-    this.breetEnv = this.config.get<string>('breet.env') || '';
+    this.breetEnv = isProduction
+      ? this.config.get<string>('breet.env') || ''
+      : this.config.get<string>('breet.testEnv') || '';
     this.breetAppId = isProduction
       ? this.config.get<string>('breet.appId') || ''
       : this.config.get<string>('breet.testAppId') || '';
@@ -91,6 +97,7 @@ export class WalletsService {
       asset_id: dto.asset_id,
       deposit_address: breetWallet.data.address,
       label: dto.label,
+      auto_settled: dto.auto_settlement ?? false,
     });
 
     return this.walletRepo.save(wallet);
@@ -365,24 +372,23 @@ export class WalletsService {
     }
   }
 
-  async getWalletBalance(developerId: string, walletId: string) {
-    const wallet = await this.findOne(developerId, walletId);
-
-    if (!wallet.id) {
-      throw new BadRequestException('Wallet is not linked to Breet.');
-    }
-
+  async getWalletBalance(developerId: string) {
     const calculatedBalance = await this.ledgerRepo
       .createQueryBuilder('ledger')
-      .select('SUM(ledger.credit) - SUM(ledger.debit)', 'balance')
-      .where('ledger.wallet_address = :walletId', {
-        walletId: wallet.deposit_address,
+      .select('SUM(ledger.credit_ngn) - SUM(ledger.debit_ngn)', 'balance')
+      .where('ledger.status IN (:...statuses)', {
+        statuses: [
+          LedgerEntryStatus.COMPLETED,
+          LedgerEntryStatus.REJECTED,
+          LedgerEntryStatus.REVERSED,
+        ],
+      })
+      .andWhere('ledger.developer_id = :developerId', {
+        developerId,
       })
       .getRawOne();
 
     return {
-      wallet_id: walletId,
-      asset: wallet.asset_id,
       balance: calculatedBalance.balance,
       synced_at: new Date(),
     };
@@ -611,6 +617,9 @@ export class WalletsService {
       'X-Breet-Env': this.breetEnv,
       'Content-Type': 'application/json',
     };
+    console.log('apiKey', this.breetApiKey);
+    console.log('appId', this.breetAppId);
+    console.log('env', this.breetEnv);
 
     try {
       const response = await fetch(url, {
@@ -696,6 +705,10 @@ export class WalletsService {
       'Content-Type': 'application/json',
     };
 
+    console.log('apiKey', this.breetApiKey);
+    console.log('appId', this.breetAppId);
+    console.log('env', this.breetEnv);
+
     if (
       withdrawalDto.network === WithdrawalNetwork.TON &&
       withdrawalDto.token === WithdrawalToken.USDC
@@ -744,7 +757,10 @@ export class WalletsService {
     }
   }
 
-  async initiateFiatWithdrawal(withdrawalDto: InitiateFiatWithdrawalDto) {
+  async initiateFiatWithdrawal(
+    withdrawalDto: InitiateFiatWithdrawalDto,
+    developerId: string,
+  ) {
     const url = `${this.breetApiUrl}/v1/payments/withdraw/bank/${withdrawalDto.bank_id}`;
     const headers = {
       'x-app-id': this.breetAppId,
@@ -753,10 +769,30 @@ export class WalletsService {
       'Content-Type': 'application/json',
     };
 
+    const calculatedBalance = await this.ledgerRepo
+      .createQueryBuilder('ledger')
+      .select('SUM(ledger.credit_ngn) - SUM(ledger.debit_ngn)', 'balance')
+      .where('ledger.status IN (:...statuses)', {
+        statuses: [
+          LedgerEntryStatus.COMPLETED,
+          LedgerEntryStatus.REJECTED,
+          LedgerEntryStatus.REVERSED,
+        ],
+      })
+      .andWhere('ledger.developer_id = :developerId', {
+        developerId,
+      })
+      .getRawOne();
+
+    if (calculatedBalance.balance < withdrawalDto.amount) {
+      throw new BadRequestException('Insufficient balance');
+    }
+
     const payload = {
-      amount: withdrawalDto.amountInUSD,
+      amount: withdrawalDto.amount,
       narration: withdrawalDto.narration,
-      pin: withdrawalDto?.pin || this.config.get<string>('app.pin'),
+      pin: this.config.get<string>('app.pin'),
+      // pin: withdrawalDto?.pin || this.config.get<string>('app.pin'),
     };
 
     try {
@@ -777,6 +813,15 @@ export class WalletsService {
 
       const result = await response.json();
       this.logger.log(`Fiat withdrawal initiated successfully`);
+
+      const newEntry = this.offrampRepo.create({
+        developer_id: developerId,
+        amount: withdrawalDto.amount,
+        description: withdrawalDto.narration,
+        breet_reference: result.data.id,
+      });
+
+      await this.offrampRepo.save(newEntry);
 
       return result;
     } catch (error) {

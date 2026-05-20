@@ -2,10 +2,22 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { WalletsController } from './wallets.controller';
 import { WalletsService } from './wallets.service';
-import { Wallet, LedgerEntry, WithdrawalWallet } from '../../database/entities';
+import {
+  Wallet,
+  LedgerEntry,
+  WithdrawalWallet,
+  OfframpTransaction,
+} from '../../database/entities';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Wallet, WithdrawalWallet, LedgerEntry])],
+  imports: [
+    TypeOrmModule.forFeature([
+      Wallet,
+      WithdrawalWallet,
+      LedgerEntry,
+      OfframpTransaction,
+    ]),
+  ],
   controllers: [WalletsController],
   providers: [WalletsService],
   exports: [WalletsService],

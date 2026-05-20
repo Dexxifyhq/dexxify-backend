@@ -31,15 +31,15 @@ export class CreateOfframpDto {
   @Min(0.00000001)
   crypto_amount: number;
 
-  @ApiProperty({ description: 'Bank code', example: '057' })
+  @ApiProperty({ description: 'Bank ID', example: 454442256 })
   @IsString()
   @IsNotEmpty()
-  bank_code: string;
+  bank_id: number;
 
-  @ApiProperty({ description: 'Account number', example: '1234567890' })
+  @ApiProperty({ description: 'Account number', example: 123456789 })
   @IsString()
   @IsNotEmpty()
-  account_number: string;
+  account_number: number;
 
   @ApiProperty({ description: 'Account name', example: 'John Doe' })
   @IsString()

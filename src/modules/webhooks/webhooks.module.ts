@@ -11,6 +11,8 @@ import {
   WebhookEvent,
   LedgerEntry,
   Wallet,
+  OfframpTransaction,
+  OnrampTransaction,
 } from '../../database/entities';
 
 @Module({
@@ -20,6 +22,8 @@ import {
       WebhookEvent,
       LedgerEntry,
       Wallet,
+      OfframpTransaction,
+      OnrampTransaction,
     ]),
   ],
   controllers: [WebhooksController, IncomingWebhooksController],

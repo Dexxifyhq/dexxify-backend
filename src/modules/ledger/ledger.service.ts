@@ -51,7 +51,7 @@ export class LedgerService {
   async getBalance(developerId: string) {
     const entries = await this.ledgerRepo.find({
       where: { developer_id: developerId },
-      select: ['asset', 'debit', 'credit'],
+      select: ['asset', 'debit_ngn', 'credit_ngn'],
     });
 
     const balances: Record<
@@ -63,8 +63,8 @@ export class LedgerService {
       if (!balances[entry.asset]) {
         balances[entry.asset] = { total_credit: 0, total_debit: 0, net: 0 };
       }
-      balances[entry.asset].total_credit += Number(entry.credit);
-      balances[entry.asset].total_debit += Number(entry.debit);
+      balances[entry.asset].total_credit += Number(entry.credit_ngn);
+      balances[entry.asset].total_debit += Number(entry.debit_ngn);
       balances[entry.asset].net =
         balances[entry.asset].total_credit - balances[entry.asset].total_debit;
     }
@@ -97,15 +97,15 @@ export class LedgerService {
     };
 
     for (const entry of entries) {
-      summary.total_debits += Number(entry.debit);
-      summary.total_credits += Number(entry.credit);
+      summary.total_debits += Number(entry.debit_ngn);
+      summary.total_credits += Number(entry.credit_ngn);
 
       if (!summary.by_type[entry.tx_type]) {
         summary.by_type[entry.tx_type] = { count: 0, debit: 0, credit: 0 };
       }
       summary.by_type[entry.tx_type].count++;
-      summary.by_type[entry.tx_type].debit += Number(entry.debit);
-      summary.by_type[entry.tx_type].credit += Number(entry.credit);
+      summary.by_type[entry.tx_type].debit += Number(entry.debit_ngn);
+      summary.by_type[entry.tx_type].credit += Number(entry.credit_ngn);
     }
 
     return { summary, entries };

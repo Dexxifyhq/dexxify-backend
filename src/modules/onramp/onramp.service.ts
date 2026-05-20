@@ -12,6 +12,7 @@ import {
   TxStatus,
   LedgerEntry,
   TxType,
+  LedgerEntryStatus,
 } from '../../database/entities';
 import { CreateOnrampDto } from './dto';
 import { WalletsService } from '../wallets/wallets.service';
@@ -52,14 +53,14 @@ export class OnrampService {
 
     const onramp = this.onrampRepo.create({
       developer_id: developerId,
-      wallet_id: dto.wallet_id,
+      wallet_address: dto.wallet_id,
       crypto_asset: dto.crypto_asset,
-      ngn_amount: dto.ngn_amount,
       exchange_rate: spreadRate,
       crypto_amount: cryptoAmount,
-      fee_ngn: feeNgn,
-      payment_reference: dto.payment_reference,
-      status: TxStatus.PROCESSING,
+      usd_amount: dto.ngn_amount,
+      fee_percentage: this.FEE_PERCENT,
+      reference: dto.payment_reference,
+      status: LedgerEntryStatus.PENDING,
       metadata: dto.metadata || {},
     });
 

@@ -25,7 +25,9 @@ export default () => ({
   breet: {
     apiUrl: process.env.BREET_API_URL,
     webhookSecret: process.env.BREET_WEBHOOK_SECRET,
+    testWebhookSecret: process.env.BREET_TEST_WEBHOOK_SECRET,
     env: process.env.BREET_ENV,
+    testEnv: process.env.BREET_TEST_ENV,
     secretKey: process.env.BREET_SECRET_KEY,
     testSecretKey: process.env.BREET_TEST_SECRET_KEY,
     appId: process.env.BREET_APP_ID,

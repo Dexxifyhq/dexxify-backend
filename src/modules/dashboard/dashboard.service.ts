@@ -134,7 +134,7 @@ export class DashboardService {
       }),
       this.offrampRepo.find({
         where: { developer_id: developerId },
-        select: ['ngn_amount', 'status'],
+        select: ['amount', 'status'],
       }),
       this.kycRepo.count({ where: { developer_id: developerId } }),
     ]);
@@ -145,7 +145,7 @@ export class DashboardService {
 
     const totalOfframpVolume = offramps
       .filter((o) => o.status === TxStatus.COMPLETED)
-      .reduce((sum, o) => sum + Number(o.ngn_amount), 0);
+      .reduce((sum, o) => sum + Number(o.amount), 0);
 
     return {
       wallets: { total: walletCount },
@@ -165,7 +165,7 @@ export class DashboardService {
         developer_id: developerId,
         created_at: MoreThanOrEqual(since),
       },
-      select: ['tx_type', 'asset', 'debit', 'credit', 'created_at'],
+      select: ['tx_type', 'asset', 'debit_ngn', 'credit_ngn', 'created_at'],
       order: { created_at: 'ASC' },
     });
 
@@ -184,8 +184,8 @@ export class DashboardService {
         };
       }
       dailyStats[day].transactions++;
-      dailyStats[day].volume_debit += Number(entry.debit);
-      dailyStats[day].volume_credit += Number(entry.credit);
+      dailyStats[day].volume_debit += Number(entry.debit_ngn);
+      dailyStats[day].volume_credit += Number(entry.credit_ngn);
     }
 
     return {
