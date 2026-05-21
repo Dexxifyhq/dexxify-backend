@@ -18,6 +18,7 @@ export enum TxStatus {
   REJECTED = 'rejected',
   REVERSED = 'reversed',
   FLAGGED = 'flagged',
+  AUTO_SETTLED = 'auto_settled',
 }
 
 @Entity('offramp_transactions')

@@ -53,6 +53,12 @@ export class Wallet {
   @Column({ type: 'text', nullable: true })
   deposit_address: string;
 
+  @Column({ type: 'text', nullable: true })
+  bank_id: string;
+
+  @Column({ type: 'text', nullable: true })
+  account_number: string;
+
   @Column({ type: 'enum', enum: WalletStatus, default: WalletStatus.ACTIVE })
   status: WalletStatus;
 

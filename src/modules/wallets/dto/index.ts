@@ -36,19 +36,21 @@ export class CreateWalletDto {
   // @IsNotEmpty()
   // wallet_id: string;
 
-  @ApiProperty({ description: 'Wallet label', example: 'Chicken Rep Wallet' })
+  @ApiProperty({ description: 'Wallet label', example: 'Wallet' })
   @IsString()
   @IsNotEmpty()
   label: string;
 
-  @ApiProperty({ description: 'Bank ID', example: '39' })
+  @ApiPropertyOptional({ description: 'Bank ID', example: '39' })
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
+  // @IsNotEmpty()
   bank_id: string;
 
-  @ApiProperty({ description: 'Account number', example: '2249098732' })
+  @ApiPropertyOptional({ description: 'Account number', example: '2249098732' })
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
+  // @IsNotEmpty()
   account_number: string;
 
   @ApiPropertyOptional({
@@ -57,9 +59,9 @@ export class CreateWalletDto {
   })
   @IsOptional()
   @IsBoolean()
-  auto_settlement?: boolean;
+  auto_settlement: boolean;
 
-  @ApiProperty({ description: 'Asset ID', example: '67063f653b4a1f6c7a60ec57' })
+  @ApiProperty({ description: 'Asset ID', example: '6930298330b92dbdfc0267a4' })
   @IsString()
   @IsNotEmpty()
   asset_id: string;
@@ -106,7 +108,7 @@ export class WalletQueryDto {
 
   @ApiPropertyOptional({
     description: 'Asset ID',
-    // example: '67063f653b4a1f6c7a60ec57',
+    // example: '6930298330b92dbdfc0267a4',
   })
   @IsOptional()
   @IsString()

@@ -6,6 +6,7 @@ import {
   Param,
   Query,
   Delete,
+  Put,
 } from '@nestjs/common';
 import { WalletsService } from './wallets.service';
 import {
@@ -26,8 +27,9 @@ import {
   ApiQuery,
   ApiTags,
   ApiPropertyOptional,
+  ApiProperty,
 } from '@nestjs/swagger';
-import { IsOptional, IsNumber } from 'class-validator';
+import { IsOptional, IsNumber, IsString, IsNotEmpty } from 'class-validator';
 
 export class CustomQueryDto {
   @ApiPropertyOptional({ description: 'Page number', example: 1 })
@@ -41,6 +43,38 @@ export class CustomQueryDto {
   limit?: number;
 }
 
+export class UpdateWalletBankDetailsDto {
+  @ApiProperty({ description: 'Bank ID', example: '39' })
+  @IsString()
+  @IsNotEmpty()
+  bank_id: string;
+
+  @ApiProperty({ description: 'Account number', example: '2249098732' })
+  @IsString()
+  @IsNotEmpty()
+  account_number: string;
+
+  @ApiPropertyOptional({ description: 'Narration', example: 'Dexxify Payout' })
+  @IsString({
+    validateIf: (obj) =>
+      obj.narration !== undefined && obj.narration.length <= 32,
+  }) // Max 32 chars
+  @IsOptional()
+  narration?: string;
+
+  @ApiPropertyOptional({ description: 'Auto settlement', example: true })
+  @IsString()
+  @IsOptional()
+  auto_settlement?: boolean;
+}
+
+export class UpdateWalletAutoSettlementDto {
+  @ApiPropertyOptional({ description: 'Auto settlement', example: true })
+  @IsString()
+  @IsOptional()
+  auto_settlement: boolean;
+}
+
 @ApiTags('Wallets')
 @ApiBearerAuth('api-key')
 @Controller('wallets')
@@ -51,12 +85,7 @@ export class WalletsController {
   @Post('/balance')
   @ApiOperation({
     summary: 'Get wallet balance',
-    description: 'Retrieve the current balance for a specific wallet',
-  })
-  @ApiParam({
-    name: 'wallet_id',
-    description: 'Wallet unique identifier',
-    example: '69d6fd3fb0a5cf7a0e793b18',
+    description: 'Retrieve the current balance for a user',
   })
   async getBalance(@GetDeveloper('id') developerId: string) {
     return this.walletsService.getWalletBalance(developerId);
@@ -144,6 +173,52 @@ export class WalletsController {
     @Param('wallet_id') walletId: string,
   ) {
     return this.walletsService.getDepositAddress(developerId, walletId);
+  }
+
+  @Put(':wallet_id/bank')
+  @ApiOperation({
+    summary: 'Update wallet with bank details',
+    description: 'Update bank details for a specific wallet',
+  })
+  @ApiParam({
+    name: 'wallet_id',
+    description: 'Wallet unique identifier',
+    example: '67063f653b4a1f6c7a60ec57',
+  })
+  @ApiBody({ type: UpdateWalletBankDetailsDto })
+  async updateWalletWithBankDetails(
+    @GetDeveloper('id') developerId: string,
+    @Body() dto: UpdateWalletBankDetailsDto,
+    @Param('wallet_id') walletId: string,
+  ) {
+    return this.walletsService.updateWalletWithBankDetails(
+      developerId,
+      walletId,
+      dto,
+    );
+  }
+
+  @Put(':wallet_id/auto_settlement')
+  @ApiOperation({
+    summary: 'Update auto settlement status',
+    description: 'Update the auto settlement status for a specific wallet',
+  })
+  @ApiParam({
+    name: 'wallet_id',
+    description: 'Wallet unique identifier',
+    example: '67063f653b4a1f6c7a60ec57',
+  })
+  @ApiBody({ type: UpdateWalletAutoSettlementDto })
+  async updateWalletAutoSettlementStatus(
+    @GetDeveloper('id') developerId: string,
+    @Body() dto: UpdateWalletAutoSettlementDto,
+    @Param('wallet_id') walletId: string,
+  ) {
+    return this.walletsService.updateWalletAutoSettlementStatus(
+      developerId,
+      walletId,
+      dto,
+    );
   }
 
   @Get('/transactions/all')

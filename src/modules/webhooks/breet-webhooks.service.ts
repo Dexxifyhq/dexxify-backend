@@ -167,9 +167,13 @@ export class BreetWebhooksService {
     //   return "Funds auto-settled to user's bank account";
     // }
 
-    const status = developerWallet.auto_settled
-      ? LedgerEntryStatus.AUTO_SETTLED
-      : LedgerEntryStatus.PENDING;
+    const status =
+      (developerWallet.auto_settled &&
+        developerWallet.bank_id &&
+        developerWallet.account_number) ||
+      ledgerEntry?.status === LedgerEntryStatus.AUTO_SETTLED
+        ? LedgerEntryStatus.AUTO_SETTLED
+        : LedgerEntryStatus.PENDING;
 
     if (ledgerEntry) {
       await this.ledgerRepo.manager.transaction(async (manager) => {
@@ -302,11 +306,16 @@ export class BreetWebhooksService {
       throw new NotFoundException('Offramp entry not found');
     }
 
+    const status =
+      offrampEntry?.status === TxStatus.AUTO_SETTLED
+        ? TxStatus.AUTO_SETTLED
+        : payload.status;
+
     await this.offrampRepo.manager.transaction(async (manager) => {
       await this.offrampRepo.update(
         { breet_reference: payload.id },
         {
-          status: payload.status,
+          status,
           fee: payload.meta.fee,
           currency: payload.currency,
           description: `Dexxify payout pending: ${payload.id}`,
@@ -325,7 +334,7 @@ export class BreetWebhooksService {
         reference_id: payload.id,
         debit_ngn: parseFloat(payload.originalAmount),
         credit_ngn: 0,
-        status: payload.status,
+        status,
         description: `Dexxify payout ${payload.status}: ${payload.id}`,
         metadata: {
           ...payload.meta,
@@ -352,11 +361,16 @@ export class BreetWebhooksService {
       throw new NotFoundException('Offramp entry not found');
     }
 
+    const status =
+      offrampEntry?.status === TxStatus.AUTO_SETTLED
+        ? TxStatus.AUTO_SETTLED
+        : payload.status;
+
     await this.offrampRepo.manager.transaction(async (manager) => {
       await this.offrampRepo.update(
         { breet_reference: payload.id },
         {
-          status: payload.status,
+          status,
         },
       );
 
@@ -364,7 +378,7 @@ export class BreetWebhooksService {
       await this.ledgerRepo.update(
         { reference_id: payload.id },
         {
-          status: payload.status,
+          status,
         },
       );
     });
@@ -377,11 +391,24 @@ export class BreetWebhooksService {
       `Withdrawal completed: ${payload.id}, amount: ${payload.originalAmount}`,
     );
 
+    const offrampEntry = await this.offrampRepo.findOne({
+      where: { breet_reference: payload.id },
+    });
+
+    if (!offrampEntry) {
+      throw new NotFoundException('Offramp entry not found');
+    }
+
+    const status =
+      offrampEntry?.status === TxStatus.AUTO_SETTLED
+        ? TxStatus.AUTO_SETTLED
+        : payload.status;
+
     await this.offrampRepo.manager.transaction(async (manager) => {
       await this.offrampRepo.update(
         { breet_reference: payload.id },
         {
-          status: payload.status,
+          status,
         },
       );
 
@@ -389,7 +416,7 @@ export class BreetWebhooksService {
       await this.ledgerRepo.update(
         { reference_id: payload.id },
         {
-          status: payload.status,
+          status,
         },
       );
     });

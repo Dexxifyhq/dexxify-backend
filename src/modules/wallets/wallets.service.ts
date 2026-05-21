@@ -30,6 +30,10 @@ import {
   generateUniqueId,
 } from '../../common/utils';
 import { LedgerEntryStatus } from 'src/database/entities/ledger-entry.entity';
+import {
+  UpdateWalletAutoSettlementDto,
+  UpdateWalletBankDetailsDto,
+} from './wallets.controller';
 
 @Injectable()
 export class WalletsService {
@@ -84,23 +88,25 @@ export class WalletsService {
 
     try {
       breetWallet = await this.createBreetWallet(dto, uniqueId);
+
+      const wallet = this.walletRepo.create({
+        id: breetWallet.data.id,
+        developer_id: developerId,
+        asset_id: dto.asset_id,
+        deposit_address: breetWallet.data.address,
+        label: dto.label,
+        auto_settled: dto.auto_settlement ?? false,
+        bank_id: dto.bank_id,
+        account_number: dto.account_number,
+      });
+
+      return this.walletRepo.save(wallet);
     } catch (err) {
       this.logger.error(`Breet wallet creation failed: ${err.message}`);
       throw new BadRequestException(
         'Failed to create wallet with crypto provider.',
       );
     }
-
-    const wallet = this.walletRepo.create({
-      id: breetWallet.data.id,
-      developer_id: developerId,
-      asset_id: dto.asset_id,
-      deposit_address: breetWallet.data.address,
-      label: dto.label,
-      auto_settled: dto.auto_settlement ?? false,
-    });
-
-    return this.walletRepo.save(wallet);
   }
 
   async findOne(developerId: string, walletId: string) {
@@ -366,6 +372,96 @@ export class WalletsService {
       const data = await response.json();
       this.logger.log(`Fetched deposit address for wallet ${breetWalletId}`);
       return data;
+    } catch (error) {
+      this.logger.error(`Failed to fetch deposit address: ${error.message}`);
+      throw error;
+    }
+  }
+
+  async updateWalletWithBankDetails(
+    developerId: string,
+    walletId: string,
+    dto: UpdateWalletBankDetailsDto,
+  ) {
+    const url = `${this.breetApiUrl}/v1/trades/wallets/${walletId}/bank`;
+    const headers = {
+      'x-app-id': this.breetAppId,
+      'x-app-secret': this.breetApiKey,
+      'X-Breet-Env': this.breetEnv,
+      'Content-Type': 'application/json',
+    };
+
+    const payload = {
+      id: dto.bank_id,
+      narration: dto.narration,
+      accountNumber: dto.account_number,
+      autoSettlement: dto.auto_settlement,
+    };
+
+    try {
+      this.logger.log(
+        `Updating wallet with bank details: ${JSON.stringify(payload)}`,
+      );
+
+      const response = await fetch(url, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(
+          `Breet API error: ${error.message || response.statusText}`,
+        );
+      }
+
+      this.logger.log(`Updated wallet with bank details: ${walletId}`);
+      const result = await response.json();
+      return result;
+    } catch (error) {
+      this.logger.error(`Failed to fetch deposit address: ${error.message}`);
+      throw error;
+    }
+  }
+  async updateWalletAutoSettlementStatus(
+    developerId: string,
+    walletId: string,
+    dto: UpdateWalletAutoSettlementDto,
+  ) {
+    const url = `${this.breetApiUrl}/v1/trades/wallets/${walletId}/auto-settlement`;
+    const headers = {
+      'x-app-id': this.breetAppId,
+      'x-app-secret': this.breetApiKey,
+      'X-Breet-Env': this.breetEnv,
+      'Content-Type': 'application/json',
+    };
+
+    const payload = {
+      autoSettlement: dto.auto_settlement,
+    };
+
+    try {
+      this.logger.log(
+        `Updating wallet auto settlement status: ${JSON.stringify(payload)}`,
+      );
+
+      const response = await fetch(url, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(
+          `Breet API error: ${error.message || response.statusText}`,
+        );
+      }
+
+      this.logger.log(`Updated wallet auto settlement status: ${walletId}`);
+      const result = await response.json();
+      return result;
     } catch (error) {
       this.logger.error(`Failed to fetch deposit address: ${error.message}`);
       throw error;

@@ -61,6 +61,12 @@ export class LedgerEntry {
   @Column({ type: 'decimal', precision: 28, scale: 8, default: 0 })
   credit_ngn: number;
 
+  @Column({ type: 'decimal', precision: 28, scale: 8, default: 0 })
+  debit_usd: number;
+
+  @Column({ type: 'decimal', precision: 28, scale: 8, default: 0 })
+  credit_usd: number;
+
   @Column({ type: 'text', nullable: true })
   asset: string;
 
