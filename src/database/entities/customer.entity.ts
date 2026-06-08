@@ -6,26 +6,21 @@ import {
   UpdateDateColumn,
   ManyToOne,
   JoinColumn,
+  OneToMany,
   Index,
+  Unique,
 } from 'typeorm';
 import { Developer } from './developer.entity';
 
-export enum KycType {
-  BVN = 'bvn',
-  NIN = 'nin',
-  DOCUMENT = 'document',
-  // LIVENESS = 'liveness',
+export enum CustomerStatus {
+  ACTIVE = 'active',
+  SUSPENDED = 'suspended',
+  BLOCKED = 'blocked',
 }
 
-export enum KycStatus {
-  PENDING = 'pending',
-  VERIFIED = 'verified',
-  FAILED = 'failed',
-  EXPIRED = 'expired',
-}
-
-@Entity('kyc_verifications')
-export class KycVerification {
+@Entity('customers')
+@Unique(['email'])
+export class Customer {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
@@ -33,21 +28,12 @@ export class KycVerification {
   @Column({ type: 'uuid' })
   developer_id: string;
 
-  @Column({ type: 'enum', enum: KycType })
-  type: KycType;
-
   @Index()
-  @Column({ type: 'text' })
-  status: string;
+  @Column({ type: 'text', nullable: true })
+  email: string;
 
   @Column({ type: 'text', nullable: true })
-  id_number: string;
-
-  @Column({ type: 'text', nullable: true })
-  document_url: string;
-
-  @Column({ type: 'text', nullable: true })
-  selfie_url: string;
+  phone: string;
 
   @Column({ type: 'text', nullable: true })
   first_name: string;
@@ -55,14 +41,15 @@ export class KycVerification {
   @Column({ type: 'text', nullable: true })
   last_name: string;
 
-  @Column({ type: 'date', nullable: true })
-  date_of_birth: Date;
-
-  @Column({ type: 'text', nullable: true })
-  provider_reference: string;
+  @Column({
+    type: 'enum',
+    enum: CustomerStatus,
+    default: CustomerStatus.ACTIVE,
+  })
+  status: CustomerStatus;
 
   @Column({ type: 'jsonb', default: {} })
-  provider_response: Record<string, any>;
+  metadata: Record<string, any>;
 
   @CreateDateColumn({ type: 'timestamptz' })
   created_at: Date;
@@ -71,7 +58,7 @@ export class KycVerification {
   updated_at: Date;
 
   // Relations
-  @ManyToOne(() => Developer, (dev) => dev.kyc_verifications)
+  @ManyToOne(() => Developer, (dev) => dev.customers, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'developer_id' })
   developer: Developer;
 }

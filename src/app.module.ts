@@ -9,7 +9,7 @@ import configuration from './config/configuration';
 
 // Database
 import { DatabaseModule } from './database/database.module';
-import { ApiKey } from './database/entities';
+import { ApiKey, Developer } from './database/entities';
 
 // Common
 import { GlobalExceptionFilter } from './common/filters/http-exception.filter';
@@ -28,6 +28,10 @@ import { WebhooksModule } from './modules/webhooks/webhooks.module';
 import { LedgerModule } from './modules/ledger/ledger.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { MiscModule } from './modules/misc/misc.module';
+import { CustomersModule } from './modules/customers/customers.module';
+import { PaymentSessionsModule } from './modules/payment-sessions/payment-sessions.module';
+import { InvoicesModule } from './modules/invoices/invoices.module';
+import { PaymentPagesModule } from './modules/payment-pages/payment-pages.module';
 
 @Module({
   imports: [
@@ -50,8 +54,8 @@ import { MiscModule } from './modules/misc/misc.module';
     // Database — TypeORM + Postgres (provider-agnostic)
     DatabaseModule,
 
-    // ApiKey entity needed by global guard
-    TypeOrmModule.forFeature([ApiKey]),
+    // Entities needed by the global ApiKeyGuard
+    TypeOrmModule.forFeature([ApiKey, Developer]),
 
     // Feature modules
     MailModule,
@@ -65,6 +69,10 @@ import { MiscModule } from './modules/misc/misc.module';
     LedgerModule,
     DashboardModule,
     MiscModule,
+    CustomersModule,
+    PaymentSessionsModule,
+    InvoicesModule,
+    PaymentPagesModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ApiKeyGuard },

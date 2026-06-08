@@ -24,6 +24,13 @@ export const CookieAuth = () => SetMetadata(AUTH_TYPE_KEY, 'cookie');
  */
 export const ApiKeyAuth = () => SetMetadata(AUTH_TYPE_KEY, 'apiKey');
 
+/**
+ * Mark a route/controller as accepting EITHER API key OR cookie JWT auth.
+ * ApiKeyGuard will try the Authorization header first, then fall back to
+ * the access_token cookie.
+ */
+export const DualAuth = () => SetMetadata(AUTH_TYPE_KEY, 'dual');
+
 // ── Param decorators ────────────────────────────────────────
 
 /**
@@ -34,10 +41,21 @@ export const ApiKeyAuth = () => SetMetadata(AUTH_TYPE_KEY, 'apiKey');
 export const GetDeveloper = createParamDecorator(
   (data: string, ctx: ExecutionContext) => {
     const request = ctx.switchToHttp().getRequest();
-    // console.log('request', request);
     const developer = request.developer || request.user;
-    console.log('developer', developer);
-    console.log('data', data);
     return data ? developer?.[data] : developer;
+  },
+);
+
+/**
+ * Extract the current environment mode ('live' | 'test') from the request.
+ * For cookie-auth routes: reads from the JWT claim.
+ * For API-key routes: reads the key's environment field.
+ * Defaults to 'test' when neither is set.
+ */
+export const GetMode = createParamDecorator(
+  (_data: unknown, ctx: ExecutionContext): 'live' | 'test' => {
+    const request = ctx.switchToHttp().getRequest();
+    const user = request.developer || request.user;
+    return user?.mode || request.apiKeyEnvironment || 'test';
   },
 );

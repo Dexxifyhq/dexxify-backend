@@ -1,4 +1,11 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  HttpException,
+  BadRequestException,
+  ConflictException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -62,6 +69,16 @@ export class MiscService {
       narration?: string;
     },
   ) {
+    const dev = await this.bankRepo.find({
+      where: {
+        developer_id: developerId,
+      },
+    });
+
+    if (dev.some((d) => d.account_number === bankData.accountNumber)) {
+      throw new ConflictException('Bank account already added');
+    }
+
     const url = `${this.breetApiUrl}/v1/payments/banks/add`;
     const headers = {
       'x-app-id': this.breetAppId,
@@ -87,9 +104,9 @@ export class MiscService {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(
-          `Breet API error: ${error.message || response.statusText}`,
-        );
+        const message = error.message || response.statusText;
+        this.logger.error(`Failed to add bank account: ${message}`);
+        throw new HttpException(message, response.status);
       }
 
       const result = await response.json();
@@ -106,10 +123,9 @@ export class MiscService {
         bank_name: result.data.bankName,
         currency: result.data.currency || 'ngn',
         disabled: result.data.disabled || false,
-        avatar: result.data.avatar,
         integration_id: result.data.integration,
         is_business: result.data.isBusiness || false,
-        narration: result.data.narration || bankData.narration,
+        primary: dev.length === 0 ? true : false,
         type: result.data.type || 'nuban',
       });
 
@@ -121,6 +137,7 @@ export class MiscService {
         local_id: savedBank.id,
       };
     } catch (error) {
+      if (error instanceof HttpException) throw error;
       this.logger.error(`Failed to add bank account: ${error.message}`);
       throw error;
     }
@@ -163,9 +180,9 @@ export class MiscService {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(
-          `Breet API error: ${error.message || response.statusText}`,
-        );
+        const message = error.message || response.statusText;
+        this.logger.error(`Failed to fetch bank by ID: ${message}`);
+        throw new HttpException(message, response.status);
       }
 
       const result = await response.json();
@@ -173,6 +190,7 @@ export class MiscService {
 
       return result;
     } catch (error) {
+      if (error instanceof HttpException) throw error;
       this.logger.error(`Failed to fetch bank by ID: ${error.message}`);
       throw error;
     }
@@ -198,9 +216,9 @@ export class MiscService {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(
-          `Breet API error: ${error.message || response.statusText}`,
-        );
+        const message = error.message || response.statusText;
+        this.logger.error(`Failed to fetch bank integrations: ${message}`);
+        throw new HttpException(message, response.status);
       }
 
       const result = await response.json();
@@ -208,6 +226,7 @@ export class MiscService {
 
       return result;
     } catch (error) {
+      if (error instanceof HttpException) throw error;
       this.logger.error(`Failed to fetch bank integrations: ${error.message}`);
       throw error;
     }
@@ -241,9 +260,9 @@ export class MiscService {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(
-          `Breet API error: ${error.message || response.statusText}`,
-        );
+        const message = error.message || response.statusText;
+        this.logger.error(`Failed to delete bank account: ${message}`);
+        throw new HttpException(message, response.status);
       }
 
       const result = await response.json();
@@ -253,6 +272,7 @@ export class MiscService {
 
       return result;
     } catch (error) {
+      if (error instanceof HttpException) throw error;
       this.logger.error(`Failed to delete bank account: ${error.message}`);
       throw error;
     }
@@ -284,9 +304,9 @@ export class MiscService {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(
-          `Breet API error: ${error.message || response.statusText}`,
-        );
+        const message = error.message || response.statusText;
+        this.logger.error(`Failed to verify bank account: ${message}`);
+        throw new HttpException(message, response.status);
       }
 
       const result = await response.json();
@@ -294,6 +314,7 @@ export class MiscService {
 
       return result;
     } catch (error) {
+      if (error instanceof HttpException) throw error;
       this.logger.error(`Failed to verify bank account: ${error.message}`);
       throw error;
     }
@@ -319,15 +340,16 @@ export class MiscService {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(
-          `Breet API error: ${error.message || response.statusText}`,
-        );
+        const message = error.message || response.statusText;
+        this.logger.error(`Failed to fetch deposit assets: ${message}`);
+        throw new HttpException(message, response.status);
       }
 
       const data = await response.json();
       // console.log('data', data);
       return data;
     } catch (error) {
+      if (error instanceof HttpException) throw error;
       this.logger.error(`Failed to fetch deposit assets: ${error.message}`);
       throw error;
     }
@@ -360,15 +382,16 @@ export class MiscService {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(
-          `Breet API error: ${error.message || response.statusText}`,
-        );
+        const message = error.message || response.statusText;
+        this.logger.error(`Failed to fetch withdrawal assets: ${message}`);
+        throw new HttpException(message, response.status);
       }
 
       const data = await response.json();
       console.log('data', data);
       return data;
     } catch (error) {
+      if (error instanceof HttpException) throw error;
       this.logger.error(`Failed to fetch withdrawal assets: ${error.message}`);
       throw error;
     }
@@ -414,9 +437,9 @@ export class MiscService {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(
-          `Breet API error: ${error.message || response.statusText}`,
-        );
+        const message = error.message || response.statusText;
+        this.logger.error(`Failed to fetch banks: ${message}`);
+        throw new HttpException(message, response.status);
       }
 
       const data = await response.json();
@@ -424,6 +447,7 @@ export class MiscService {
       // Monnify code is the bank code, our interest is in the bank code
       return data;
     } catch (error) {
+      if (error instanceof HttpException) throw error;
       this.logger.error(`Failed to fetch banks: ${error.message}`);
       throw error;
     }
@@ -484,9 +508,11 @@ export class MiscService {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(
-          `Breet API error: ${error.message || response.statusText}`,
+        const message = error.message || response.statusText;
+        this.logger.error(
+          `Failed to fetch crypto price for ${options.to}-${options.from}: ${message}`,
         );
+        throw new HttpException(message, response.status);
       }
 
       const price = await response.json();
@@ -497,6 +523,7 @@ export class MiscService {
 
       return price;
     } catch (error) {
+      if (error instanceof HttpException) throw error;
       this.logger.error(
         `Failed to fetch crypto price for ${options.to}-${options.from}: ${error.message}`,
       );
@@ -530,13 +557,16 @@ export class MiscService {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(
-          `Breet API error: ${error.message || response.statusText}`,
+        const message = error.message || response.statusText;
+        this.logger.error(
+          `Failed to calculate rate for ${assetId}: ${message}`,
         );
+        throw new HttpException(message, response.status);
       }
 
       return await response.json();
     } catch (error) {
+      if (error instanceof HttpException) throw error;
       this.logger.error(
         `Failed to calculate rate for ${assetId}: ${error.message}`,
       );
@@ -573,9 +603,9 @@ export class MiscService {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(
-          `Breet API error: ${error.message || response.statusText}`,
-        );
+        const message = error.message || response.statusText;
+        this.logger.error(`Failed to convert USD to ${bankId}: ${message}`);
+        throw new HttpException(message, response.status);
       }
 
       const result = await response.json();
@@ -585,6 +615,7 @@ export class MiscService {
       );
       return result;
     } catch (error) {
+      if (error instanceof HttpException) throw error;
       this.logger.error(`Failed to convert USD to ${bankId}: ${error.message}`);
       throw error;
     }
@@ -619,9 +650,9 @@ export class MiscService {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(
-          `Breet API error: ${error.message || response.statusText}`,
-        );
+        const message = error.message || response.statusText;
+        this.logger.error(`Failed to convert to USD: ${message}`);
+        throw new HttpException(message, response.status);
       }
 
       const result = await response.json();
@@ -631,6 +662,7 @@ export class MiscService {
       );
       return result;
     } catch (error) {
+      if (error instanceof HttpException) throw error;
       this.logger.error(`Failed to convert to USD: ${error.message}`);
       throw error;
     }

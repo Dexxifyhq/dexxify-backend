@@ -72,14 +72,14 @@ export class WalletsService {
   async create(developerId: string, dto: CreateWalletDto) {
     const existing = await this.walletRepo.findOne({
       where: {
-        developer_id: developerId,
+        // developer_id: developerId,
         label: dto.label,
       },
     });
 
     if (existing) {
       throw new BadRequestException(
-        `Wallet with label "${dto.label}" already exists for this developer.`,
+        `Wallet with label "${dto.label}" already exists for a developer.`,
       );
     }
 

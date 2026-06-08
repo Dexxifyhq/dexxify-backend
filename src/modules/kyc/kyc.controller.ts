@@ -6,7 +6,7 @@ import {
   VerifyDocumentDto,
   LivenessCheckDto,
 } from './dto';
-import { GetDeveloper } from '../../common/decorators';
+import { GetDeveloper, DualAuth } from '../../common/decorators';
 import {
   ApiOperation,
   ApiTags,
@@ -17,6 +17,7 @@ import {
 
 @ApiTags('KYC Verification')
 @ApiBearerAuth('api-key')
+@DualAuth()
 @Controller('kyc')
 export class KycController {
   constructor(private readonly kycService: KycService) {}
@@ -52,7 +53,7 @@ export class KycController {
   @ApiOperation({
     summary: 'Verify document',
     description:
-      'Verify government-issued identity documents (passport, drivers license, etc.)',
+      'Verify government-issued identity documents (passport, drivers license, CAC etc.)',
   })
   @ApiBody({ type: VerifyDocumentDto })
   @Post('document')
@@ -63,34 +64,26 @@ export class KycController {
     return this.kycService.verifyDocument(developerId, dto);
   }
 
-  @ApiOperation({
-    summary: 'Liveness check',
-    description:
-      'Perform biometric liveness check to verify user is physically present',
-  })
-  @ApiBody({ type: LivenessCheckDto })
-  @Post('liveness')
-  async livenessCheck(
-    @GetDeveloper('id') developerId: string,
-    @Body() dto: LivenessCheckDto,
-  ) {
-    return this.kycService.livenessCheck(developerId, dto);
-  }
+  // @ApiOperation({
+  //   summary: 'Liveness check',
+  //   description:
+  //     'Perform biometric liveness check to verify user is physically present',
+  // })
+  // @ApiBody({ type: LivenessCheckDto })
+  // @Post('liveness')
+  // async livenessCheck(
+  //   @GetDeveloper('id') developerId: string,
+  //   @Body() dto: LivenessCheckDto,
+  // ) {
+  // return this.kycService.livenessCheck(developerId, dto);
+  // }
 
   @ApiOperation({
     summary: 'Get KYC status',
     description: 'Retrieve KYC verification status for a specific user',
   })
-  @ApiParam({
-    name: 'user_id',
-    description: 'User unique identifier',
-    example: 'user_123456',
-  })
-  @Get(':user_id/status')
-  async getStatus(
-    @GetDeveloper('id') developerId: string,
-    @Param('user_id') userId: string,
-  ) {
-    return this.kycService.getStatus(developerId, userId);
+  @Get('status')
+  async getStatus(@GetDeveloper('id') developerId: string) {
+    return this.kycService.getStatus(developerId);
   }
 }

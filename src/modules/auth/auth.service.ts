@@ -389,9 +389,21 @@ export class AuthService {
 
   // ── Refresh, Logout, Profile ──────────────────────────
 
-  async refresh(developer: Developer, res: Response) {
-    this.setTokenCookies(res, developer);
+  async refresh(
+    developer: Developer & { mode?: 'live' | 'test' },
+    res: Response,
+  ) {
+    this.setTokenCookies(res, developer, developer.mode ?? 'test');
     return {
+      developer: this.sanitizeDeveloper(developer),
+    };
+  }
+
+  async switchMode(developer: Developer, mode: 'live' | 'test', res: Response) {
+    const tokens = this.setTokenCookies(res, developer, mode);
+    return {
+      mode,
+      access_token: tokens.access_token,
       developer: this.sanitizeDeveloper(developer),
     };
   }
@@ -415,12 +427,12 @@ export class AuthService {
     return { message: 'Logged out successfully.' };
   }
 
-  async getProfile(developerId: string) {
-    const developer = await this.developerRepo.findOne({
-      where: { id: developerId },
+  async getProfile(developer: any) {
+    const dev = await this.developerRepo.findOne({
+      where: { id: developer.id },
     });
-    if (!developer) throw new UnauthorizedException('Developer not found.');
-    return this.sanitizeDeveloper(developer);
+    if (!dev) throw new UnauthorizedException('Developer not found.');
+    return this.sanitizeDeveloper({ ...dev, mode: developer.mode });
   }
 
   // ── Internal helpers ──────────────────────────────────
@@ -457,8 +469,12 @@ export class AuthService {
     );
   }
 
-  private setTokenCookies(res: Response, developer: Developer) {
-    const payload = { sub: developer.id, email: developer.email };
+  private setTokenCookies(
+    res: Response,
+    developer: Developer,
+    mode: 'live' | 'test' = 'test',
+  ) {
+    const payload = { sub: developer.id, email: developer.email, mode };
 
     const accessToken = this.jwtService.sign({ ...payload, type: 'access' }, {
       secret: this.jwtSecret,
@@ -507,7 +523,7 @@ export class AuthService {
     }
   }
 
-  private sanitizeDeveloper(developer: Developer) {
+  private sanitizeDeveloper(developer: any) {
     const { password_hash, ...safe } = developer;
     return safe;
   }

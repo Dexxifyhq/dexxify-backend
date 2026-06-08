@@ -18,7 +18,7 @@ import {
   InitiateStableCoinWithdrawalDto,
   InitiateFiatWithdrawalDto,
 } from './dto';
-import { GetDeveloper } from '../../common/decorators';
+import { GetDeveloper, DualAuth } from '../../common/decorators';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -77,6 +77,7 @@ export class UpdateWalletAutoSettlementDto {
 
 @ApiTags('Wallets')
 @ApiBearerAuth('api-key')
+@DualAuth()
 @Controller('wallets')
 export class WalletsController {
   constructor(private readonly walletsService: WalletsService) {}

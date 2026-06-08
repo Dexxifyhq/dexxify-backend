@@ -15,7 +15,7 @@ import {
 import { WebhooksService } from './webhooks.service';
 import { BreetWebhooksService } from './breet-webhooks.service';
 import { CreateWebhookDto } from './dto';
-import { GetDeveloper, Public } from '../../common/decorators';
+import { GetDeveloper, Public, DualAuth } from '../../common/decorators';
 import {
   ApiOperation,
   ApiTags,
@@ -28,6 +28,7 @@ import type { Request } from 'express';
 
 @ApiTags('Webhooks')
 @ApiBearerAuth('api-key')
+@DualAuth()
 @Controller('webhooks')
 export class WebhooksController {
   constructor(private readonly webhooksService: WebhooksService) {}

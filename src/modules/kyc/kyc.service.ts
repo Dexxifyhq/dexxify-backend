@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  Logger,
+  BadRequestException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -19,10 +24,6 @@ import {
 @Injectable()
 export class KycService {
   private readonly logger = new Logger(KycService.name);
-  private readonly BVN_FEE = 150;
-  private readonly NIN_FEE = 150;
-  private readonly DOCUMENT_FEE = 500;
-  private readonly LIVENESS_FEE = 400;
 
   private readonly koraSecretKey: string;
   private readonly koraEncryptionKey: string;
@@ -45,52 +46,53 @@ export class KycService {
   }
 
   async verifyBvn(developerId: string, dto: VerifyBvnDto) {
+    const url = 'https://api.korapay.com/merchant/api/v1/identities/ng/bvn';
     return this.executeVerification(developerId, {
       type: KycType.BVN,
-      external_user_id: dto.external_user_id,
       id_number: dto.bvn,
       first_name: dto.first_name,
       last_name: dto.last_name,
       date_of_birth: dto.date_of_birth,
-      fee: this.BVN_FEE,
+      kora_url: url,
     });
   }
 
   async verifyNin(developerId: string, dto: VerifyNinDto) {
+    const url = 'https://api.korapay.com/merchant/api/v1/identities/ng/nin';
+
     return this.executeVerification(developerId, {
       type: KycType.NIN,
-      external_user_id: dto.external_user_id,
       id_number: dto.nin,
       first_name: dto.first_name,
       last_name: dto.last_name,
-      fee: this.NIN_FEE,
+      kora_url: url,
     });
   }
 
   async verifyDocument(developerId: string, dto: VerifyDocumentDto) {
+    const url = 'https://api.korapay.com/merchant/api/v1/identities/ng/cac';
+
     return this.executeVerification(developerId, {
       type: KycType.DOCUMENT,
-      external_user_id: dto.external_user_id,
       document_url: dto.document_url,
       first_name: dto.first_name,
       last_name: dto.last_name,
-      fee: this.DOCUMENT_FEE,
+      kora_url: url,
     });
   }
 
-  async livenessCheck(developerId: string, dto: LivenessCheckDto) {
-    return this.executeVerification(developerId, {
-      type: KycType.LIVENESS,
-      external_user_id: dto.external_user_id,
-      selfie_url: dto.selfie_url,
-      document_url: dto.document_url,
-      fee: this.LIVENESS_FEE,
-    });
-  }
+  // async livenessCheck(developerId: string, dto: LivenessCheckDto) {
+  //   return this.executeVerification(developerId, {
+  //     type: KycType.LIVENESS,
+  //     selfie_url: dto.selfie_url,
+  //     document_url: dto.document_url,
+  //     fee: this.LIVENESS_FEE,
+  //   });
+  // }
 
-  async getStatus(developerId: string, externalUserId: string) {
+  async getStatus(developerId: string) {
     const verifications = await this.kycRepo.find({
-      where: { developer_id: developerId, external_user_id: externalUserId },
+      where: { developer_id: developerId },
       order: { created_at: 'DESC' },
     });
 
@@ -107,7 +109,6 @@ export class KycService {
     );
 
     return {
-      external_user_id: externalUserId,
       overall_status: allVerified
         ? 'verified'
         : anyFailed
@@ -119,8 +120,6 @@ export class KycService {
         id: v.id,
         type: v.type,
         status: v.status,
-        confidence_score: v.confidence_score,
-        verified_at: v.verified_at,
         created_at: v.created_at,
       })),
     };
@@ -132,80 +131,88 @@ export class KycService {
     developerId: string,
     params: {
       type: KycType;
-      external_user_id: string;
       id_number?: string;
       document_url?: string;
       selfie_url?: string;
       first_name?: string;
       last_name?: string;
       date_of_birth?: string;
-      fee: number;
+      kora_url: string;
     },
   ) {
     const koraResult = await this.callKoraKyc(params);
 
     const verification = this.kycRepo.create({
       developer_id: developerId,
-      external_user_id: params.external_user_id,
       type: params.type,
-      status: koraResult.status as KycStatus,
       id_number: params.id_number,
       document_url: params.document_url,
+      status: koraResult.status,
       selfie_url: params.selfie_url,
       first_name: params.first_name,
       last_name: params.last_name,
       date_of_birth: params.date_of_birth
         ? new Date(params.date_of_birth)
         : undefined,
-      provider_reference: koraResult.reference,
-      provider_response: koraResult.raw,
-      confidence_score: koraResult.confidence,
-      verified_at: koraResult.status === 'verified' ? new Date() : undefined,
+      provider_reference: koraResult.data?.reference,
+      provider_response: koraResult.data,
     });
 
     const saved = await this.kycRepo.save(verification);
 
-    // Record fee
-    // await this.ledgerRepo.save(
-    //   this.ledgerRepo.create({
-    //     developer_id: developerId,
-    //     tx_type: TxType.FEE,
-    //     reference_type: 'kyc',
-    //     reference_id: saved.id,
-    //     debit: params.fee,
-    //     credit: 0,
-    //     asset: 'NGN',
-    //     description: `KYC ${params.type} verification fee`,
-    //   }),
-    // );
-
-    return saved;
+    return {
+      status: koraResult.status,
+      message: koraResult.message,
+      data: koraResult.data,
+    };
   }
 
   // ── Kora KYC stub ────────────────────────────────────────
 
-  private async callKoraKyc(params: any): Promise<{
-    status: string;
-    reference: string;
-    confidence: number;
-    raw: any;
-  }> {
-    // TODO: Replace with actual Kora Identity API calls
-    // BVN: POST https://api.korapay.com/merchant/api/v1/identity/bvn
-    // NIN: POST https://api.korapay.com/merchant/api/v1/identity/nin
-    // Headers: { Authorization: `Bearer ${this.koraSecretKey}` }
-    //
-    // Example request body for BVN:
-    // { bvn: "12345678901", first_name: "John", last_name: "Doe" }
-    //
-    // Use this.koraEncryptionKey if Kora requires payload encryption
+  private async callKoraKyc(params: any) {
+    const { bvn, first_name, last_name, date_of_birth, kora_url } = params;
 
-    this.logger.warn('Using stub Kora KYC — implement actual API call');
-    return {
-      status: 'verified',
-      reference: `kora_${Date.now()}`,
-      confidence: 99.5,
-      raw: { stub: true, type: params.type, provider: 'kora' },
-    };
+    try {
+      // console.log(this.koraSecretKey);
+      if (!this.koraSecretKey) {
+        throw new Error('Kora configuration missing');
+      }
+
+      // Kora NIN verification API endpoint
+      const response = await fetch(kora_url, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${this.koraSecretKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: bvn,
+          verification_consent: true,
+          validation: { first_name, last_name, date_of_birth },
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new BadRequestException(result.message);
+      }
+
+      const { image, ...newResult } = result.data;
+
+      return {
+        status: result.status,
+        message: result.message,
+        data: newResult,
+      };
+    } catch (error) {
+      if (error.message.includes('issue with your input')) {
+        throw new BadRequestException(error.message);
+      }
+      if (error.message.includes('not found')) {
+        throw new NotFoundException(error.message);
+      }
+      throw new BadRequestException(error.message || 'Verification failed');
+    }
   }
 }

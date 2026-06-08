@@ -5,9 +5,11 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { ApiKey } from '../../database/entities';
+import { ApiKey, Developer, DeveloperStatus } from '../../database/entities';
 import { IS_PUBLIC_KEY, AUTH_TYPE_KEY } from '../decorators';
 import { hashApiKey } from '../utils';
 
@@ -16,35 +18,49 @@ export class ApiKeyGuard implements CanActivate {
   constructor(
     @InjectRepository(ApiKey)
     private readonly apiKeyRepo: Repository<ApiKey>,
+    @InjectRepository(Developer)
+    private readonly developerRepo: Repository<Developer>,
     private readonly reflector: Reflector,
+    private readonly configService: ConfigService,
+    private readonly jwtService: JwtService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    // Skip if route is public
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
       context.getHandler(),
       context.getClass(),
     ]);
     if (isPublic) return true;
 
-    // Skip if route explicitly uses cookie auth (dashboard/auth routes)
     const authType = this.reflector.getAllAndOverride<string>(AUTH_TYPE_KEY, [
       context.getHandler(),
       context.getClass(),
     ]);
+
+    // Cookie-only routes — Passport JWT guard handles them
     if (authType === 'cookie') return true;
 
-    // This is an API key route — extract from Authorization header
     const request = context.switchToHttp().getRequest();
     const authHeader = request.headers['authorization'];
 
+    // ── Dual auth: API key OR cookie JWT ────────────────
+    if (authType === 'dual') {
+      if (authHeader) {
+        return this.validateApiKey(request, authHeader);
+      }
+      return this.validateCookieJwt(request);
+    }
+
+    // ── Default: API key only ────────────────────────────
     if (!authHeader) {
       throw new UnauthorizedException(
         'Missing authorization. Include Authorization: Bearer <api_key> header.',
       );
     }
+    return this.validateApiKey(request, authHeader);
+  }
 
-    // Support "Bearer dex_live_..." format
+  private async validateApiKey(request: any, authHeader: string): Promise<boolean> {
     const apiKey = authHeader.startsWith('Bearer ')
       ? authHeader.slice(7)
       : authHeader;
@@ -54,7 +70,6 @@ export class ApiKeyGuard implements CanActivate {
     }
 
     const keyHash = hashApiKey(apiKey);
-
     const keyRecord = await this.apiKeyRepo.findOne({
       where: { key_hash: keyHash, is_active: true },
       relations: ['developer'],
@@ -81,13 +96,54 @@ export class ApiKeyGuard implements CanActivate {
       throw new UnauthorizedException('Developer account is not active.');
     }
 
-    // Fire and forget — update last used
     this.apiKeyRepo.update(keyRecord.id, { last_used_at: new Date() });
 
-    // Attach to request (same property name so @GetDeveloper works for both)
     request.developer = keyRecord.developer;
     request.apiKeyEnvironment = keyRecord.environment;
 
     return true;
+  }
+
+  private async validateCookieJwt(request: any): Promise<boolean> {
+    const token = request?.cookies?.access_token;
+
+    if (!token) {
+      throw new UnauthorizedException(
+        'Missing authorization. Provide an API key or a valid session cookie.',
+      );
+    }
+
+    try {
+      const secret =
+        this.configService.get<string>('jwt.secret') || 'fallback-secret';
+
+      const payload = this.jwtService.verify<{
+        sub: string;
+        email: string;
+        type: string;
+        mode?: 'live' | 'test';
+      }>(token, { secret });
+
+      if (payload.type !== 'access') {
+        throw new UnauthorizedException('Invalid token type.');
+      }
+
+      const developer = await this.developerRepo.findOne({
+        where: { id: payload.sub, status: DeveloperStatus.ACTIVE },
+      });
+
+      if (!developer) {
+        throw new UnauthorizedException('Invalid or inactive account.');
+      }
+
+      request.developer = Object.assign(developer, {
+        mode: payload.mode ?? 'test',
+      });
+
+      return true;
+    } catch (err) {
+      if (err instanceof UnauthorizedException) throw err;
+      throw new UnauthorizedException('Invalid or expired session token.');
+    }
   }
 }

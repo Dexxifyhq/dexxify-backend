@@ -8,7 +8,7 @@ import {
   Min,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { WalletAsset } from '../../wallets/dto';
+import { WalletAsset, WalletNetwork } from 'src/database/entities';
 
 export class CreateOnrampDto {
   @ApiProperty({

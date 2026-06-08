@@ -33,7 +33,12 @@ export class JwtRefreshStrategy extends PassportStrategy(
     });
   }
 
-  async validate(payload: { sub: string; email: string; type: string }) {
+  async validate(payload: {
+    sub: string;
+    email: string;
+    type: string;
+    mode?: 'live' | 'test';
+  }) {
     if (payload.type !== 'refresh') {
       throw new UnauthorizedException('Invalid token type.');
     }
@@ -46,6 +51,6 @@ export class JwtRefreshStrategy extends PassportStrategy(
       throw new UnauthorizedException('Invalid or inactive account.');
     }
 
-    return developer;
+    return Object.assign(developer, { mode: payload.mode ?? 'test' });
   }
 }

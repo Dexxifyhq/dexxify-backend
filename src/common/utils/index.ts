@@ -87,3 +87,16 @@ export function hashOtp(code: string): string {
 export function generateUniqueId(): string {
   return randomBytes(12).toString('hex'); // 12 bytes = 24 hex chars
 }
+
+/**
+ * Generate a URL-safe slug from a title with a 4-char random hex suffix.
+ * e.g. "Summer Sale Checkout" → "summer-sale-checkout-a3f9"
+ */
+export function generateSlug(title: string): string {
+  const base = title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  const suffix = randomBytes(2).toString('hex'); // 4-char hex
+  return `${base}-${suffix}`;
+}

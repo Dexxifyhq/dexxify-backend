@@ -45,9 +45,9 @@ export default () => ({
   kora: {
     secretKey: process.env.KORA_SECRET_KEY,
     publicKey: process.env.KORA_PUBLIC_KEY,
+    encryptionKey: process.env.KORA_ENCRYPTION_KEY,
     testSecretKey: process.env.KORA_TEST_SECRET_KEY,
     testPublicKey: process.env.KORA_TEST_PUBLIC_KEY,
-    encryptionKey: process.env.KORA_ENCRYPTION_KEY,
     testEncryptionKey: process.env.KORA_TEST_ENCRYPTION_KEY,
   },
 

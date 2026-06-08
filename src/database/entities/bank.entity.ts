@@ -22,7 +22,7 @@ import { Developer } from './developer.entity';
 // }
 
 @Entity('banks')
-@Unique(['breet_bank_id', 'id', 'account_number'])
+@Index(['developer_id', 'account_number'])
 export class Bank {
   @PrimaryColumn('text')
   id: string;
@@ -50,9 +50,6 @@ export class Bank {
   @Column({ type: 'boolean', default: false })
   auto_settlement: boolean;
 
-  @Column({ type: 'text', nullable: true })
-  avatar: string;
-
   @Column({ type: 'text' })
   bank_name: string;
 
@@ -68,14 +65,11 @@ export class Bank {
   @Column({ type: 'boolean', default: false })
   is_business: boolean;
 
-  @Column({ type: 'text', nullable: true })
-  narration: string;
-
   @Column({ type: 'text' })
   type: string;
 
-  //   @Column({ type: 'enum', enum: BankType, default: BankType.NUBAN })
-  //   type: BankType;
+  @Column({ type: 'boolean', default: true })
+  primary: boolean;
 
   @CreateDateColumn({ type: 'timestamptz' })
   created_at: Date;

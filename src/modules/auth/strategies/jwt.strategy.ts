@@ -28,7 +28,12 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     });
   }
 
-  async validate(payload: { sub: string; email: string; type: string }) {
+  async validate(payload: {
+    sub: string;
+    email: string;
+    type: string;
+    mode?: 'live' | 'test';
+  }) {
     if (payload.type !== 'access') {
       throw new UnauthorizedException('Invalid token type.');
     }
@@ -41,6 +46,6 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
       throw new UnauthorizedException('Invalid or inactive account.');
     }
 
-    return developer;
+    return Object.assign(developer, { mode: payload.mode ?? 'test' });
   }
 }

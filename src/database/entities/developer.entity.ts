@@ -16,6 +16,10 @@ import { WebhookEndpoint } from './webhook.entity';
 import { LedgerEntry } from './ledger-entry.entity';
 import { Bank } from './bank.entity';
 import { WithdrawalWallet } from './withdrawal-wallet.entity';
+import { Customer } from './customer.entity';
+import { PaymentSession } from './payment-session.entity';
+import { Invoice } from './invoice.entity';
+import { PaymentPage } from './payment-page.entity';
 
 export enum DeveloperStatus {
   ACTIVE = 'active',
@@ -116,4 +120,16 @@ export class Developer {
 
   @OneToMany(() => WithdrawalWallet, (w) => w.developer)
   withdrawal_wallets: WithdrawalWallet[];
+
+  @OneToMany(() => Customer, (c) => c.developer)
+  customers: Customer[];
+
+  @OneToMany(() => PaymentSession, (ps) => ps.developer)
+  payment_sessions: PaymentSession[];
+
+  @OneToMany(() => Invoice, (inv) => inv.developer)
+  invoices: Invoice[];
+
+  @OneToMany(() => PaymentPage, (pp) => pp.developer)
+  payment_pages: PaymentPage[];
 }

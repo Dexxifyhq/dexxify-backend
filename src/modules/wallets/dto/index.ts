@@ -10,12 +10,12 @@ import {
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
-export enum WalletAsset {
-  BTC = 'BTC',
-  USDT = 'USDT',
-  ETH = 'ETH',
-  USDC = 'USDC',
-}
+// export enum WalletAsset {
+//   BTC = 'BTC',
+//   USDT = 'USDT',
+//   ETH = 'ETH',
+//   USDC = 'USDC',
+// }
 
 export enum WithdrawalNetwork {
   ERC20 = 'ERC20',

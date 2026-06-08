@@ -19,6 +19,7 @@ import {
   ResendOtpDto,
   ForgotPasswordDto,
   ResetPasswordDto,
+  SwitchModeDto,
 } from './dto';
 import { Public, CookieAuth, GetDeveloper } from '../../common/decorators';
 import { ApiOperation, ApiTags, ApiBearerAuth } from '@nestjs/swagger';
@@ -117,6 +118,22 @@ export class AuthController {
   }
 
   @ApiOperation({
+    summary: 'Switch environment mode',
+    description:
+      'Switch between live and test mode. Issues a new JWT with the updated mode claim and refreshes the cookie.',
+  })
+  @UseGuards(AuthGuard('jwt'))
+  @Post('mode')
+  @HttpCode(HttpStatus.OK)
+  async switchMode(
+    @GetDeveloper() developer: any,
+    @Body() dto: SwitchModeDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    return this.authService.switchMode(developer, dto.mode, res);
+  }
+
+  @ApiOperation({
     summary: 'Logout',
     description: 'Clear authentication cookies and logout developer',
   })
@@ -135,7 +152,7 @@ export class AuthController {
   // @ApiBearerAuth('api-key')
   @UseGuards(AuthGuard('jwt'))
   @Get('profile')
-  async getProfile(@GetDeveloper('id') developerId: string) {
-    return this.authService.getProfile(developerId);
+  async getProfile(@GetDeveloper() developer: any) {
+    return this.authService.getProfile(developer);
   }
 }

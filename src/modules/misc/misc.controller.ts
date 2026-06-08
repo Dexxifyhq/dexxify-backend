@@ -10,7 +10,7 @@ import {
 } from '@nestjs/common';
 import { MiscService } from './misc.service';
 import { GetRateQueryDto, AddBankDto, VerifyBankAccountDto } from './dto';
-import { GetDeveloper, Public } from '../../common/decorators';
+import { GetDeveloper, Public, DualAuth } from '../../common/decorators';
 import {
   ApiBearerAuth,
   ApiBody,
@@ -21,6 +21,7 @@ import {
 } from '@nestjs/swagger';
 
 @ApiTags('Misc - Banks & Assets')
+@DualAuth()
 @Controller('misc')
 export class MiscController {
   constructor(private readonly miscService: MiscService) {}
@@ -30,7 +31,6 @@ export class MiscController {
     description:
       'Returns list of supported Nigerian banks (bank code + name). Cached for 24 hours.',
   })
-  @ApiBearerAuth('api-key')
   @Get('banks')
   async getBanks() {
     return this.miscService.getBanks();
@@ -40,7 +40,6 @@ export class MiscController {
     summary: 'Add bank account',
     description: 'Add a validated NGN or GHS bank account to your integration',
   })
-  @ApiBearerAuth('api-key')
   @Post('banks')
   async addBank(
     @GetDeveloper('id') developerId: string,
@@ -54,7 +53,6 @@ export class MiscController {
     description:
       'Retrieve all saved bank accounts for the authenticated developer from local database',
   })
-  @ApiBearerAuth('api-key')
   @Get('banks/saved')
   async getSavedBanks(@GetDeveloper('id') developerId: string) {
     return this.miscService.getSavedBanks(developerId);
@@ -69,7 +67,6 @@ export class MiscController {
     description: 'Bank account number',
     example: '3154021148',
   })
-  @ApiBearerAuth('api-key')
   @Get('banks/saved/:accountNumber')
   async getSavedBankById(
     @GetDeveloper('id') developerId: string,
@@ -85,7 +82,6 @@ export class MiscController {
     summary: 'Get Breet bank integration',
     description: 'Fetch all banks on your integration from Breet API',
   })
-  @ApiBearerAuth('api-key')
   @Get('banks/breet')
   async getBreetBankIntegration() {
     return this.miscService.getBreetBankIntegration();
@@ -100,7 +96,6 @@ export class MiscController {
     description: 'Breet bank unique identifier',
     example: '69737920df8b52679a8b198e',
   })
-  @ApiBearerAuth('api-key')
   @Get('banks/:bankId')
   async getBreetBankById(@Param('bankId') bankId: string) {
     return this.miscService.getBreetBankById(bankId);
@@ -116,7 +111,6 @@ export class MiscController {
     description: 'Breet bank unique identifier',
     example: '69737920df8b52679a8b198e',
   })
-  @ApiBearerAuth('api-key')
   @Delete('banks/:bankId')
   async deleteBank(@Param('bankId') bankId: string) {
     return this.miscService.deleteBank(bankId);
@@ -127,18 +121,17 @@ export class MiscController {
     description:
       'Verify bank account details before adding. Returns account name if valid.',
   })
-  @ApiBearerAuth('api-key')
   @Post('banks/verify')
   async verifyBankAccount(@Body() dto: VerifyBankAccountDto) {
     return this.miscService.verifyBankAccount(dto);
   }
 
+  @Public()
   @ApiOperation({
     summary: 'Get deposit assets',
     description:
       'Returns supported crypto assets for deposit (test and mainnet)',
   })
-  @ApiBearerAuth('api-key')
   @Get('deposit-assets')
   async getSupportedDepositAssets() {
     return this.miscService.getSupportedDepositAssets();
@@ -149,7 +142,6 @@ export class MiscController {
     description:
       'Returns supported crypto assets for withdrawal to external addresses',
   })
-  @ApiBearerAuth('api-key')
   @Get('withdrawal-assets')
   async getSupportedWithdrawalAssets() {
     return this.miscService.getSupportedWithdrawalAssets();
@@ -159,7 +151,6 @@ export class MiscController {
     summary: 'Get crypto prices',
     description: 'Get global market prices for crypto-fiat pairs from Breet',
   })
-  @ApiBearerAuth('api-key')
   @Post('crypto-prices')
   async getCryptoPrices(@Body() query: GetRateQueryDto) {
     return this.miscService.getCryptoPrices(query);
@@ -170,7 +161,6 @@ export class MiscController {
     description:
       "Calculate crypto amount and get NGN/GHS rate using Breet's actual conversion rates",
   })
-  @ApiBearerAuth('api-key')
   @Post('rate-calculator')
   @ApiBody({
     schema: {
@@ -198,7 +188,6 @@ export class MiscController {
     description:
       'Convert USD balance to local fiat (NGN/GHS) and optionally credit to saved bank account',
   })
-  @ApiBearerAuth('api-key')
   @Post('convert/usd-to-fiat')
   @ApiBody({
     schema: {
@@ -226,7 +215,6 @@ export class MiscController {
     description:
       'Convert local fiat (NGN/GHS) to USD and optionally withdraw to crypto address',
   })
-  @ApiBearerAuth('api-key')
   @Post('convert/fiat-to-usd')
   @ApiBody({
     schema: {

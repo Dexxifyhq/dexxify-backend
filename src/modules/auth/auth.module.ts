@@ -14,6 +14,7 @@ import { Developer, ApiKey, OtpCode } from '../../database/entities';
     TypeOrmModule.forFeature([Developer, ApiKey, OtpCode]),
     PassportModule,
     JwtModule.registerAsync({
+      global: true,
       imports: [ConfigModule],
       useFactory: (config: ConfigService) => ({
         secret: config.get<string>('jwt.secret') || 'fallback-secret',

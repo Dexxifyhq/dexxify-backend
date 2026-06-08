@@ -13,9 +13,35 @@ import { Developer } from './developer.entity';
 
 export enum WalletAsset {
   BTC = 'BTC',
+  BCH = 'BCH',
+  BNB = 'BNB',
+  DOGE = 'DOGE',
+  LTC = 'LTC',
+  TRX = 'TRX',
+  XRP = 'XRP',
+  AVAX = 'AVAX',
+  TON = 'TON',
   USDT = 'USDT',
   ETH = 'ETH',
   USDC = 'USDC',
+  SOL = 'SOL',
+}
+
+export enum WalletNetwork {
+  BITCOIN_CASH = 'Bitcoin_Cash',
+  BINANCE_SMART_CHAIN = 'Binance_Smart_Chain',
+  BITCOIN = 'Bitcoin',
+  DOGECOIN = 'Dogecoin',
+  ETHEREUM = 'Ethereum',
+  LITECOIN = 'Litecoin',
+  SOLANA = 'Solana',
+  TRON = 'Tron',
+  BASE = 'Base',
+  AVALANCHE = 'Avalanche',
+  POLYGON = 'Polygon',
+  ARBITRUM = 'Arbitrum',
+  TON = 'TON',
+  XRP = 'XRP',
 }
 
 export enum WalletStatus {

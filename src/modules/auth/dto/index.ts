@@ -105,6 +105,17 @@ export class ForgotPasswordDto {
   email: string;
 }
 
+export class SwitchModeDto {
+  @ApiProperty({
+    description: 'Target environment mode',
+    enum: ['live', 'test'],
+    example: 'live',
+  })
+  @IsString()
+  @IsNotEmpty()
+  mode: 'live' | 'test';
+}
+
 export class ResetPasswordDto {
   @ApiProperty({
     description: 'User email address',

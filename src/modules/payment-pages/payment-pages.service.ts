@@ -1,0 +1,294 @@
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  ConflictException,
+} from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { InjectRepository } from '@nestjs/typeorm';
+import { In, Repository } from 'typeorm';
+import {
+  PaymentPage,
+  PaymentPageStatus,
+  PaymentSession,
+  PaymentSessionStatus,
+  Customer,
+  Bank,
+} from '../../database/entities';
+import { CustomerWalletsService } from '../customers/customer-wallets.service';
+import {
+  parsePagination,
+  buildPaginationMeta,
+  generateSlug,
+  generateUniqueId,
+} from '../../common/utils';
+import {
+  CreatePaymentPageDto,
+  UpdatePaymentPageDto,
+  PaymentPageQueryDto,
+  PublicPayDto,
+} from './dto';
+
+@Injectable()
+export class PaymentPagesService {
+  private readonly frontendUrl: string;
+
+  constructor(
+    @InjectRepository(PaymentPage)
+    private readonly pageRepo: Repository<PaymentPage>,
+    @InjectRepository(Customer)
+    private readonly customerRepo: Repository<Customer>,
+    @InjectRepository(PaymentSession)
+    private readonly sessionRepo: Repository<PaymentSession>,
+    @InjectRepository(Bank)
+    private readonly bankRepo: Repository<Bank>,
+    private readonly customerWalletsService: CustomerWalletsService,
+    private readonly config: ConfigService,
+  ) {
+    this.frontendUrl = this.config.get<string>('frontend.url') || '';
+  }
+
+  async create(developerId: string, dto: CreatePaymentPageDto) {
+    if (!dto.amount) {
+      throw new BadRequestException('amount is required.');
+    }
+
+    if (dto.auto_settlement) {
+      const bankAccount = await this.bankRepo.findOne({
+        where: { developer_id: developerId, primary: true },
+      });
+      if (!bankAccount) {
+        throw new BadRequestException(
+          'Auto settlement is enabled but no bank account is configured for this merchant.',
+        );
+      }
+    }
+
+    const slug = await this.resolveUniqueSlug(dto.slug || dto.title);
+
+    const page = this.pageRepo.create({
+      developer_id: developerId,
+      title: dto.title,
+      description: dto.description || null,
+      slug,
+      currency: dto.currency?.toUpperCase() || 'USD',
+      amount: dto.amount ?? null,
+      status: dto.status,
+      auto_settlement: dto.auto_settlement ?? false,
+    });
+
+    const saved = await this.pageRepo.save(page);
+    return this.formatWithUrl(saved);
+  }
+
+  async findAll(developerId: string, query: PaymentPageQueryDto) {
+    const { page, limit, offset } = parsePagination(query);
+
+    const qb = this.pageRepo
+      .createQueryBuilder('pp')
+      .where('pp.developer_id = :developerId', { developerId });
+
+    if (query.status)
+      qb.andWhere('pp.status = :status', { status: query.status });
+
+    qb.orderBy('pp.created_at', 'DESC').skip(offset).take(limit);
+
+    const [data, total] = await qb.getManyAndCount();
+
+    return {
+      data: data.map((p) => this.formatWithUrl(p)),
+      meta: buildPaginationMeta(total, page, limit),
+    };
+  }
+
+  async findOne(developerId: string, pageId: string) {
+    const page = await this.pageRepo.findOne({
+      where: { id: pageId, developer_id: developerId },
+    });
+    if (!page) throw new NotFoundException('Payment page not found.');
+    return this.formatWithUrl(page);
+  }
+
+  async update(developerId: string, pageId: string, dto: UpdatePaymentPageDto) {
+    const page = await this.pageRepo.findOne({
+      where: { id: pageId, developer_id: developerId },
+    });
+    if (!page) throw new NotFoundException('Payment page not found.');
+
+    Object.assign(page, dto);
+    const saved = await this.pageRepo.save(page);
+    return this.formatWithUrl(saved);
+  }
+
+  async remove(developerId: string, pageId: string) {
+    const page = await this.pageRepo.findOne({
+      where: { id: pageId, developer_id: developerId },
+    });
+    if (!page) throw new NotFoundException('Payment page not found.');
+    await this.pageRepo.remove(page);
+    return { message: 'Payment page deleted.' };
+  }
+
+  async getSessions(
+    developerId: string,
+    pageId: string,
+    query: PaymentPageQueryDto,
+  ) {
+    await this.findOne(developerId, pageId);
+
+    const { page, limit, offset } = parsePagination(query);
+
+    const [data, total] = await this.sessionRepo
+      .createQueryBuilder('ps')
+      .where('ps.payment_page_id = :pageId', { pageId })
+      .orderBy('ps.created_at', 'DESC')
+      .skip(offset)
+      .take(limit)
+      .getManyAndCount();
+
+    return { data, meta: buildPaginationMeta(total, page, limit) };
+  }
+
+  // ── Public ────────────────────────────────────────────
+
+  async getPublicPage(slug: string) {
+    const page = await this.pageRepo.findOne({ where: { slug } });
+    if (!page || page.status !== PaymentPageStatus.ACTIVE) {
+      throw new NotFoundException(
+        'Payment page not found or no longer active.',
+      );
+    }
+    return this.toPublicView(page);
+  }
+
+  async pay(slug: string, dto: PublicPayDto) {
+    const page = await this.pageRepo.findOne({ where: { slug } });
+
+    if (!page || page.status !== PaymentPageStatus.ACTIVE) {
+      throw new NotFoundException(
+        'Payment page not found or no longer active.',
+      );
+    }
+
+    let bankAccount: Bank | null = null;
+    if (page.auto_settlement) {
+      bankAccount = await this.bankRepo.findOne({
+        where: { developer_id: page.developer_id, primary: true },
+      });
+      if (!bankAccount) {
+        throw new BadRequestException(
+          'Auto settlement is enabled but no bank account is configured for this merchant.',
+        );
+      }
+    }
+
+    if (dto.amount !== undefined && dto.amount < Number(page.amount)) {
+      throw new BadRequestException(
+        `Minimum amount is ${page.amount} ${page.currency}.`,
+      );
+    }
+
+    // Find or create the customer (email is globally unique per the entity constraint)
+    const existingCustomer = await this.customerRepo.findOne({
+      where: { email: dto.email },
+    });
+
+    const customer: Customer = existingCustomer
+      ? existingCustomer
+      : await this.customerRepo.save(
+          this.customerRepo.create({
+            developer_id: page.developer_id,
+            first_name: dto.first_name,
+            last_name: dto.last_name,
+            email: dto.email,
+          } as Customer),
+        );
+
+    // Check for an active session already open for this customer on this page
+    // const existingSession = await this.sessionRepo.findOne({
+    //   where: {
+    //     payment_page_id: page.id,
+    //     customer_id: customer.id,
+    //     status: In([
+    //       PaymentSessionStatus.PENDING,
+    //       PaymentSessionStatus.INITIATED,
+    //     ]),
+    //   },
+    // });
+
+    // if (existingSession) {
+    //   throw new BadRequestException(
+    //     'An active payment session already exists for this customer on this page.',
+    //   );
+    // }
+
+    // Get or provision a deposit address for this customer+asset+network combo
+    const customerWallet = await this.customerWalletsService.getOrCreate(
+      customer.id,
+      page.developer_id,
+      dto.asset,
+      dto.asset_id,
+      dto.network,
+      page.auto_settlement,
+      bankAccount,
+    );
+
+    const session = await this.sessionRepo.save(
+      this.sessionRepo.create({
+        developer_id: page.developer_id,
+        customer_id: customer.id,
+        payment_page_id: page.id,
+        reference: `ps_${generateUniqueId().slice(0, 16)}`,
+        deposit_address: customerWallet.deposit_address,
+        amount: page.amount,
+        currency: page.currency,
+        crypto_asset: dto.asset,
+        network: dto.network,
+        status: PaymentSessionStatus.INITIATED,
+        metadata: { ...(dto.metadata || {}), payment_page_slug: slug },
+        expires_at: new Date(Date.now() + 30 * 60 * 1000),
+      }),
+    );
+
+    return {
+      session,
+      // crypto_asset: dto.asset,
+      // network: dto.network,
+    };
+  }
+
+  // ── Helpers ───────────────────────────────────────────
+
+  private async resolveUniqueSlug(base: string): Promise<string> {
+    let slug = generateSlug(base);
+    let attempts = 0;
+
+    while (await this.pageRepo.findOne({ where: { slug } })) {
+      if (++attempts > 5)
+        throw new ConflictException(
+          'Could not generate a unique slug. Try a different title.',
+        );
+      slug = generateSlug(base);
+    }
+
+    return slug;
+  }
+
+  private formatWithUrl(page: PaymentPage) {
+    return {
+      ...page,
+      url: `${this.frontendUrl}/p/${page.slug}`,
+    };
+  }
+
+  private toPublicView(page: PaymentPage) {
+    return {
+      title: page.title,
+      description: page.description,
+      slug: page.slug,
+      currency: page.currency,
+      amount: page.amount,
+      status: page.status,
+    };
+  }
+}
