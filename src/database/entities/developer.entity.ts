@@ -10,7 +10,7 @@ import {
 import { ApiKey } from './api-key.entity';
 import { Wallet } from './wallet.entity';
 import { Payout } from './payout.entity';
-import { OfframpTransaction } from './offramp-transaction.entity';
+import { CryptoTransaction } from './crypto-transaction.entity';
 import { KycVerification } from './kyc-verification.entity';
 import { WebhookEndpoint } from './webhook.entity';
 import { LedgerEntry } from './ledger-entry.entity';
@@ -103,8 +103,8 @@ export class Developer {
   @OneToMany(() => Payout, (p) => p.developer)
   payouts: Payout[];
 
-  @OneToMany(() => OfframpTransaction, (o) => o.developer)
-  offramp_transactions: OfframpTransaction[];
+  @OneToMany(() => CryptoTransaction, (t) => t.developer)
+  crypto_transactions: CryptoTransaction[];
 
   @OneToMany(() => KycVerification, (k) => k.developer)
   kyc_verifications: KycVerification[];

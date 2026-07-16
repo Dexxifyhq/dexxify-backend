@@ -61,11 +61,6 @@ export class UpdateCustomerDto {
   @IsString()
   last_name?: string;
 
-  @ApiPropertyOptional({ enum: CustomerStatus })
-  @IsOptional()
-  @IsEnum(CustomerStatus)
-  status?: CustomerStatus;
-
   @ApiPropertyOptional()
   @IsOptional()
   metadata?: Record<string, any>;

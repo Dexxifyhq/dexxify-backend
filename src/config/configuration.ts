@@ -22,16 +22,15 @@ export default () => ({
     refreshExpiresIn: process.env.JWT_REFRESH_EXPIRATION || '1d',
   },
 
-  breet: {
-    apiUrl: process.env.BREET_API_URL,
-    webhookSecret: process.env.BREET_WEBHOOK_SECRET,
-    testWebhookSecret: process.env.BREET_TEST_WEBHOOK_SECRET,
-    env: process.env.BREET_ENV,
-    testEnv: process.env.BREET_TEST_ENV,
-    secretKey: process.env.BREET_SECRET_KEY,
-    testSecretKey: process.env.BREET_TEST_SECRET_KEY,
-    appId: process.env.BREET_APP_ID,
-    testAppId: process.env.BREET_TEST_APP_ID,
+  coincircuit: {
+    apiUrl: process.env.COINCIRCUIT_API_URL || 'https://api.coincircuit.io',
+    sandboxApiUrl:
+      process.env.COINCIRCUIT_SANDBOX_API_URL ||
+      'https://sandbox-api.coincircuit.io',
+    apiKey: process.env.COINCIRCUIT_API_KEY,
+    testApiKey: process.env.COINCIRCUIT_TEST_API_KEY,
+    webhookSecret: process.env.COINCIRCUIT_WEBHOOK_SECRET,
+    testWebhookSecret: process.env.COINCIRCUIT_TEST_WEBHOOK_SECRET,
   },
 
   paystack: {
@@ -58,6 +57,7 @@ export default () => ({
   },
 
   webhook: {
+    testUrl: process.env.WEBHOOK_TEST_URL,
     retryAttempts:
       parseInt(process.env.WEBHOOK_RETRY_ATTEMPTS as string, 10) || 3,
     retryDelayMs:
@@ -84,5 +84,12 @@ export default () => ({
     maxAttempts: parseInt(process.env.OTP_MAX_ATTEMPTS as string, 10) || 5,
     resendCooldownSeconds:
       parseInt(process.env.OTP_RESEND_COOLDOWN as string, 10) || 60,
+  },
+
+  platform: {
+    // Email used to identify the internal platform Developer record in the DB.
+    email: process.env.PLATFORM_EMAIL || 'dexxifyhq@gmail.com',
+    // Secret key for admin endpoints (x-admin-key header).
+    adminKey: process.env.PLATFORM_ADMIN_KEY,
   },
 });

@@ -17,14 +17,14 @@ import {
   ApiBearerAuth,
   ApiParam,
   ApiBody,
-  ApiQuery,
 } from '@nestjs/swagger';
 import { CustomersService } from './customers.service';
 import { CreateCustomerDto, CustomerQueryDto, UpdateCustomerDto } from './dto';
-import { GetDeveloper } from '../../common/decorators';
+import { DualAuth, GetDeveloper } from '../../common/decorators';
 
 @ApiTags('Customers')
-@ApiBearerAuth('api-key')
+@DualAuth()
+// @ApiBearerAuth('api-key')
 @Controller('customers')
 export class CustomersController {
   constructor(private readonly customersService: CustomersService) {}
@@ -79,5 +79,20 @@ export class CustomersController {
     @Param('customer_id', ParseUUIDPipe) customerId: string,
   ) {
     return this.customersService.remove(developerId, customerId);
+  }
+
+  @ApiOperation({
+    summary: "Get or provision a customer's deposit account",
+    description:
+      'Returns all crypto deposit addresses and NGN virtual accounts from CoincircuitMCP. ' +
+      'Creates the deposit account if one does not exist yet.',
+  })
+  @ApiParam({ name: 'customer_id', description: 'Customer UUID' })
+  @Get(':customer_id/deposit-account')
+  getDepositAccount(
+    @GetDeveloper('id') developerId: string,
+    @Param('customer_id', ParseUUIDPipe) customerId: string,
+  ) {
+    return this.customersService.getDepositAccount(developerId, customerId);
   }
 }

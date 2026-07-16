@@ -6,7 +6,7 @@ import {
   ApiKey,
   Wallet,
   Payout,
-  OfframpTransaction,
+  CryptoTransaction,
   KycVerification,
   LedgerEntry,
 } from '../../database/entities';
@@ -17,7 +17,7 @@ import {
       ApiKey,
       Wallet,
       Payout,
-      OfframpTransaction,
+      CryptoTransaction,
       KycVerification,
       LedgerEntry,
     ]),

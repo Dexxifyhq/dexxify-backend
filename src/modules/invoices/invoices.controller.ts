@@ -2,7 +2,6 @@ import {
   Controller,
   Get,
   Post,
-  Put,
   Body,
   Param,
   Query,
@@ -18,16 +17,21 @@ import {
   ApiBody,
 } from '@nestjs/swagger';
 import { InvoicesService } from './invoices.service';
-import { CreateInvoiceDto, InvoiceQueryDto, UpdateInvoiceDto } from './dto';
-import { GetDeveloper } from '../../common/decorators';
+import { CreateInvoiceDto, InvoicePaymentDto, InvoiceQueryDto } from './dto';
+import { DualAuth, GetDeveloper, Public } from '../../common/decorators';
 
 @ApiTags('Invoices')
-@ApiBearerAuth('api-key')
+@DualAuth()
+// @ApiBearerAuth('api-key')
 @Controller('invoices')
 export class InvoicesController {
   constructor(private readonly invoicesService: InvoicesService) {}
 
-  @ApiOperation({ summary: 'Create a draft invoice' })
+  @ApiOperation({
+    summary: 'Create and send an invoice',
+    description:
+      'Creates an invoice via CoincircuitMCP and saves it to the database. Returns the invoice including a payment URL to share with your customer.',
+  })
   @ApiBody({ type: CreateInvoiceDto })
   @Post()
   create(
@@ -46,37 +50,52 @@ export class InvoicesController {
     return this.invoicesService.findAll(developerId, query);
   }
 
-  @ApiOperation({ summary: 'Get an invoice by ID' })
+  @ApiOperation({
+    summary: 'Get invoice by ID',
+    description: 'Returns local invoice data enriched with live CC status.',
+  })
   @ApiParam({ name: 'invoice_id', description: 'Invoice UUID' })
   @Get(':invoice_id')
   findOne(
     @GetDeveloper('id') developerId: string,
     @Param('invoice_id', ParseUUIDPipe) invoiceId: string,
   ) {
-    return this.invoicesService.findOne(developerId, invoiceId);
+    return this.invoicesService.findOneEnriched(developerId, invoiceId);
   }
 
-  @ApiOperation({ summary: 'Update a draft invoice' })
-  @ApiParam({ name: 'invoice_id', description: 'Invoice UUID' })
-  @ApiBody({ type: UpdateInvoiceDto })
-  @Put(':invoice_id')
-  update(
-    @GetDeveloper('id') developerId: string,
-    @Param('invoice_id', ParseUUIDPipe) invoiceId: string,
-    @Body() dto: UpdateInvoiceDto,
-  ) {
-    return this.invoicesService.update(developerId, invoiceId, dto);
+  @ApiOperation({
+    summary: 'Get invoice by number (public)',
+    description:
+      'Public endpoint — no auth required. Used by the customer-facing pay page to display invoice details.',
+  })
+  @ApiParam({
+    name: 'invoice_number',
+    description: 'Invoice number e.g. INV-ABC123',
+  })
+  @Public()
+  @Get('pay/:invoice_number')
+  findByNumber(@Param('invoice_number') invoiceNumber: string) {
+    return this.invoicesService.findByNumber(invoiceNumber);
   }
 
-  @ApiOperation({ summary: 'Send an invoice (draft → sent)' })
-  @ApiParam({ name: 'invoice_id', description: 'Invoice UUID' })
-  @HttpCode(HttpStatus.OK)
-  @Post(':invoice_id/send')
-  send(
-    @GetDeveloper('id') developerId: string,
-    @Param('invoice_id', ParseUUIDPipe) invoiceId: string,
+  @ApiOperation({
+    summary: 'Create payment session for invoice (public)',
+    description:
+      'Public endpoint — customer selects which crypto asset and network to pay with. Returns a payment session with a deposit address. The invoice is marked PAID automatically when payment.completed webhook fires.',
+  })
+  @ApiParam({
+    name: 'invoice_number',
+    description: 'Invoice number e.g. INV-ABC123',
+  })
+  @ApiBody({ type: InvoicePaymentDto })
+  @Public()
+  @HttpCode(HttpStatus.CREATED)
+  @Post('pay/:invoice_number/session')
+  createPaymentSession(
+    @Param('invoice_number') invoiceNumber: string,
+    @Body() dto: InvoicePaymentDto,
   ) {
-    return this.invoicesService.send(developerId, invoiceId);
+    return this.invoicesService.createPaymentSession(invoiceNumber, dto);
   }
 
   @ApiOperation({ summary: 'Mark an invoice as paid' })

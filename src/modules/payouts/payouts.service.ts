@@ -1,5 +1,4 @@
 import { Injectable, NotFoundException, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import {
@@ -10,44 +9,50 @@ import {
 } from '../../database/entities';
 import { CreatePayoutDto, BatchPayoutDto, ResolveAccountDto } from './dto';
 import { parsePagination, buildPaginationMeta } from '../../common/utils';
+import { CoincircuitService } from '../../providers/coincircuit/coincircuit.service';
 
 @Injectable()
 export class PayoutsService {
   private readonly logger = new Logger(PayoutsService.name);
   private readonly PAYOUT_FEE = 150;
-  private readonly breetApiUrl: string;
-  private readonly breetApiKey: string;
 
   constructor(
     @InjectRepository(Payout)
     private readonly payoutRepo: Repository<Payout>,
     @InjectRepository(LedgerEntry)
     private readonly ledgerRepo: Repository<LedgerEntry>,
-    private readonly config: ConfigService,
-  ) {
-    this.breetApiUrl = this.config.get<string>('breet.apiUrl') || '';
-    this.breetApiKey = this.config.get<string>('breet.apiKey') || '';
-  }
+    private readonly cc: CoincircuitService,
+  ) {}
 
   async create(developerId: string, dto: CreatePayoutDto) {
-    // Resolve account name if not provided
     let accountName = dto.account_name;
     if (!accountName) {
-      const resolved = await this.resolveBreetAccount(
-        dto.account_number,
-        dto.bank_code,
-      );
-      accountName = resolved.account_name;
+      const resolved = await this.resolveAccount({
+        account_number: dto.account_number,
+        bank_code: dto.bank_code,
+      });
+      accountName = (resolved as any)?.data?.details?.accountName ?? dto.account_number;
     }
 
-    // Initiate payout via Breet
-    const transfer = await this.initiateBreetTransfer(
-      dto.account_number,
-      dto.bank_code,
-      accountName,
-      dto.amount,
-      dto.narration,
-    );
+    // Ensure recipient exists in CoincircuitMCP
+    const recipientResult = await this.cc.createRecipient({
+      type: 'ngn_bank_account',
+      details: {
+        accountNumber: dto.account_number,
+        bankCode: dto.bank_code,
+      },
+    });
+    const recipientId = recipientResult.data.id;
+
+    // Initiate payout via CoincircuitMCP
+    const payoutResult = await this.cc.initiatePayout({
+      recipientId,
+      amount: String(dto.amount),
+      currency: 'NGN',
+      narration: dto.narration,
+    });
+
+    const ccPayout = payoutResult.data;
 
     const payout = this.payoutRepo.create({
       developer_id: developerId,
@@ -58,27 +63,12 @@ export class PayoutsService {
       account_name: accountName,
       narration: dto.narration,
       status: PayoutStatus.PROCESSING,
-      breet_reference: transfer.reference,
-      breet_transfer_id: transfer.transfer_id,
+      provider_reference: ccPayout.reference ?? ccPayout.id,
+      provider_payout_id: ccPayout.id,
       metadata: dto.metadata || {},
     });
 
-    const saved = await this.payoutRepo.save(payout);
-
-    // await this.ledgerRepo.save(
-    //   this.ledgerRepo.create({
-    //     developer_id: developerId,
-    //     tx_type: TxType.PAYOUT,
-    //     reference_type: 'payout',
-    //     reference_id: saved.id,
-    //     debit: dto.amount + this.PAYOUT_FEE,
-    //     credit: 0,
-    //     asset: 'NGN',
-    //     description: `Payout ₦${dto.amount} to ${dto.account_number}`,
-    //   }),
-    // );
-
-    return saved;
+    return this.payoutRepo.save(payout);
   }
 
   async createBatch(developerId: string, dto: BatchPayoutDto) {
@@ -113,57 +103,22 @@ export class PayoutsService {
 
   async findAll(developerId: string, query: any) {
     const { offset, limit, page } = parsePagination(query);
-
     const [data, total] = await this.payoutRepo.findAndCount({
       where: { developer_id: developerId },
       order: { created_at: 'DESC' },
       skip: offset,
       take: limit,
     });
-
     return { data, meta: buildPaginationMeta(total, page, limit) };
   }
 
   async resolveAccount(dto: ResolveAccountDto) {
-    return this.resolveBreetAccount(dto.account_number, dto.bank_code);
-  }
-
-  // ── Breet Payout Integration Stubs ──────────────────────
-
-  private async initiateBreetTransfer(
-    accountNumber: string,
-    bankCode: string,
-    accountName: string,
-    amount: number,
-    narration?: string,
-  ): Promise<{ reference: string; transfer_id: string }> {
-    // TODO: Implement actual Breet payout API call
-    // POST ${this.breetApiUrl}/payouts or /transfers
-    // Headers: { Authorization: `Bearer ${this.breetApiKey}` }
-    // Body: { account_number, bank_code, account_name, amount, narration }
-    this.logger.warn('Using stub Breet transfer — implement actual API call');
-    return {
-      reference: `BRT_TRF_${Date.now()}`,
-      transfer_id: `BRT_ID_${Date.now()}`,
-    };
-  }
-
-  private async resolveBreetAccount(
-    accountNumber: string,
-    bankCode: string,
-  ): Promise<{
-    account_number: string;
-    account_name: string;
-    bank_code: string;
-  }> {
-    // TODO: Implement actual Breet account resolution
-    // GET ${this.breetApiUrl}/bank/resolve?account_number=...&bank_code=...
-    // Headers: { Authorization: `Bearer ${this.breetApiKey}` }
-    this.logger.warn('Using stub Breet resolve — implement actual API call');
-    return {
-      account_number: accountNumber,
-      account_name: 'STUB ACCOUNT NAME',
-      bank_code: bankCode,
-    };
+    return this.cc.validateRecipient({
+      type: 'ngn_bank_account',
+      details: {
+        accountNumber: dto.account_number,
+        bankCode: dto.bank_code,
+      },
+    });
   }
 }

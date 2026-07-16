@@ -6,17 +6,14 @@ import {
   Wallet,
   LedgerEntry,
   WithdrawalWallet,
-  OfframpTransaction,
+  Payout,
 } from '../../database/entities';
+import { CoincircuitModule } from '../../providers/coincircuit/coincircuit.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([
-      Wallet,
-      WithdrawalWallet,
-      LedgerEntry,
-      OfframpTransaction,
-    ]),
+    TypeOrmModule.forFeature([Wallet, WithdrawalWallet, LedgerEntry, Payout]),
+    CoincircuitModule,
   ],
   controllers: [WalletsController],
   providers: [WalletsService],

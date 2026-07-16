@@ -4,34 +4,32 @@ import {
   BadRequestException,
   Logger,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import {
-  OfframpTransaction,
-  TxStatus,
-  Wallet,
-  LedgerEntry,
-  TxType,
+  CryptoTransaction,
+  CryptoTxDirection,
+  CryptoTxStatus,
+  SwapRecord,
+  SwapRecordStatus,
+  SwapRecordType,
 } from '../../database/entities';
 import { CreateOfframpDto } from './dto';
 import { WalletsService } from '../wallets/wallets.service';
+import { CoincircuitService } from '../../providers/coincircuit/coincircuit.service';
 
 @Injectable()
 export class OfframpService {
   private readonly logger = new Logger(OfframpService.name);
   private readonly FEE_PERCENT = 1.5;
-  private readonly SPREAD_PERCENT = 0.75;
 
   constructor(
-    @InjectRepository(OfframpTransaction)
-    private readonly offrampRepo: Repository<OfframpTransaction>,
-    @InjectRepository(Wallet)
-    private readonly walletRepo: Repository<Wallet>,
-    @InjectRepository(LedgerEntry)
-    private readonly ledgerRepo: Repository<LedgerEntry>,
-    private readonly config: ConfigService,
+    @InjectRepository(CryptoTransaction)
+    private readonly txRepo: Repository<CryptoTransaction>,
+    @InjectRepository(SwapRecord)
+    private readonly swapRecordRepo: Repository<SwapRecord>,
     private readonly walletsService: WalletsService,
+    private readonly cc: CoincircuitService,
   ) {}
 
   async getRate(pair: string) {
@@ -40,15 +38,20 @@ export class OfframpService {
       throw new BadRequestException('Invalid pair format. Use e.g. USDT_NGN');
     }
 
-    const baseRate = await this.fetchBreetRate(base, quote);
-    const spreadAmount = baseRate * (this.SPREAD_PERCENT / 100);
-    const rateWithSpread = baseRate - spreadAmount;
+    const estimate = await this.cc.estimateSwap({
+      fromCurrency: base,
+      toCurrency: quote,
+      amount: '1',
+    });
+
+    const baseRate = Number(estimate.data?.targetAmount ?? 0);
+    const feeAdjustedRate = baseRate * (1 - this.FEE_PERCENT / 100);
 
     return {
       pair: `${base}/${quote}`,
-      rate: rateWithSpread,
+      rate: feeAdjustedRate,
       base_rate: baseRate,
-      spread: this.SPREAD_PERCENT,
+      platform_fee_percent: this.FEE_PERCENT,
       valid_for_seconds: 30,
       timestamp: new Date().toISOString(),
     };
@@ -60,80 +63,80 @@ export class OfframpService {
       dto.wallet_id,
     );
 
-    if (wallet.asset_id !== dto.crypto_asset) {
+    // 1. Get CC swap quotation (crypto → NGN)
+    let quotation: any;
+    let swap: any;
+    try {
+      const quotationResult = await this.cc.createSwapQuotation({
+        fromCurrency: String(dto.crypto_asset).toUpperCase(),
+        toCurrency: 'NGN',
+        amount: dto.crypto_amount.toString(),
+      });
+      quotation = quotationResult.data;
+
+      // 2. Execute swap immediately against the quotation
+      const swapResult = await this.cc.executeSwap(quotation.id);
+      swap = swapResult.data;
+    } catch (err) {
+      this.logger.error(`Offramp swap failed: ${err.message}`);
       throw new BadRequestException(
-        'Wallet asset does not match requested crypto asset.',
+        'Failed to initiate offramp swap with provider.',
       );
     }
 
-    // const available = Number(wallet.balance) - Number(wallet.locked_balance);
-    // if (available < dto.crypto_amount) {
-    //   throw new BadRequestException('Insufficient wallet balance.');
-    // }
+    // 3. Estimate payout from quotation (actual amount confirmed via swap.completed webhook)
+    const estimatedGrossNgn = Number(quotation.targetAmount ?? 0);
+    const estimatedFeeNgn = estimatedGrossNgn * (this.FEE_PERCENT / 100);
+    const estimatedNetNgn = estimatedGrossNgn - estimatedFeeNgn;
 
-    const rate = await this.fetchBreetRate(dto.crypto_asset, 'NGN');
-    const spreadRate = rate * (1 - this.SPREAD_PERCENT / 100);
-    const grossNgn = dto.crypto_amount * spreadRate;
-    const feeNgn = grossNgn * (this.FEE_PERCENT / 100);
-    const netNgn = grossNgn - feeNgn;
-
-    // Lock funds
-    await this.walletRepo.increment(
-      { id: dto.wallet_id },
-      'locked_balance',
-      dto.crypto_amount,
-    );
-
-    const offramp = this.offrampRepo.create({
-      developer_id: developerId,
-      amount: netNgn,
-      fee: feeNgn,
-      destination_bank_id: Number(dto.bank_id),
-      destination_account_number: dto.account_number,
-      destination_account_name: dto.account_name,
-      status: TxStatus.PROCESSING,
-      metadata: dto.metadata || {},
-    });
-
-    const saved = await this.offrampRepo.save(offramp);
-
-    // TODO: Queue async Breet conversion + Paystack payout via BullMQ
-    this.logger.log(`Offramp ${saved.id} created — queue Breet conversion`);
-
-    await this.ledgerRepo.save(
-      this.ledgerRepo.create({
+    // 4. Save SwapRecord — webhook uses type=OFFRAMP to trigger auto-payout
+    await this.swapRecordRepo.save(
+      this.swapRecordRepo.create({
         developer_id: developerId,
-        tx_type: TxType.OFFRAMP,
-        reference_type: 'offramp',
-        reference_id: saved.id,
-        debit_ngn: dto.crypto_amount,
-        credit_ngn: 0,
-        asset: dto.crypto_asset,
-        description: `Offramp ${dto.crypto_amount} ${dto.crypto_asset} → ₦${netNgn.toFixed(2)}`,
+        cc_swap_id: swap.id,
+        from_currency: String(dto.crypto_asset).toUpperCase(),
+        to_currency: 'NGN',
+        source_amount: dto.crypto_amount,
+        target_amount: estimatedGrossNgn || null,
+        status: SwapRecordStatus.PENDING,
+        type: SwapRecordType.OFFRAMP,
+        metadata: {
+          recipientId: dto.recipient_id,
+          feePercent: this.FEE_PERCENT,
+        },
       }),
     );
 
+    // 5. Save CryptoTransaction — outbound crypto record
+    const tx = this.txRepo.create({
+      developer_id: developerId,
+      direction: CryptoTxDirection.OUTBOUND,
+      crypto_asset: dto.crypto_asset as any,
+      crypto_amount: dto.crypto_amount,
+      fiat_amount: estimatedNetNgn || null,
+      fiat_currency: 'NGN',
+      fee: estimatedFeeNgn,
+      exchange_rate: estimatedGrossNgn / dto.crypto_amount || null,
+      status: CryptoTxStatus.INITIATED,
+      provider_reference: swap.id,
+      metadata: { quotationId: quotation.id, ...(dto.metadata || {}) },
+      description: `Offramp ${dto.crypto_amount} ${dto.crypto_asset} → ~₦${estimatedNetNgn.toFixed(2)}`,
+    });
+
+    const saved = await this.txRepo.save(tx);
+    this.logger.log(`Offramp initiated: swap=${swap.id} tx=${saved.id}`);
     return saved;
   }
 
   async findOne(developerId: string, txId: string) {
-    const tx = await this.offrampRepo.findOne({
-      where: { id: txId, developer_id: developerId },
+    const tx = await this.txRepo.findOne({
+      where: {
+        id: txId,
+        developer_id: developerId,
+        direction: CryptoTxDirection.OUTBOUND,
+      },
     });
     if (!tx) throw new NotFoundException('Offramp transaction not found.');
     return tx;
-  }
-
-  // ── Breet stub ────────────────────────────────────────
-  private async fetchBreetRate(base: string, _quote: string): Promise<number> {
-    // TODO: Replace with actual Breet API call
-    this.logger.warn('Using stub Breet rate — implement actual API call');
-    const stubRates: Record<string, number> = {
-      USDT: 1580,
-      BTC: 68000000,
-      ETH: 5700000,
-      USDC: 1580,
-    };
-    return stubRates[base] || 1580;
   }
 }

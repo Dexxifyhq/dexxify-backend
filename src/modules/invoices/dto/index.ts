@@ -14,7 +14,11 @@ import {
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { InvoiceStatus } from '../../../database/entities';
+import {
+  InvoiceStatus,
+  WalletAsset,
+  WalletNetwork,
+} from '../../../database/entities';
 
 export class InvoiceLineItemDto {
   @ApiProperty({ example: 'Consulting services' })
@@ -33,11 +37,33 @@ export class InvoiceLineItemDto {
   unit_price: number;
 }
 
-export class CreateInvoiceDto {
-  @ApiPropertyOptional({ description: 'Customer ID to bill', example: '550e8400-e29b-41d4-a716-446655440000' })
+export class CreateInvoiceCustomerDto {
+  @ApiProperty({ example: 'john@example.com' })
+  @IsString()
+  @IsNotEmpty()
+  email: string;
+
+  @ApiProperty({ example: 'John' })
+  @IsString()
+  @IsNotEmpty()
+  first_name: string;
+
+  @ApiProperty({ example: 'Doe' })
+  @IsString()
+  @IsNotEmpty()
+  last_name: string;
+
+  @ApiPropertyOptional({ example: '+2348012345678' })
   @IsOptional()
-  @IsUUID()
-  customer_id?: string;
+  @IsString()
+  phone?: string;
+}
+
+export class CreateInvoiceDto {
+  @ApiProperty({ type: () => CreateInvoiceCustomerDto })
+  @ValidateNested()
+  @Type(() => CreateInvoiceCustomerDto)
+  customer: CreateInvoiceCustomerDto;
 
   @ApiPropertyOptional({ description: 'ISO currency code', example: 'USD' })
   @IsOptional()
@@ -139,4 +165,14 @@ export class InvoiceQueryDto {
   @IsOptional()
   @IsUUID()
   customer_id?: string;
+}
+
+export class InvoicePaymentDto {
+  @ApiProperty({ enum: WalletAsset, example: WalletAsset.USDT })
+  @IsEnum(WalletAsset)
+  crypto_asset: WalletAsset;
+
+  @ApiProperty({ enum: WalletNetwork, example: WalletNetwork.TRON })
+  @IsEnum(WalletNetwork)
+  network: WalletNetwork;
 }

@@ -2,41 +2,115 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { PaymentSession, PaymentSessionStatus } from '../../database/entities';
+import {
+  PaymentSession,
+  PaymentSessionStatus,
+  Customer,
+} from '../../database/entities';
 import {
   parsePagination,
   buildPaginationMeta,
   generateUniqueId,
 } from '../../common/utils';
-import { CreatePaymentSessionDto, PaymentSessionQueryDto } from './dto';
+import {
+  CreatePaymentSessionDto,
+  GenerateDepositAddressDto,
+  EstimatePaymentDto,
+  PaymentSessionQueryDto,
+} from './dto';
+import {
+  CoincircuitService,
+  toCCAsset,
+  toCCChain,
+} from '../../providers/coincircuit/coincircuit.service';
 
 @Injectable()
 export class PaymentSessionsService {
+  private readonly logger = new Logger(PaymentSessionsService.name);
+
   constructor(
     @InjectRepository(PaymentSession)
     private readonly sessionRepo: Repository<PaymentSession>,
+    @InjectRepository(Customer)
+    private readonly customerRepo: Repository<Customer>,
+    private readonly cc: CoincircuitService,
   ) {}
 
   async create(developerId: string, dto: CreatePaymentSessionDto) {
-    const expiresAt = dto.expires_in_minutes
-      ? new Date(Date.now() + dto.expires_in_minutes * 60 * 1000)
-      : new Date(Date.now() + 30 * 60 * 1000); // default 30 min
-
-    const session = this.sessionRepo.create({
-      developer_id: developerId,
-      customer_id: dto.customer_id || null,
-      reference: `ps_${generateUniqueId().slice(4, 12)}`,
-      amount: dto.amount,
-      crypto_asset: dto.crypto_asset || null,
-      status: PaymentSessionStatus.PENDING,
-      metadata: dto.metadata || {},
-      expires_at: expiresAt,
+    // Find or create our local customer record
+    const existingCustomer = await this.customerRepo.findOne({
+      where: { email: dto.customer_email, developer_id: developerId },
     });
 
-    return this.sessionRepo.save(session);
+    const customer: Customer = existingCustomer
+      ? existingCustomer
+      : await this.customerRepo.save(
+          this.customerRepo.create({
+            developer_id: developerId,
+            first_name: dto.first_name,
+            last_name: dto.last_name,
+            email: dto.customer_email,
+          } as Customer),
+        );
+
+    // Sync to CoincircuitMCP
+    try {
+      const ccPayload: Parameters<
+        CoincircuitService['createPaymentSession']
+      >[0] = {
+        title: dto.title || 'Payment Session',
+        description: dto.description || '',
+        amount: String(dto.amount),
+        currency: dto.currency as 'NGN' | 'USD',
+        metadata: dto.metadata,
+        successUrl: dto.success_url,
+        cancelUrl: dto.cancel_url,
+      };
+
+      if (dto.crypto_asset) ccPayload.asset = toCCAsset(dto.crypto_asset);
+      if (dto.network) ccPayload.chain = toCCChain(dto.network);
+      if (customer?.email) {
+        ccPayload.customer = {
+          email: customer.email,
+          firstName: customer.first_name || undefined,
+          lastName: customer.last_name || undefined,
+        };
+      }
+
+      const ccResult = await this.cc.createPaymentSession(ccPayload);
+      const ccData = ccResult?.data;
+
+      const session = this.sessionRepo.create({
+        developer_id: developerId,
+        customer_id: customer?.id || null,
+        reference: `ps_${generateUniqueId().slice(4, 12)}`,
+        amount: dto.amount,
+        currency: dto.currency,
+        crypto_asset: dto.crypto_asset || null,
+        network: dto.network || null,
+        status: PaymentSessionStatus.PENDING,
+        metadata: dto.metadata || {},
+        expires_at: ccData.expiresAt,
+      });
+
+      const saved = await this.sessionRepo.save(session);
+
+      await this.sessionRepo.update(saved.id, {
+        provider_session_reference: ccData?.reference ?? null,
+        metadata: { ...saved.metadata, ...ccData },
+      });
+
+      // saved.provider_session_reference = ccData?.reference ?? null;
+      // saved.metadata = {};
+      return saved;
+    } catch (err) {
+      this.logger.warn(`Payment session creation failed, ${err.message}`);
+      throw err;
+    }
   }
 
   async findAll(developerId: string, query: PaymentSessionQueryDto) {
@@ -75,7 +149,92 @@ export class PaymentSessionsService {
       relations: ['customer'],
     });
     if (!session) throw new NotFoundException('Payment session not found.');
+
+    // Enrich with live CC status if synced
+    if (session.provider_session_reference) {
+      try {
+        const ccResult = await this.cc.getPaymentSession(
+          session.provider_session_reference,
+        );
+        return { ...session, cc: ccResult?.data };
+      } catch (err) {
+        this.logger.warn(
+          `CC session fetch failed for ${reference}: ${err.message}`,
+        );
+        throw err;
+      }
+    }
+
     return session;
+  }
+
+  async generateDepositAddress(
+    sessionId: string,
+    dto: GenerateDepositAddressDto,
+  ) {
+    const session = await this.findOne(sessionId);
+
+    if (!session.provider_session_reference) {
+      throw new BadRequestException(
+        'Session is not yet synced with CoincircuitMCP.',
+      );
+    }
+
+    if (
+      session.status !== PaymentSessionStatus.PENDING
+    ) {
+      throw new BadRequestException(
+        `Cannot generate address for session with status '${session.status}'.`,
+      );
+    }
+
+    const asset = toCCAsset(dto.crypto_asset);
+    const chain = toCCChain(dto.network);
+
+    const ccResult = await this.cc.generateDepositAddress(
+      session.provider_session_reference,
+      asset,
+      chain,
+    );
+    const address = ccResult?.data?.payment?.address ?? null;
+
+    if (address) {
+      await this.sessionRepo.update(session.id, {
+        deposit_address: address,
+        crypto_asset: dto.crypto_asset,
+        network: dto.network,
+      });
+      session.deposit_address = address;
+      session.crypto_asset = dto.crypto_asset;
+      session.network = dto.network;
+    }
+
+    // return { session, cc: ccResult?.data };
+    return { session };
+  }
+
+  async getEstimate(dto: EstimatePaymentDto) {
+    const asset = toCCAsset(dto.crypto_asset);
+    const chain = toCCChain(dto.network);
+    const result = await this.cc.estimatePayment({
+      asset,
+      chain,
+      amount: dto.amount,
+      currency: dto.currency,
+      reference: dto.reference,
+    });
+
+    if (dto.reference) {
+      const session = await this.sessionRepo.findOne({
+        where: { provider_session_reference: dto.reference },
+      });
+      if (!session) return;
+      await this.sessionRepo.update(session.id, {
+        metadata: { ...session.metadata, estimate: { ...result.data } },
+      });
+    }
+
+    return result;
   }
 
   async cancel(sessionId: string) {
@@ -87,7 +246,7 @@ export class PaymentSessionsService {
       );
     }
 
-    session.status = PaymentSessionStatus.CANCELLED;
+    session.status = PaymentSessionStatus.FAILED;
     return this.sessionRepo.save(session);
   }
 
@@ -97,16 +256,16 @@ export class PaymentSessionsService {
     });
   }
 
-  async linkTransaction(
-    sessionId: string,
-    transactionId: string,
-    status: PaymentSessionStatus,
-  ) {
-    await this.sessionRepo.update(sessionId, {
-      transaction_id: transactionId,
-      status,
-      completed_at:
-        status === PaymentSessionStatus.COMPLETED ? new Date() : undefined,
-    });
-  }
+  // async linkTransaction(
+  //   sessionId: string,
+  //   transactionId: string,
+  //   status: PaymentSessionStatus,
+  // ) {
+  //   await this.sessionRepo.update(sessionId, {
+  //     transaction_id: transactionId,
+  //     status,
+  //     completed_at:
+  //       status === PaymentSessionStatus.COMPLETED ? new Date() : undefined,
+  //   });
+  // }
 }

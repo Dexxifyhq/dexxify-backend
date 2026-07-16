@@ -21,7 +21,6 @@ import { MailModule } from './modules/mail/mail.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { WalletsModule } from './modules/wallets/wallets.module';
 import { OfframpModule } from './modules/offramp/offramp.module';
-import { OnrampModule } from './modules/onramp/onramp.module';
 import { PayoutsModule } from './modules/payouts/payouts.module';
 import { KycModule } from './modules/kyc/kyc.module';
 import { WebhooksModule } from './modules/webhooks/webhooks.module';
@@ -32,6 +31,10 @@ import { CustomersModule } from './modules/customers/customers.module';
 import { PaymentSessionsModule } from './modules/payment-sessions/payment-sessions.module';
 import { InvoicesModule } from './modules/invoices/invoices.module';
 import { PaymentPagesModule } from './modules/payment-pages/payment-pages.module';
+import { SwapsModule } from './modules/swaps/swaps.module';
+import { RefundsModule } from './modules/refunds/refunds.module';
+import { PlatformModule } from './modules/platform/platform.module';
+import { AdminModule } from './modules/admin/admin.module';
 
 @Module({
   imports: [
@@ -62,7 +65,6 @@ import { PaymentPagesModule } from './modules/payment-pages/payment-pages.module
     AuthModule,
     WalletsModule,
     OfframpModule,
-    OnrampModule,
     PayoutsModule,
     KycModule,
     WebhooksModule,
@@ -73,6 +75,10 @@ import { PaymentPagesModule } from './modules/payment-pages/payment-pages.module
     PaymentSessionsModule,
     InvoicesModule,
     PaymentPagesModule,
+    SwapsModule,
+    RefundsModule,
+    PlatformModule,
+    AdminModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ApiKeyGuard },

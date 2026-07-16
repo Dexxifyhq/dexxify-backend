@@ -12,14 +12,14 @@ import {
 import { Developer } from './developer.entity';
 
 export enum WalletAsset {
+  // BCH = 'BCH',
+  // DOGE = 'DOGE',
+  // LTC = 'LTC',
+  // XRP = 'XRP',
+  // AVAX = 'AVAX',
   BTC = 'BTC',
-  BCH = 'BCH',
-  BNB = 'BNB',
-  DOGE = 'DOGE',
-  LTC = 'LTC',
   TRX = 'TRX',
-  XRP = 'XRP',
-  AVAX = 'AVAX',
+  BNB = 'BNB',
   TON = 'TON',
   USDT = 'USDT',
   ETH = 'ETH',
@@ -28,20 +28,20 @@ export enum WalletAsset {
 }
 
 export enum WalletNetwork {
-  BITCOIN_CASH = 'Bitcoin_Cash',
-  BINANCE_SMART_CHAIN = 'Binance_Smart_Chain',
+  // BITCOIN_CASH = 'Bitcoin_Cash',
+  // DOGECOIN = 'Dogecoin',
+  // LITECOIN = 'Litecoin',
+  // AVALANCHE = 'Avalanche',
+  // POLYGON = 'Polygon',
+  // XRP = 'XRP',
   BITCOIN = 'Bitcoin',
-  DOGECOIN = 'Dogecoin',
+  BINANCE_SMART_CHAIN = 'Binance_Smart_Chain',
   ETHEREUM = 'Ethereum',
-  LITECOIN = 'Litecoin',
   SOLANA = 'Solana',
   TRON = 'Tron',
   BASE = 'Base',
-  AVALANCHE = 'Avalanche',
-  POLYGON = 'Polygon',
   ARBITRUM = 'Arbitrum',
   TON = 'TON',
-  XRP = 'XRP',
 }
 
 export enum WalletStatus {
@@ -60,24 +60,29 @@ export class Wallet {
   @Column({ type: 'uuid' })
   developer_id: string;
 
-  // @Index()
-  // @Column({ type: 'text' })
-  // external_user_id: string;
-
   @Column({ type: 'text' })
   label: string;
 
-  @Column({ type: 'text' })
-  asset_id: string;
+  // @Column({ type: 'text' })
+  // asset_id: string;
 
-  // @Column({ type: 'decimal', precision: 28, scale: 8, default: 0 })
-  // balance: number;
+  @Column({ type: 'jsonb', default: [] })
+  deposit_addresses: Array<{
+    chain: string;
+    address: string;
+    createdAt: string;
+  }>;
 
-  // @Column({ type: 'decimal', precision: 28, scale: 8, default: 0 })
-  // locked_balance: number;
-
-  @Column({ type: 'text', nullable: true })
-  deposit_address: string;
+  @Column({ type: 'jsonb', default: [] })
+  ngn_virtual_accounts: Array<{
+    currency: string;
+    accountNumber: string;
+    accountName: string;
+    bankName: string;
+    bankCode: string;
+    accountReference: string;
+    createdAt: string;
+  }>;
 
   @Column({ type: 'text', nullable: true })
   bank_id: string;
@@ -88,23 +93,12 @@ export class Wallet {
   @Column({ type: 'enum', enum: WalletStatus, default: WalletStatus.ACTIVE })
   status: WalletStatus;
 
-  @Column({ type: 'boolean', default: false })
-  auto_settled: boolean;
-
-  // @Index()
-  // @Column({ type: 'text' })
-  // breet_wallet_id: string;
-
-  // @Column({ type: 'jsonb', default: {} })
-  // metadata: Record<string, any>;
-
   @CreateDateColumn({ type: 'timestamptz' })
   created_at: Date;
 
   @UpdateDateColumn({ type: 'timestamptz' })
   updated_at: Date;
 
-  // Relations
   @ManyToOne(() => Developer, (dev) => dev.wallets, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'developer_id' })
   developer: Developer;

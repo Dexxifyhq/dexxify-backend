@@ -51,8 +51,8 @@ export class PaymentPage {
   })
   status: PaymentPageStatus;
 
-  @Column({ type: 'boolean', default: false })
-  auto_settlement: boolean;
+  // @Column({ type: 'boolean', default: false })
+  // auto_settlement: boolean;
 
   @CreateDateColumn({ type: 'timestamptz' })
   created_at: Date;

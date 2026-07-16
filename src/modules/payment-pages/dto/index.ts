@@ -114,17 +114,22 @@ export class PaymentPageQueryDto {
 
 export class PublicPayDto {
   @ApiProperty({
-    description: 'Asset ID',
-    example: '550e846655440000',
+    type: 'string',
+    enum: WalletAsset,
+    enumName: 'WalletAsset',
+    description: 'Cryptocurrency asset to pay with',
+    example: WalletAsset.USDT,
   })
-  @IsString()
-  asset_id: string;
-
-  @ApiProperty({ enum: WalletAsset, example: WalletAsset.USDT })
   @IsEnum(WalletAsset)
   asset: WalletAsset;
 
-  @ApiProperty({ enum: WalletNetwork, example: WalletNetwork.TRON })
+  @ApiProperty({
+    type: 'string',
+    enum: WalletNetwork,
+    enumName: 'WalletNetwork',
+    description: 'Blockchain network for the payment',
+    example: WalletNetwork.TRON,
+  })
   @IsEnum(WalletNetwork)
   network: WalletNetwork;
 
@@ -158,7 +163,7 @@ export class PublicPayDto {
   @IsEmail()
   email: string;
 
-  @ApiPropertyOptional({ example: { order_ref: 'ord_abc' } })
+  @ApiPropertyOptional()
   @IsOptional()
   metadata?: Record<string, any>;
 }

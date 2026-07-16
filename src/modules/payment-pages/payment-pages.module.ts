@@ -4,17 +4,16 @@ import { PaymentPagesController } from './payment-pages.controller';
 import { PublicPaymentController } from './public-payment.controller';
 import { PaymentPagesService } from './payment-pages.service';
 import {
-  Bank,
   Customer,
   PaymentPage,
   PaymentSession,
 } from '../../database/entities';
-import { CustomersModule } from '../customers/customers.module';
+import { CoincircuitModule } from '../../providers/coincircuit/coincircuit.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([PaymentPage, PaymentSession, Customer, Bank]),
-    CustomersModule,
+    TypeOrmModule.forFeature([PaymentPage, PaymentSession, Customer]),
+    CoincircuitModule,
   ],
   controllers: [PaymentPagesController, PublicPaymentController],
   providers: [PaymentPagesService],

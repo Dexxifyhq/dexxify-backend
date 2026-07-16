@@ -1,6 +1,5 @@
 import {
   IsArray,
-  IsNotEmpty,
   IsOptional,
   IsString,
   IsUrl,
@@ -11,8 +10,6 @@ export const WEBHOOK_EVENT_TYPES = [
   'wallet.deposit.confirmed',
   'offramp.completed',
   'offramp.failed',
-  'onramp.completed',
-  'onramp.failed',
   'payout.success',
   'payout.failed',
   'kyc.approved',

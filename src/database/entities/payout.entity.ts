@@ -32,11 +32,11 @@ export class Payout {
   @Column({ type: 'decimal', precision: 18, scale: 2, default: 0 })
   fee: number;
 
-  @Column({ type: 'varchar', length: 10 })
-  bank_code: string;
+  @Column({ type: 'varchar', length: 10, nullable: true })
+  bank_code: string | null;
 
-  @Column({ type: 'varchar', length: 20 })
-  account_number: string;
+  @Column({ type: 'varchar', length: 20, nullable: true })
+  account_number: string | null;
 
   @Column({ type: 'varchar', length: 255, nullable: true })
   account_name: string;
@@ -53,10 +53,10 @@ export class Payout {
   batch_id: string;
 
   @Column({ type: 'varchar', length: 255, nullable: true })
-  breet_reference: string;
+  provider_reference: string;
 
   @Column({ type: 'varchar', length: 255, nullable: true })
-  breet_transfer_id: string;
+  provider_payout_id: string;
 
   @Column({ type: 'text', nullable: true })
   failure_reason: string;

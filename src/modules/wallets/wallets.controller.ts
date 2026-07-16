@@ -11,9 +11,7 @@ import {
 import { WalletsService } from './wallets.service';
 import {
   CreateWalletDto,
-  TransferDto,
   WalletQueryDto,
-  MockTradeDto,
   AddWithdrawalAddressDto,
   InitiateStableCoinWithdrawalDto,
   InitiateFiatWithdrawalDto,
@@ -82,16 +80,6 @@ export class UpdateWalletAutoSettlementDto {
 export class WalletsController {
   constructor(private readonly walletsService: WalletsService) {}
 
-  // Wallet Balance
-  @Post('/balance')
-  @ApiOperation({
-    summary: 'Get wallet balance',
-    description: 'Retrieve the current balance for a user',
-  })
-  async getBalance(@GetDeveloper('id') developerId: string) {
-    return this.walletsService.getWalletBalance(developerId);
-  }
-
   @Post()
   @ApiOperation({
     summary: 'Create a new wallet',
@@ -138,8 +126,7 @@ export class WalletsController {
   @Get(':wallet_id/details')
   @ApiOperation({
     summary: 'Get detailed wallet info',
-    description:
-      'Get comprehensive wallet details including Breet integration data',
+    description: 'Get comprehensive wallet details from the crypto provider',
   })
   @ApiParam({
     name: 'wallet_id',
@@ -176,52 +163,6 @@ export class WalletsController {
     return this.walletsService.getDepositAddress(developerId, walletId);
   }
 
-  @Put(':wallet_id/bank')
-  @ApiOperation({
-    summary: 'Update wallet with bank details',
-    description: 'Update bank details for a specific wallet',
-  })
-  @ApiParam({
-    name: 'wallet_id',
-    description: 'Wallet unique identifier',
-    example: '67063f653b4a1f6c7a60ec57',
-  })
-  @ApiBody({ type: UpdateWalletBankDetailsDto })
-  async updateWalletWithBankDetails(
-    @GetDeveloper('id') developerId: string,
-    @Body() dto: UpdateWalletBankDetailsDto,
-    @Param('wallet_id') walletId: string,
-  ) {
-    return this.walletsService.updateWalletWithBankDetails(
-      developerId,
-      walletId,
-      dto,
-    );
-  }
-
-  @Put(':wallet_id/auto_settlement')
-  @ApiOperation({
-    summary: 'Update auto settlement status',
-    description: 'Update the auto settlement status for a specific wallet',
-  })
-  @ApiParam({
-    name: 'wallet_id',
-    description: 'Wallet unique identifier',
-    example: '67063f653b4a1f6c7a60ec57',
-  })
-  @ApiBody({ type: UpdateWalletAutoSettlementDto })
-  async updateWalletAutoSettlementStatus(
-    @GetDeveloper('id') developerId: string,
-    @Body() dto: UpdateWalletAutoSettlementDto,
-    @Param('wallet_id') walletId: string,
-  ) {
-    return this.walletsService.updateWalletAutoSettlementStatus(
-      developerId,
-      walletId,
-      dto,
-    );
-  }
-
   @Get('/transactions/all')
   @ApiOperation({
     summary: 'Get all transactions',
@@ -248,31 +189,29 @@ export class WalletsController {
   @ApiQuery({ type: CustomQueryDto })
   async getTransactions(
     @GetDeveloper('id') developerId: string,
-    @Param('wallet_id') walletId: string,
+    @Param('transaction_id') transactionId: string,
     @Query() query: CustomQueryDto,
   ) {
-    return this.walletsService.getTransactionsByWalletId(
+    return this.walletsService.getTransactionsById(
       developerId,
-      walletId,
+      transactionId,
       query,
     );
   }
 
-  // @Get('/breet/transactions/all')
-  // async getAllBreetTransactions(
+  // @Get('/:wallet_id/transactions/all')
+  // async getAllTransactionsByWallet(
   //   @GetDeveloper('id') developerId: string,
   //   @Query() query: any,
-  // ) {
-  //   return this.walletsService.getBreetWalletTransactions(developerId, query);
-  // }
+  // ) { ... }
 
   // @Get('/breet/:wallet_id/transactions')
-  // async getBreetWalletTransactions(
+  // async getWalletTransactionsById(
   //   @GetDeveloper('id') developerId: string,
   //   @Param('wallet_id') walletId: string,
   //   @Query() query: any,
   // ) {
-  //   return this.walletsService.getBreetWalletTransactionsById(
+  //   return this.walletsService.getTransactionsByWalletId(
   //     developerId,
   //     walletId,
   //     query,
@@ -291,20 +230,6 @@ export class WalletsController {
   // ) {
   //   return this.walletsService.transfer(developerId, dto);
   // }
-
-  @Post('/mock-trade')
-  @ApiOperation({
-    summary: 'Mock a trade (development only)',
-    description:
-      'Simulate an incoming deposit for testing purposes. Only available in development environment.',
-  })
-  @ApiBody({ type: MockTradeDto })
-  async mockTrade(
-    @GetDeveloper('id') developerId: string,
-    @Body() dto: MockTradeDto,
-  ) {
-    return this.walletsService.mockBreetTrade(developerId, dto);
-  }
 
   // Withdrawal Address Endpoints
   @Post('withdrawal-addresses')
@@ -329,10 +254,10 @@ export class WalletsController {
     return this.walletsService.getSavedWithdrawalAddresses(developerId);
   }
 
-  @Get('withdrawal-addresses/breet')
+  @Get('withdrawal-addresses')
   @ApiOperation({
     summary: 'Get withdrawal addresses',
-    description: 'Fetch all breet withdrawal (payout) wallet addresses',
+    description: 'Fetch all withdrawal (payout) wallet addresses',
   })
   async getWithdrawalAddresses() {
     return this.walletsService.getWithdrawalAddresses();
@@ -362,8 +287,9 @@ export class WalletsController {
   @ApiBody({ type: InitiateStableCoinWithdrawalDto })
   async initiateStableCoinWithdrawal(
     @Body() dto: InitiateStableCoinWithdrawalDto,
+    @GetDeveloper('id') developerId: string,
   ) {
-    return this.walletsService.initiateStableCoinWithdrawal(dto);
+    return this.walletsService.initiateStableCoinWithdrawal(dto, developerId);
   }
 
   @Post('withdrawals/local-currencies')
@@ -379,26 +305,13 @@ export class WalletsController {
     return this.walletsService.initiateFiatWithdrawal(dto, developerId);
   }
 
-  @Get('withdrawals/breet')
+  @Get('withdrawals')
   @ApiOperation({
-    summary: 'Get breet withdrawals',
-    description: 'Fetch all breet withdrawals',
+    summary: 'Get withdrawals',
+    description: 'Fetch all payouts / withdrawals',
   })
-  @ApiParam({
-    name: 'page',
-    description: 'Page number',
-    example: 1,
-  })
-  @ApiParam({
-    name: 'size',
-    description: 'Number of items per page',
-    example: 10,
-  })
-  async getBreetWithdrawals(
-    @Query('page') page: string,
-    @Query('size') size: string,
-  ) {
-    return this.walletsService.getBreetWithdrawals({ page, size });
+  async listPayouts(@Query('page') page: string, @Query('size') size: string) {
+    return this.walletsService.listPayouts({ page, size });
   }
 
   // @Get('withdrawals/:withdrawalId')

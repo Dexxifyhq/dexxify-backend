@@ -12,15 +12,17 @@ import { Developer } from './developer.entity';
 import { Customer } from './customer.entity';
 import { WalletAsset, WalletNetwork } from './wallet.entity';
 import { PaymentPage } from './payment-page.entity';
+import { Invoice } from './invoice.entity';
 
 export enum PaymentSessionStatus {
-  INITIATED = 'initiated',
   PENDING = 'pending',
-  PROCESSING = 'processing',
   COMPLETED = 'completed',
   FAILED = 'failed',
   EXPIRED = 'expired',
-  CANCELLED = 'cancelled',
+  PARTIAL = 'partial',
+  // INITIATED = 'initiated',
+  // PROCESSING = 'processing',
+  // CANCELLED = 'cancelled',
 }
 
 @Entity('payment_sessions')
@@ -60,7 +62,7 @@ export class PaymentSession {
   @Column({
     type: 'enum',
     enum: PaymentSessionStatus,
-    default: PaymentSessionStatus.INITIATED,
+    default: PaymentSessionStatus.PENDING,
   })
   status: PaymentSessionStatus;
 
@@ -68,8 +70,16 @@ export class PaymentSession {
   @Column({ type: 'uuid', nullable: true })
   payment_page_id: string | null;
 
+  @Index()
+  @Column({ type: 'uuid', nullable: true })
+  invoice_id: string | null;
+
   @Column({ type: 'text', nullable: true })
   transaction_id: string | null;
+
+  @Index()
+  @Column({ type: 'text', nullable: true })
+  provider_session_reference: string | null;
 
   @Column({ type: 'jsonb', default: {} })
   metadata: Record<string, any>;
@@ -101,4 +111,8 @@ export class PaymentSession {
   })
   @JoinColumn({ name: 'payment_page_id' })
   payment_page: PaymentPage;
+
+  @ManyToOne(() => Invoice, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'invoice_id' })
+  invoice: Invoice;
 }

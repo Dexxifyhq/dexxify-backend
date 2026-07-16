@@ -6,16 +6,19 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import {
   PaymentPage,
   PaymentPageStatus,
   PaymentSession,
   PaymentSessionStatus,
   Customer,
-  Bank,
 } from '../../database/entities';
-import { CustomerWalletsService } from '../customers/customer-wallets.service';
+import {
+  CoincircuitService,
+  toCCAsset,
+  toCCChain,
+} from '../../providers/coincircuit/coincircuit.service';
 import {
   parsePagination,
   buildPaginationMeta,
@@ -32,6 +35,7 @@ import {
 @Injectable()
 export class PaymentPagesService {
   private readonly frontendUrl: string;
+  private readonly webhookUrl: string;
 
   constructor(
     @InjectRepository(PaymentPage)
@@ -40,28 +44,17 @@ export class PaymentPagesService {
     private readonly customerRepo: Repository<Customer>,
     @InjectRepository(PaymentSession)
     private readonly sessionRepo: Repository<PaymentSession>,
-    @InjectRepository(Bank)
-    private readonly bankRepo: Repository<Bank>,
-    private readonly customerWalletsService: CustomerWalletsService,
+    private readonly cc: CoincircuitService,
     private readonly config: ConfigService,
   ) {
     this.frontendUrl = this.config.get<string>('frontend.url') || '';
+    this.webhookUrl = this.config.get<string>('webhook.testUrl') || '';
+    // this.webhookUrl = `${this.config.get<string>('app.apiPrefix') || ''}/webhooks/incoming/coincircuit`;
   }
 
   async create(developerId: string, dto: CreatePaymentPageDto) {
     if (!dto.amount) {
       throw new BadRequestException('amount is required.');
-    }
-
-    if (dto.auto_settlement) {
-      const bankAccount = await this.bankRepo.findOne({
-        where: { developer_id: developerId, primary: true },
-      });
-      if (!bankAccount) {
-        throw new BadRequestException(
-          'Auto settlement is enabled but no bank account is configured for this merchant.',
-        );
-      }
     }
 
     const slug = await this.resolveUniqueSlug(dto.slug || dto.title);
@@ -74,7 +67,7 @@ export class PaymentPagesService {
       currency: dto.currency?.toUpperCase() || 'USD',
       amount: dto.amount ?? null,
       status: dto.status,
-      auto_settlement: dto.auto_settlement ?? false,
+      // auto_settlement: dto.auto_settlement ?? false,
     });
 
     const saved = await this.pageRepo.save(page);
@@ -170,27 +163,23 @@ export class PaymentPagesService {
       );
     }
 
-    let bankAccount: Bank | null = null;
-    if (page.auto_settlement) {
-      bankAccount = await this.bankRepo.findOne({
-        where: { developer_id: page.developer_id, primary: true },
-      });
-      if (!bankAccount) {
-        throw new BadRequestException(
-          'Auto settlement is enabled but no bank account is configured for this merchant.',
-        );
-      }
-    }
+    // if (dto.amount !== undefined && dto.amount < Number(page.amount)) {
+    //   throw new BadRequestException(
+    //     `Minimum amount is ${page.amount} ${page.currency}.`,
+    //   );
+    // }
 
-    if (dto.amount !== undefined && dto.amount < Number(page.amount)) {
-      throw new BadRequestException(
-        `Minimum amount is ${page.amount} ${page.currency}.`,
-      );
-    }
+    // Map to CoincircuitMCP asset/chain identifiers (throws for unsupported)
+    const ccAsset = toCCAsset(dto.asset);
+    const ccChain = toCCChain(dto.network);
+    // console.log(dto.asset);
+    // console.log(dto.network);
+    // console.log(ccAsset);
+    // console.log(ccChain);
 
-    // Find or create the customer (email is globally unique per the entity constraint)
+    // Find or create our local customer record
     const existingCustomer = await this.customerRepo.findOne({
-      where: { email: dto.email },
+      where: { email: dto.email, developer_id: page.developer_id },
     });
 
     const customer: Customer = existingCustomer
@@ -204,34 +193,23 @@ export class PaymentPagesService {
           } as Customer),
         );
 
-    // Check for an active session already open for this customer on this page
-    // const existingSession = await this.sessionRepo.findOne({
-    //   where: {
-    //     payment_page_id: page.id,
-    //     customer_id: customer.id,
-    //     status: In([
-    //       PaymentSessionStatus.PENDING,
-    //       PaymentSessionStatus.INITIATED,
-    //     ]),
-    //   },
-    // });
+    // Create a CoincircuitMCP payment session — CC handles address provisioning
+    const ccResult = await this.cc.createPaymentSession({
+      title: page.title,
+      description: page.description || page.title,
+      amount: String(page.amount),
+      currency: (page.currency as 'NGN' | 'USD') || 'NGN',
+      asset: ccAsset,
+      chain: ccChain,
+      customer: {
+        email: dto.email,
+        firstName: dto.first_name,
+        lastName: dto.last_name,
+      },
+      webhookUrl: this.webhookUrl || undefined,
+    });
 
-    // if (existingSession) {
-    //   throw new BadRequestException(
-    //     'An active payment session already exists for this customer on this page.',
-    //   );
-    // }
-
-    // Get or provision a deposit address for this customer+asset+network combo
-    const customerWallet = await this.customerWalletsService.getOrCreate(
-      customer.id,
-      page.developer_id,
-      dto.asset,
-      dto.asset_id,
-      dto.network,
-      page.auto_settlement,
-      bankAccount,
-    );
+    const ccSession = ccResult.data;
 
     const session = await this.sessionRepo.save(
       this.sessionRepo.create({
@@ -239,21 +217,29 @@ export class PaymentPagesService {
         customer_id: customer.id,
         payment_page_id: page.id,
         reference: `ps_${generateUniqueId().slice(0, 16)}`,
-        deposit_address: customerWallet.deposit_address,
+        provider_session_reference: ccSession.reference,
+        deposit_address: ccSession.payment?.address ?? null,
         amount: page.amount,
         currency: page.currency,
         crypto_asset: dto.asset,
         network: dto.network,
-        status: PaymentSessionStatus.INITIATED,
-        metadata: { ...(dto.metadata || {}), payment_page_slug: slug },
-        expires_at: new Date(Date.now() + 30 * 60 * 1000),
+        status: PaymentSessionStatus.PENDING,
+        metadata: {
+          ...(dto.metadata || {}),
+          ...ccSession,
+          payment_page_slug: slug,
+        },
+        expires_at: ccSession.expiresAt
+          ? new Date(ccSession.expiresAt)
+          : new Date(Date.now() + 30 * 60 * 1000),
       }),
     );
 
     return {
       session,
-      // crypto_asset: dto.asset,
-      // network: dto.network,
+      // payment: ccSession.payment ?? null,
+      // cancelUrl: ccSession.cancelUrl,
+      // successUrl: ccSession.successUrl,
     };
   }
 

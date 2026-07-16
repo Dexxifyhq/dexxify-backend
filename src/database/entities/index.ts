@@ -11,8 +11,6 @@ export {
   WalletNetwork,
   WalletStatus,
 } from './wallet.entity';
-export { OfframpTransaction, TxStatus } from './offramp-transaction.entity';
-export { OnrampTransaction } from './onramp-transaction.entity';
 export { Payout, PayoutStatus } from './payout.entity';
 export { KycVerification, KycType, KycStatus } from './kyc-verification.entity';
 export {
@@ -32,4 +30,9 @@ export { PaymentSession, PaymentSessionStatus } from './payment-session.entity';
 export { Invoice, InvoiceStatus } from './invoice.entity';
 export type { InvoiceLineItem } from './invoice.entity';
 export { PaymentPage, PaymentPageStatus } from './payment-page.entity';
-export { CustomerWallet } from './customer-wallet.entity';
+export {
+  CryptoTransaction,
+  CryptoTxDirection,
+  CryptoTxStatus,
+} from './crypto-transaction.entity';
+export { SwapRecord, SwapRecordStatus, SwapRecordType } from './swap-record.entity';

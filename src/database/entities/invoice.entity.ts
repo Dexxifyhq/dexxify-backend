@@ -79,6 +79,13 @@ export class Invoice {
   @Column({ type: 'text', nullable: true })
   notes: string | null;
 
+  @Index()
+  @Column({ type: 'text', nullable: true })
+  provider_invoice_reference: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  cc_invoice_url: string | null;
+
   @Column({ type: 'jsonb', default: {} })
   metadata: Record<string, any>;
 

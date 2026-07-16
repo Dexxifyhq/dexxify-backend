@@ -14,8 +14,7 @@ import { Developer } from './developer.entity';
 
 export enum CustomerStatus {
   ACTIVE = 'active',
-  SUSPENDED = 'suspended',
-  BLOCKED = 'blocked',
+  INACTIVE = 'inactive',
 }
 
 @Entity('customers')
@@ -47,6 +46,10 @@ export class Customer {
     default: CustomerStatus.ACTIVE,
   })
   status: CustomerStatus;
+
+  @Index()
+  @Column({ type: 'text', nullable: true })
+  cc_customer_id: string | null;
 
   @Column({ type: 'jsonb', default: {} })
   metadata: Record<string, any>;

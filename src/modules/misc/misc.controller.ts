@@ -1,24 +1,8 @@
-import {
-  Controller,
-  Get,
-  Query,
-  Post,
-  Body,
-  Param,
-  Delete,
-  ParseIntPipe,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete } from '@nestjs/common';
 import { MiscService } from './misc.service';
 import { GetRateQueryDto, AddBankDto, VerifyBankAccountDto } from './dto';
 import { GetDeveloper, Public, DualAuth } from '../../common/decorators';
-import {
-  ApiBearerAuth,
-  ApiBody,
-  ApiOperation,
-  ApiParam,
-  ApiQuery,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiBody, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('Misc - Banks & Assets')
 @DualAuth()
@@ -26,20 +10,13 @@ import {
 export class MiscController {
   constructor(private readonly miscService: MiscService) {}
 
-  @ApiOperation({
-    summary: 'Get supported banks',
-    description:
-      'Returns list of supported Nigerian banks (bank code + name). Cached for 24 hours.',
-  })
+  @ApiOperation({ summary: 'Get supported banks' })
   @Get('banks')
   async getBanks() {
     return this.miscService.getBanks();
   }
 
-  @ApiOperation({
-    summary: 'Add bank account',
-    description: 'Add a validated NGN or GHS bank account to your integration',
-  })
+  @ApiOperation({ summary: 'Add bank account' })
   @Post('banks')
   async addBank(
     @GetDeveloper('id') developerId: string,
@@ -48,197 +25,74 @@ export class MiscController {
     return this.miscService.addBank(developerId, dto);
   }
 
-  @ApiOperation({
-    summary: 'Get saved banks',
-    description:
-      'Retrieve all saved bank accounts for the authenticated developer from local database',
-  })
+  @ApiOperation({ summary: 'Get saved banks' })
   @Get('banks/saved')
   async getSavedBanks(@GetDeveloper('id') developerId: string) {
     return this.miscService.getSavedBanks(developerId);
   }
 
-  @ApiOperation({
-    summary: 'Get saved bank by account number',
-    description: 'Retrieve a specific saved bank account by account number',
-  })
-  @ApiParam({
-    name: 'accountNumber',
-    description: 'Bank account number',
-    example: '3154021148',
-  })
+  @ApiOperation({ summary: 'Get saved bank by account number' })
+  @ApiParam({ name: 'accountNumber', example: '3154021148' })
   @Get('banks/saved/:accountNumber')
   async getSavedBankById(
     @GetDeveloper('id') developerId: string,
-    @Param('accountNumber', ParseIntPipe) accountNumber: number,
+    @Param('accountNumber') accountNumber: string,
   ) {
-    return this.miscService.getSavedBanksById(
-      developerId,
-      accountNumber.toString(),
-    );
+    return this.miscService.getSavedBanksById(developerId, accountNumber);
   }
 
-  @ApiOperation({
-    summary: 'Get Breet bank integration',
-    description: 'Fetch all banks on your integration from Breet API',
-  })
-  @Get('banks/breet')
-  async getBreetBankIntegration() {
-    return this.miscService.getBreetBankIntegration();
-  }
-
-  @ApiOperation({
-    summary: 'Get Breet bank by ID',
-    description: 'Fetch a specific bank from Breet API by its ID',
-  })
-  @ApiParam({
-    name: 'bankId',
-    description: 'Breet bank unique identifier',
-    example: '69737920df8b52679a8b198e',
-  })
-  @Get('banks/:bankId')
-  async getBreetBankById(@Param('bankId') bankId: string) {
-    return this.miscService.getBreetBankById(bankId);
-  }
-
-  @ApiOperation({
-    summary: 'Delete bank account',
-    description:
-      'Remove a saved bank account from your integration by ID. Also detaches from all associated wallets.',
-  })
-  @ApiParam({
-    name: 'bankId',
-    description: 'Breet bank unique identifier',
-    example: '69737920df8b52679a8b198e',
-  })
+  @ApiOperation({ summary: 'Delete bank account' })
+  @ApiParam({ name: 'bankId', description: 'Local bank record ID' })
   @Delete('banks/:bankId')
   async deleteBank(@Param('bankId') bankId: string) {
     return this.miscService.deleteBank(bankId);
   }
 
-  @ApiOperation({
-    summary: 'Verify bank account',
-    description:
-      'Verify bank account details before adding. Returns account name if valid.',
-  })
+  @ApiOperation({ summary: 'Verify bank account' })
   @Post('banks/verify')
   async verifyBankAccount(@Body() dto: VerifyBankAccountDto) {
     return this.miscService.verifyBankAccount(dto);
   }
 
   @Public()
-  @ApiOperation({
-    summary: 'Get deposit assets',
-    description:
-      'Returns supported crypto assets for deposit (test and mainnet)',
-  })
-  @Get('deposit-assets')
+  @ApiOperation({ summary: 'Get supported blockchain and assets' })
+  @Get('assets')
   async getSupportedDepositAssets() {
-    return this.miscService.getSupportedDepositAssets();
+    return this.miscService.getSupportedAssets();
   }
 
-  @ApiOperation({
-    summary: 'Get withdrawal assets',
-    description:
-      'Returns supported crypto assets for withdrawal to external addresses',
-  })
-  @Get('withdrawal-assets')
-  async getSupportedWithdrawalAssets() {
-    return this.miscService.getSupportedWithdrawalAssets();
-  }
+  // @ApiOperation({ summary: 'Get supported withdrawal assets' })
+  // @Get('withdrawal-assets')
+  // async getSupportedWithdrawalAssets() {
+  //   return this.miscService.getSupportedWithdrawalAssets();
+  // }
 
-  @ApiOperation({
-    summary: 'Get crypto prices',
-    description: 'Get global market prices for crypto-fiat pairs from Breet',
-  })
+  @ApiOperation({ summary: 'Get crypto conversion rate' })
   @Post('crypto-prices')
   async getCryptoPrices(@Body() query: GetRateQueryDto) {
     return this.miscService.getCryptoPrices(query);
   }
 
-  @ApiOperation({
-    summary: 'Rate calculator',
-    description:
-      "Calculate crypto amount and get NGN/GHS rate using Breet's actual conversion rates",
+  @ApiOperation({ summary: 'Estimate payment amount in crypto' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        asset: { type: 'string', example: 'USDT' },
+        amount: { type: 'number', example: 100 },
+        currency: { type: 'string', example: 'NGN' },
+      },
+      required: ['asset', 'amount', 'currency'],
+    },
   })
   @Post('rate-calculator')
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        assetId: { type: 'string', example: '69b3e33d5aef202395e800e1' },
-        amountInUSD: { type: 'number', example: 100 },
-        currency: { type: 'string', example: 'ngn' },
-      },
-      required: ['assetId', 'amountInUSD', 'currency'],
-    },
-  })
   async getRateCalculator(
-    @Body() body: { assetId: string; amountInUSD: number; currency: string },
+    @Body() body: { asset: string; amount: number; currency: string },
   ) {
     return this.miscService.getRateCalculator(
-      body.assetId,
-      body.amountInUSD,
-      body.currency,
-    );
-  }
-
-  @ApiOperation({
-    summary: 'Convert USD to fiat',
-    description:
-      'Convert USD balance to local fiat (NGN/GHS) and optionally credit to saved bank account',
-  })
-  @Post('convert/usd-to-fiat')
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        amount: { type: 'number', example: 10 },
-        pin: { type: 'string', example: '1234' },
-        bankId: { type: 'string', example: '69e941d9eda0df83cc847d8a' },
-      },
-      required: ['amount', 'bankId', 'pin'],
-    },
-  })
-  async convertUsdToFiat(
-    @Body() body: { amount: number; pin: string; bankId: string },
-  ) {
-    return this.miscService.convertUsdToFiat(
+      body.asset,
       body.amount,
-      body.pin,
-      body.bankId,
-    );
-  }
-
-  @ApiOperation({
-    summary: 'Convert fiat to USD',
-    description:
-      'Convert local fiat (NGN/GHS) to USD and optionally withdraw to crypto address',
-  })
-  @Post('convert/fiat-to-usd')
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        localAmount: { type: 'number', example: 20000 },
-        pin: { type: 'string', example: '1234' },
-        withdrawalAddressId: { type: 'string', example: 'address_123' },
-      },
-      required: ['localAmount', 'pin', 'withdrawalAddressId'],
-    },
-  })
-  async convertFiatToUsd(
-    @Body()
-    body: {
-      localAmount: number;
-      pin: string;
-      withdrawalAddressId: string;
-    },
-  ) {
-    return this.miscService.convertFiatToUsd(
-      body.localAmount,
-      body.pin,
-      body.withdrawalAddressId,
+      body.currency,
     );
   }
 }
@@ -248,10 +102,7 @@ export class MiscController {
 export class HealthController {
   constructor(private readonly miscService: MiscService) {}
 
-  @ApiOperation({
-    summary: 'Health check',
-    description: 'Public health check endpoint to verify API availability',
-  })
+  @ApiOperation({ summary: 'Health check' })
   @Public()
   @Get()
   getHealth() {

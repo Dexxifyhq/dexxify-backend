@@ -14,21 +14,21 @@ export enum TxType {
   DEPOSIT = 'deposit',
   WITHDRAWAL = 'withdrawal',
   TRANSFER = 'transfer',
-  ONRAMP = 'onramp',
+  ONRAMP = 'onramp', // This will soon be removed
   OFFRAMP = 'offramp',
   PAYOUT = 'payout',
   FEE = 'fee',
+  SWAP = 'swap',
+  REFUND = 'refund',
 }
 
 export enum LedgerEntryStatus {
   INITIATED = 'initiated',
   PENDING = 'pending',
   COMPLETED = 'completed',
-  FLAGGED = 'flagged',
   PROCESSING = 'processing',
   REJECTED = 'rejected',
   REVERSED = 'reversed',
-  AUTO_SETTLED = 'auto_settled',
 }
 
 @Entity('ledger_entries')

@@ -2,13 +2,13 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CustomersController } from './customers.controller';
 import { CustomersService } from './customers.service';
-import { CustomerWalletsService } from './customer-wallets.service';
-import { Customer, CustomerWallet } from '../../database/entities';
+import { Customer } from '../../database/entities';
+import { CoincircuitModule } from '../../providers/coincircuit/coincircuit.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Customer, CustomerWallet])],
+  imports: [TypeOrmModule.forFeature([Customer]), CoincircuitModule],
   controllers: [CustomersController],
-  providers: [CustomersService, CustomerWalletsService],
-  exports: [CustomersService, CustomerWalletsService],
+  providers: [CustomersService],
+  exports: [CustomersService],
 })
 export class CustomersModule {}

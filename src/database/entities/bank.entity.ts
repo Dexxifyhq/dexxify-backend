@@ -7,7 +7,6 @@ import {
   JoinColumn,
   Index,
   PrimaryColumn,
-  Unique,
 } from 'typeorm';
 import { Developer } from './developer.entity';
 
@@ -29,7 +28,7 @@ export class Bank {
 
   @Index()
   @Column({ type: 'text' })
-  breet_bank_id: string;
+  provider_recipient_id: string;
 
   @ManyToOne(() => Developer, (developer) => developer.banks, {
     onDelete: 'CASCADE',
@@ -47,8 +46,11 @@ export class Bank {
   @Column({ type: 'text' })
   account_number: string;
 
-  @Column({ type: 'boolean', default: false })
-  auto_settlement: boolean;
+  @Column({ type: 'text' })
+  bank_code: string;
+
+  // @Column({ type: 'boolean', default: false })
+  // auto_settlement: boolean;
 
   @Column({ type: 'text' })
   bank_name: string;
@@ -56,19 +58,19 @@ export class Bank {
   @Column({ type: 'text' })
   currency: string;
 
-  @Column({ type: 'boolean', default: false })
-  disabled: boolean;
+  // @Column({ type: 'boolean', default: false })
+  // disabled: boolean;
 
   @Column({ type: 'text', nullable: true })
-  integration_id: string;
+  label: string;
 
   @Column({ type: 'boolean', default: false })
-  is_business: boolean;
+  is_trusted: boolean;
 
-  @Column({ type: 'text' })
+  @Column({ type: 'text', nullable: true })
   type: string;
 
-  @Column({ type: 'boolean', default: true })
+  @Column({ type: 'boolean', default: false })
   primary: boolean;
 
   @CreateDateColumn({ type: 'timestamptz' })

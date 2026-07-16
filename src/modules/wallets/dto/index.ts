@@ -53,18 +53,18 @@ export class CreateWalletDto {
   // @IsNotEmpty()
   account_number: string;
 
-  @ApiPropertyOptional({
-    description: 'Enable auto settlement',
-    example: true,
-  })
-  @IsOptional()
-  @IsBoolean()
-  auto_settlement: boolean;
+  // @ApiPropertyOptional({
+  //   description: 'Enable auto settlement',
+  //   example: true,
+  // })
+  // @IsOptional()
+  // @IsBoolean()
+  // auto_settlement: boolean;
 
-  @ApiProperty({ description: 'Asset ID', example: '6930298330b92dbdfc0267a4' })
-  @IsString()
-  @IsNotEmpty()
-  asset_id: string;
+  // @ApiProperty({ description: 'Asset ID', example: '6930298330b92dbdfc0267a4' })
+  // @IsString()
+  // @IsNotEmpty()
+  // asset_id: string;
 }
 
 export class TransferDto {
@@ -220,6 +220,13 @@ export class AddWithdrawalAddressDto {
   @IsString()
   @IsNotEmpty()
   label: string;
+
+  @ApiProperty({
+    description: 'Default wallet account',
+    example: true,
+  })
+  @IsBoolean()
+  isDefault: boolean;
 }
 
 // Note for withdrawals, USDC is not supported on TON

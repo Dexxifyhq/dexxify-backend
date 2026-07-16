@@ -2,17 +2,15 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { OfframpController } from './offramp.controller';
 import { OfframpService } from './offramp.service';
-import {
-  OfframpTransaction,
-  Wallet,
-  LedgerEntry,
-} from '../../database/entities';
+import { CryptoTransaction, SwapRecord } from '../../database/entities';
 import { WalletsModule } from '../wallets/wallets.module';
+import { CoincircuitModule } from '../../providers/coincircuit/coincircuit.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([OfframpTransaction, Wallet, LedgerEntry]),
+    TypeOrmModule.forFeature([CryptoTransaction, SwapRecord]),
     WalletsModule,
+    CoincircuitModule,
   ],
   controllers: [OfframpController],
   providers: [OfframpService],

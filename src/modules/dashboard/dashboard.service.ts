@@ -10,8 +10,9 @@ import {
   Wallet,
   Payout,
   PayoutStatus,
-  OfframpTransaction,
-  TxStatus,
+  CryptoTransaction,
+  CryptoTxStatus,
+  CryptoTxDirection,
   KycVerification,
   LedgerEntry,
 } from '../../database/entities';
@@ -27,8 +28,8 @@ export class DashboardService {
     private readonly walletRepo: Repository<Wallet>,
     @InjectRepository(Payout)
     private readonly payoutRepo: Repository<Payout>,
-    @InjectRepository(OfframpTransaction)
-    private readonly offrampRepo: Repository<OfframpTransaction>,
+    @InjectRepository(CryptoTransaction)
+    private readonly cryptoTxRepo: Repository<CryptoTransaction>,
     @InjectRepository(KycVerification)
     private readonly kycRepo: Repository<KycVerification>,
     @InjectRepository(LedgerEntry)
@@ -126,15 +127,15 @@ export class DashboardService {
   // ── Usage & Stats ───────────────────────────────────────
 
   async getOverview(developerId: string) {
-    const [walletCount, payouts, offramps, kycCount] = await Promise.all([
+    const [walletCount, payouts, cryptoTxs, kycCount] = await Promise.all([
       this.walletRepo.count({ where: { developer_id: developerId } }),
       this.payoutRepo.find({
         where: { developer_id: developerId },
         select: ['amount', 'status'],
       }),
-      this.offrampRepo.find({
+      this.cryptoTxRepo.find({
         where: { developer_id: developerId },
-        select: ['amount', 'status'],
+        select: ['fiat_amount', 'status', 'direction'],
       }),
       this.kycRepo.count({ where: { developer_id: developerId } }),
     ]);
@@ -143,16 +144,32 @@ export class DashboardService {
       .filter((p) => p.status === PayoutStatus.COMPLETED)
       .reduce((sum, p) => sum + Number(p.amount), 0);
 
-    const totalOfframpVolume = offramps
-      .filter((o) => o.status === TxStatus.COMPLETED)
-      .reduce((sum, o) => sum + Number(o.amount), 0);
+    const inbound = cryptoTxs.filter(
+      (t) => t.direction === CryptoTxDirection.INBOUND,
+    );
+    const outbound = cryptoTxs.filter(
+      (t) => t.direction === CryptoTxDirection.OUTBOUND,
+    );
+
+    const totalInboundVolume = inbound
+      .filter((t) => t.status === CryptoTxStatus.COMPLETED)
+      .reduce((sum, t) => sum + Number(t.fiat_amount ?? 0), 0);
+
+    const totalOutboundVolume = outbound
+      .filter((t) => t.status === CryptoTxStatus.COMPLETED)
+      .reduce((sum, t) => sum + Number(t.fiat_amount ?? 0), 0);
 
     return {
       wallets: { total: walletCount },
       payouts: { total: payouts.length, volume_ngn: totalPayoutVolume },
-      offramps: { total: offramps.length, volume_ngn: totalOfframpVolume },
+      crypto_inbound: { total: inbound.length, volume_ngn: totalInboundVolume },
+      crypto_outbound: {
+        total: outbound.length,
+        volume_ngn: totalOutboundVolume,
+      },
       kyc_verifications: { total: kycCount },
-      total_volume_ngn: totalPayoutVolume + totalOfframpVolume,
+      total_volume_ngn:
+        totalPayoutVolume + totalInboundVolume + totalOutboundVolume,
     };
   }
 

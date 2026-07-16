@@ -1,105 +1,80 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import {
+  IsBoolean,
+  IsEnum,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 
 export enum RateTo {
-  NGN = 'ngn',
-  GHS = 'ghs',
-  USD = 'usd',
-  CAD = 'cad',
-  AUD = 'aud',
-  GBP = 'gbp',
-  EUR = 'eur',
+  NGN = 'NGN',
+  USD = 'USD',
 }
 
-// Commented out assets possess isAccountBased: false, on Breet
 export enum RateFrom {
-  // BCH = 'BCH',
-  // DOGE = 'DOGE',
-  // LTC = 'LTC',
-  // BTC = 'BTC',
+  BTC = 'BTC',
   BNB = 'BNB',
   ETH = 'ETH',
   USDT = 'USDT',
   USDC = 'USDC',
   SOL = 'SOL',
   TRX = 'TRX',
-  XRP = 'XRP',
-  AVAX = 'AVAX',
-  TON = 'TON',
 }
 
 export class GetRateQueryDto {
-  @ApiProperty({
-    description: 'Source Asset',
-    example: RateFrom.USDT,
-  })
+  @ApiProperty({ description: 'Source asset', example: RateFrom.USDT })
   @IsEnum(RateFrom)
   @IsNotEmpty()
-  from: RateFrom; // e.g. 'USDT'
+  from: RateFrom;
 
-  @ApiProperty({
-    description: 'Fiat currency',
-    example: RateTo.NGN,
-  })
+  @ApiProperty({ description: 'Fiat currency', example: RateTo.NGN })
   @IsEnum(RateTo)
   @IsNotEmpty()
-  to: RateTo; // e.g. 'NGN'
-}
-
-export enum BankCurrency {
-  NGN = 'NGN',
-  GHS = 'GHS',
+  to: RateTo;
 }
 
 export class AddBankDto {
-  @ApiProperty({
-    description: 'Bank account number',
-    example: '3154021148',
-  })
+  @ApiProperty({ description: 'Bank account number', example: '8065924354' })
   @IsString()
   @IsNotEmpty()
   accountNumber: string;
 
   @ApiProperty({
-    description: 'Breet Bank ID',
-    example: '39',
+    description: 'Bank code (e.g. 305 for OPay)',
+    example: '305',
   })
   @IsString()
   @IsNotEmpty()
-  bankId: string;
-
-  // @ApiProperty({
-  //   description: 'Currency',
-  //   enum: BankCurrency,
-  //   example: BankCurrency.NGN,
-  // })
-  // @IsEnum(BankCurrency)
-  // @IsNotEmpty()
-  // currency: BankCurrency;
+  bankCode: string;
 
   @ApiPropertyOptional({
-    description: 'Narration for the bank account',
-    example: 'My Zenith Account',
+    description: 'Friendly label',
+    example: 'My OpayBank',
   })
   @IsOptional()
   @IsString()
-  narration?: string;
+  label?: string;
+
+  @ApiProperty({
+    description: 'Default account recipient',
+    example: false,
+  })
+  @IsBoolean()
+  isDefault: boolean;
 }
 
 export class VerifyBankAccountDto {
-  @ApiProperty({
-    description: 'Bank account number',
-    example: '1234567890',
-  })
+  @ApiProperty({ description: 'Bank account number', example: '2249098732' })
   @IsString()
   @IsNotEmpty()
   accountNumber: string;
 
   @ApiProperty({
-    description: 'Breet Bank ID',
-    example: '057',
+    description: 'Bank code (e.g. 033 for UBABank)',
+    example: '033',
   })
   @IsString()
   @IsNotEmpty()
-  bankId: string;
+  bankCode: string;
 }

@@ -5,29 +5,37 @@ import {
   IncomingWebhooksController,
 } from './webhooks.controller';
 import { WebhooksService } from './webhooks.service';
-import { BreetWebhooksService } from './breet-webhooks.service';
+import { CoincircuitWebhooksService } from './coincircuit-webhooks.service';
+import { CoincircuitModule } from '../../providers/coincircuit/coincircuit.module';
 import {
   WebhookEndpoint,
   WebhookEvent,
+  PaymentSession,
+  Payout,
   LedgerEntry,
+  Invoice,
   Wallet,
-  OfframpTransaction,
-  OnrampTransaction,
+  SwapRecord,
+  CryptoTransaction,
 } from '../../database/entities';
 
 @Module({
   imports: [
+    CoincircuitModule,
     TypeOrmModule.forFeature([
       WebhookEndpoint,
       WebhookEvent,
+      PaymentSession,
+      Payout,
       LedgerEntry,
+      Invoice,
       Wallet,
-      OfframpTransaction,
-      OnrampTransaction,
+      SwapRecord,
+      CryptoTransaction,
     ]),
   ],
   controllers: [WebhooksController, IncomingWebhooksController],
-  providers: [WebhooksService, BreetWebhooksService],
+  providers: [WebhooksService, CoincircuitWebhooksService],
   exports: [WebhooksService],
 })
 export class WebhooksModule {}

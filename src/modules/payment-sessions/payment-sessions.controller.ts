@@ -17,11 +17,17 @@ import {
   ApiBody,
 } from '@nestjs/swagger';
 import { PaymentSessionsService } from './payment-sessions.service';
-import { CreatePaymentSessionDto, PaymentSessionQueryDto } from './dto';
-import { GetDeveloper, Public } from '../../common/decorators';
+import {
+  CreatePaymentSessionDto,
+  GenerateDepositAddressDto,
+  EstimatePaymentDto,
+  PaymentSessionQueryDto,
+} from './dto';
+import { DualAuth, GetDeveloper, Public } from '../../common/decorators';
 
 @ApiTags('Payment Sessions')
-@ApiBearerAuth('api-key')
+@DualAuth()
+// @ApiBearerAuth('api-key')
 @Controller('payment-sessions')
 export class PaymentSessionsController {
   constructor(private readonly sessionsService: PaymentSessionsService) {}
@@ -68,6 +74,32 @@ export class PaymentSessionsController {
     @Param('reference') reference: string,
   ) {
     return this.sessionsService.findByReference(developerId, reference);
+  }
+
+  @ApiOperation({
+    summary: 'Generate deposit address for a session',
+    description:
+      'Requests a crypto deposit address from CoincircuitMCP and stores it on the session.',
+  })
+  @ApiParam({ name: 'session_id', description: 'Payment session UUID' })
+  @ApiBody({ type: GenerateDepositAddressDto })
+  @Post(':session_id/deposit-address')
+  generateDepositAddress(
+    @Param('session_id', ParseUUIDPipe) sessionId: string,
+    @Body() dto: GenerateDepositAddressDto,
+  ) {
+    return this.sessionsService.generateDepositAddress(sessionId, dto);
+  }
+
+  @ApiOperation({
+    summary: 'Estimate crypto amount for a fiat payment',
+    description:
+      'Returns the crypto amount equivalent for a given fiat amount.',
+  })
+  @ApiBody({ type: EstimatePaymentDto })
+  @Post('estimate')
+  getEstimate(@Body() dto: EstimatePaymentDto) {
+    return this.sessionsService.getEstimate(dto);
   }
 
   @ApiOperation({ summary: 'Cancel a pending payment session' })

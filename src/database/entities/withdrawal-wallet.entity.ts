@@ -50,6 +50,9 @@ export class WithdrawalWallet {
   @Column({ type: 'text' })
   label: string;
 
+  @Column({ type: 'boolean', default: false })
+  primary: boolean;
+
   @Column({ type: 'text', nullable: true })
   avatar: string;
 
