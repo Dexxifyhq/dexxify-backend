@@ -245,13 +245,13 @@ export class InitiateStableCoinWithdrawalDto {
   @IsNotEmpty()
   amount: number;
 
-  @ApiPropertyOptional({
-    description: 'Pin on the dashboard',
-    example: '3847',
-  })
-  @IsString()
-  @IsOptional()
-  pin?: string;
+  // @ApiPropertyOptional({
+  //   description: 'Pin on the dashboard',
+  //   example: '3847',
+  // })
+  // @IsString()
+  // @IsOptional()
+  // pin?: string;
 
   @ApiProperty({
     description: 'Blockchain network',

@@ -31,6 +31,11 @@ export enum LedgerEntryStatus {
   REVERSED = 'reversed',
 }
 
+export enum LedgerCurrency {
+  NGN = 'NGN',
+  USD = 'USD',
+}
+
 @Entity('ledger_entries')
 export class LedgerEntry {
   @PrimaryGeneratedColumn('uuid')
@@ -67,6 +72,9 @@ export class LedgerEntry {
   @Column({ type: 'decimal', precision: 28, scale: 8, default: 0 })
   credit_usd: number;
 
+  @Column({ type: 'enum', enum: LedgerCurrency, default: LedgerCurrency.NGN })
+  currency: LedgerCurrency;
+
   @Column({ type: 'text', nullable: true })
   asset: string;
 
@@ -77,11 +85,11 @@ export class LedgerEntry {
   })
   status: LedgerEntryStatus;
 
-  @Column({ type: 'decimal', precision: 28, scale: 8, nullable: true })
-  amount_usd: number; // amount in USD
+  // @Column({ type: 'decimal', precision: 28, scale: 8, nullable: true })
+  // amount_usd: number; // amount in USD
 
-  @Column({ type: 'decimal', precision: 28, scale: 8, nullable: true })
-  amount_crypto: number; // amount in crypto
+  // @Column({ type: 'decimal', precision: 28, scale: 8, nullable: true })
+  // amount_crypto: number; // amount in crypto
 
   @Column({ type: 'text', nullable: true })
   description: string;

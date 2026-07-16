@@ -18,7 +18,7 @@ export {
   WebhookEvent,
   WebhookEventStatus,
 } from './webhook.entity';
-export { LedgerEntry, LedgerEntryStatus, TxType } from './ledger-entry.entity';
+export { LedgerEntry, LedgerEntryStatus, LedgerCurrency, TxType } from './ledger-entry.entity';
 export { OtpCode, OtpType } from './otp-code.entity';
 export {
   WithdrawalWallet,

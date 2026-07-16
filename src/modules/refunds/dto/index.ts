@@ -16,7 +16,7 @@ export enum RefundFeePaidBy {
 
 export enum RefundEntityType {
   SESSION = 'session',
-  INVOICE = 'invoice',
+  // INVOICE = 'invoice',
 }
 
 export enum RefundStatus {
@@ -27,17 +27,26 @@ export enum RefundStatus {
 }
 
 export class RefundDto {
-  @ApiProperty({ description: 'Customer wallet address to receive the refund', example: 'TXyz1234567890abcdef' })
+  @ApiProperty({
+    description: 'Customer wallet address to receive the refund',
+    example: 'TXyz1234567890abcdef',
+  })
   @IsString()
   @IsNotEmpty()
   refundAddress: string;
 
-  @ApiPropertyOptional({ description: 'Reason for refund', example: 'Customer requested refund' })
+  @ApiPropertyOptional({
+    description: 'Reason for refund',
+    example: 'Customer requested refund',
+  })
   @IsString()
   @IsOptional()
   reason?: string;
 
-  @ApiPropertyOptional({ enum: RefundFeePaidBy, description: 'Who pays the blockchain fee. Defaults to merchant settings.' })
+  @ApiPropertyOptional({
+    enum: RefundFeePaidBy,
+    description: 'Who pays the blockchain fee. Defaults to merchant settings.',
+  })
   @IsEnum(RefundFeePaidBy)
   @IsOptional()
   feePaidBy?: RefundFeePaidBy;
@@ -71,28 +80,42 @@ export class RefundQueryDto {
   @IsOptional()
   invoiceReference?: string;
 
-  @ApiPropertyOptional({ description: 'Start date filter (ISO 8601)', example: '2026-01-01T00:00:00Z' })
+  @ApiPropertyOptional({
+    description: 'Start date filter (ISO 8601)',
+    example: '2026-01-01T00:00:00Z',
+  })
   @IsString()
   @IsOptional()
   startDate?: string;
 
-  @ApiPropertyOptional({ description: 'End date filter (ISO 8601)', example: '2026-12-31T23:59:59Z' })
+  @ApiPropertyOptional({
+    description: 'End date filter (ISO 8601)',
+    example: '2026-12-31T23:59:59Z',
+  })
   @IsString()
   @IsOptional()
   endDate?: string;
 
-  @ApiPropertyOptional({ description: 'Search by session or invoice reference' })
+  @ApiPropertyOptional({
+    description: 'Search by session or invoice reference',
+  })
   @IsString()
   @IsOptional()
   search?: string;
 }
 
 export class EstimateRefundQueryDto {
-  @ApiProperty({ enum: RefundEntityType, description: 'Whether the reference is for a session or invoice' })
+  @ApiProperty({
+    enum: RefundEntityType,
+    description: 'Whether the reference is for a session or invoice',
+  })
   @IsEnum(RefundEntityType)
   entity: RefundEntityType;
 
-  @ApiPropertyOptional({ enum: RefundFeePaidBy, description: 'Who will pay the network fee' })
+  @ApiPropertyOptional({
+    enum: RefundFeePaidBy,
+    description: 'Who will pay the network fee',
+  })
   @IsEnum(RefundFeePaidBy)
   @IsOptional()
   feePaidBy?: RefundFeePaidBy;

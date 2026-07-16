@@ -163,41 +163,41 @@ export class WalletsController {
     return this.walletsService.getDepositAddress(developerId, walletId);
   }
 
-  @Get('/transactions/all')
-  @ApiOperation({
-    summary: 'Get all transactions',
-    description: 'Retrieve all transactions across all developer wallets',
-  })
-  @ApiQuery({ type: CustomQueryDto })
-  async getAllTransactions(
-    @GetDeveloper('id') developerId: string,
-    @Query() query: CustomQueryDto,
-  ) {
-    return this.walletsService.getAllTransactions(developerId, query);
-  }
+  // @Get('/transactions/all')
+  // @ApiOperation({
+  //   summary: 'Get all transactions',
+  //   description: 'Retrieve all transactions across all developer wallets',
+  // })
+  // @ApiQuery({ type: CustomQueryDto })
+  // async getAllTransactions(
+  //   @GetDeveloper('id') developerId: string,
+  //   @Query() query: CustomQueryDto,
+  // ) {
+  //   return this.walletsService.getAllTransactions(developerId, query);
+  // }
 
-  @Get(':wallet_id/transactions')
-  @ApiOperation({
-    summary: 'Get wallet transactions',
-    description: 'Retrieve transactions for a specific wallet with pagination',
-  })
-  @ApiParam({
-    name: 'wallet_id',
-    description: 'Wallet unique identifier',
-    example: '67063f653b4a1f6c7a60ec57',
-  })
-  @ApiQuery({ type: CustomQueryDto })
-  async getTransactions(
-    @GetDeveloper('id') developerId: string,
-    @Param('transaction_id') transactionId: string,
-    @Query() query: CustomQueryDto,
-  ) {
-    return this.walletsService.getTransactionsById(
-      developerId,
-      transactionId,
-      query,
-    );
-  }
+  // @Get(':wallet_id/transactions')
+  // @ApiOperation({
+  //   summary: 'Get wallet transactions',
+  //   description: 'Retrieve transactions for a specific wallet with pagination',
+  // })
+  // @ApiParam({
+  //   name: 'wallet_id',
+  //   description: 'Wallet unique identifier',
+  //   example: '67063f653b4a1f6c7a60ec57',
+  // })
+  // @ApiQuery({ type: CustomQueryDto })
+  // async getTransactions(
+  //   @GetDeveloper('id') developerId: string,
+  //   @Param('transaction_id') transactionId: string,
+  //   @Query() query: CustomQueryDto,
+  // ) {
+  //   return this.walletsService.getTransactionsById(
+  //     developerId,
+  //     transactionId,
+  //     query,
+  //   );
+  // }
 
   // @Get('/:wallet_id/transactions/all')
   // async getAllTransactionsByWallet(

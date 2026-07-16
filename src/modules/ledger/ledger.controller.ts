@@ -1,7 +1,7 @@
 import { Controller, Get, Param, Query, ParseUUIDPipe } from '@nestjs/common';
 import { LedgerService } from './ledger.service';
 import { LedgerQueryDto } from './dto';
-import { GetDeveloper } from '../../common/decorators';
+import { DualAuth, GetDeveloper } from '../../common/decorators';
 import {
   ApiOperation,
   ApiTags,
@@ -11,7 +11,8 @@ import {
 } from '@nestjs/swagger';
 
 @ApiTags('Ledger')
-@ApiBearerAuth('api-key')
+@DualAuth()
+// @ApiBearerAuth('api-key')
 @Controller()
 export class LedgerController {
   constructor(private readonly ledgerService: LedgerService) {}

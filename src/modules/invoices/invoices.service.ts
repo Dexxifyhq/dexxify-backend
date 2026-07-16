@@ -68,6 +68,7 @@ export class InvoicesService {
       dto.line_items,
       dto.tax_rate ?? 0,
       dto.discount_amount ?? 0,
+      dto.currency ?? 'USD',
     );
 
     const invoice = this.invoiceRepo.create({
@@ -199,6 +200,7 @@ export class InvoicesService {
         amount: invoice.total,
         currency: invoice.currency,
         crypto_asset: dto.crypto_asset,
+        deposit_address: ccResult?.data?.payment?.address || null,
         network: dto.network,
         status: PaymentSessionStatus.PENDING,
         provider_session_reference: ccData?.reference ?? null,
@@ -262,6 +264,7 @@ export class InvoicesService {
     rawItems: InvoiceLineItemDto[],
     taxRate: number,
     discountAmount: number,
+    currency: string,
   ): {
     subtotal: number;
     taxAmount: number;
@@ -275,9 +278,20 @@ export class InvoicesService {
       amount: item.quantity * item.unit_price,
     }));
 
+    if (currency.toUpperCase() === 'NGN') {
+      const invalid = lineItems.find((item) => item.amount <= 3000);
+      if (invalid) {
+        throw new BadRequestException(
+          `Each line item amount must be greater than ₦3,000 for NGN invoices (got ₦${invalid.amount} for "${invalid.description}").`,
+        );
+      }
+    }
+
     const subtotal = lineItems.reduce((sum, item) => sum + item.amount, 0);
     const taxAmount = parseFloat(((subtotal * taxRate) / 100).toFixed(2));
-    const total = parseFloat((subtotal + taxAmount - discountAmount).toFixed(2));
+    const total = parseFloat(
+      (subtotal + taxAmount - discountAmount).toFixed(2),
+    );
 
     return { subtotal, taxAmount, total, lineItems };
   }

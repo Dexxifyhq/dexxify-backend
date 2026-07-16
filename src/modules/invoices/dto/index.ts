@@ -9,6 +9,7 @@ import {
   IsArray,
   ValidateNested,
   IsDateString,
+  Matches,
   Min,
   Max,
 } from 'class-validator';
@@ -53,9 +54,9 @@ export class CreateInvoiceCustomerDto {
   @IsNotEmpty()
   last_name: string;
 
-  @ApiPropertyOptional({ example: '+2348012345678' })
+  @ApiPropertyOptional({ example: '08012345678' })
   @IsOptional()
-  @IsString()
+  @Matches(/^\d{11}$/, { message: 'phone must be exactly 11 digits' })
   phone?: string;
 }
 

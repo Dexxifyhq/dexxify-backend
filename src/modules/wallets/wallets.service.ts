@@ -10,6 +10,7 @@ import {
   Wallet,
   LedgerEntry,
   LedgerEntryStatus,
+  LedgerCurrency,
   TxType,
   WithdrawalWallet,
   Payout,
@@ -180,43 +181,43 @@ export class WalletsService {
     }
   }
 
-  async getAllTransactions(developerId: string, query: any) {
-    const { offset, limit, page } = parsePagination(query);
+  // async getAllTransactions(developerId: string, query: any) {
+  //   const { offset, limit, page } = parsePagination(query);
 
-    const [entries, total] = await this.ledgerRepo.findAndCount({
-      where: { developer_id: developerId },
-      order: { created_at: 'DESC' },
-      skip: offset,
-      take: limit,
-    });
+  //   const [entries, total] = await this.ledgerRepo.findAndCount({
+  //     where: { developer_id: developerId },
+  //     order: { created_at: 'DESC' },
+  //     skip: offset,
+  //     take: limit,
+  //   });
 
-    return {
-      data: entries,
-      meta: buildPaginationMeta(total, page, limit),
-    };
-  }
+  //   return {
+  //     data: entries,
+  //     meta: buildPaginationMeta(total, page, limit),
+  //   };
+  // }
 
-  async getTransactionsById(
-    developerId: string,
-    transactionId: string,
-    query: any,
-  ) {
-    // const wallet = await this.findOne(developerId, walletId);
+  // async getTransactionsById(
+  //   developerId: string,
+  //   transactionId: string,
+  //   query: any,
+  // ) {
+  //   // const wallet = await this.findOne(developerId, walletId);
 
-    const { offset, limit, page } = parsePagination(query);
+  //   const { offset, limit, page } = parsePagination(query);
 
-    const [entries, total] = await this.ledgerRepo.findAndCount({
-      where: { developer_id: developerId, id: transactionId },
-      order: { created_at: 'DESC' },
-      skip: offset,
-      take: limit,
-    });
+  //   const [entries, total] = await this.ledgerRepo.findAndCount({
+  //     where: { developer_id: developerId, id: transactionId },
+  //     order: { created_at: 'DESC' },
+  //     skip: offset,
+  //     take: limit,
+  //   });
 
-    return {
-      data: entries,
-      meta: buildPaginationMeta(total, page, limit),
-    };
-  }
+  //   return {
+  //     data: entries,
+  //     meta: buildPaginationMeta(total, page, limit),
+  //   };
+  // }
 
   // Withdrawal Address Management
 
@@ -310,6 +311,8 @@ export class WalletsService {
 
     const payoutId: string = result.data?.id;
 
+    const withdrawalCurrency = isStablecoin ? LedgerCurrency.USD : LedgerCurrency.NGN;
+
     // Withdrawal debit — pending until payout.success fires
     await this.ledgerRepo.save(
       this.ledgerRepo.create({
@@ -317,6 +320,7 @@ export class WalletsService {
         tx_type: TxType.WITHDRAWAL,
         reference_type: 'withdrawal',
         reference_id: payoutId,
+        currency: withdrawalCurrency,
         debit_ngn: isStablecoin ? 0 : netAmount,
         debit_usd: isStablecoin ? netAmount : 0,
         credit_ngn: 0,
@@ -334,6 +338,7 @@ export class WalletsService {
         tx_type: TxType.FEE,
         reference_type: 'withdrawal',
         reference_id: payoutId,
+        currency: withdrawalCurrency,
         debit_ngn: isStablecoin ? 0 : feeAmount,
         debit_usd: isStablecoin ? feeAmount : 0,
         credit_ngn: 0,
@@ -346,6 +351,7 @@ export class WalletsService {
         tx_type: TxType.FEE,
         reference_type: 'withdrawal',
         reference_id: payoutId,
+        currency: withdrawalCurrency,
         credit_ngn: isStablecoin ? 0 : feeAmount,
         credit_usd: isStablecoin ? feeAmount : 0,
         debit_ngn: 0,
@@ -414,6 +420,7 @@ export class WalletsService {
         tx_type: TxType.FEE,
         reference_type: 'withdrawal',
         reference_id: payoutId,
+        currency: LedgerCurrency.NGN,
         debit_ngn: feeAmount,
         credit_ngn: 0,
         asset: 'NGN',
@@ -425,6 +432,7 @@ export class WalletsService {
         tx_type: TxType.FEE,
         reference_type: 'withdrawal',
         reference_id: payoutId,
+        currency: LedgerCurrency.NGN,
         credit_ngn: feeAmount,
         debit_ngn: 0,
         asset: 'NGN',
