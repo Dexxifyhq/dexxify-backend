@@ -6,10 +6,10 @@ export {
 export { ApiKey } from './api-key.entity';
 export { Bank } from './bank.entity';
 export {
-  Wallet,
+  DepositAccount,
   WalletAsset,
   WalletNetwork,
-  WalletStatus,
+  DepositAccountStatus,
 } from './wallet.entity';
 export { Payout, PayoutStatus } from './payout.entity';
 export { KycVerification, KycType, KycStatus } from './kyc-verification.entity';

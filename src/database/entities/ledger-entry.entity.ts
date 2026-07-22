@@ -34,6 +34,8 @@ export enum LedgerEntryStatus {
 export enum LedgerCurrency {
   NGN = 'NGN',
   USD = 'USD',
+  USDT = 'USDT',
+  USDC = 'USDC',
 }
 
 @Entity('ledger_entries')
@@ -71,6 +73,18 @@ export class LedgerEntry {
 
   @Column({ type: 'decimal', precision: 28, scale: 8, default: 0 })
   credit_usd: number;
+
+  @Column({ type: 'decimal', precision: 28, scale: 8, default: 0 })
+  debit_usdt: number;
+
+  @Column({ type: 'decimal', precision: 28, scale: 8, default: 0 })
+  credit_usdt: number;
+
+  @Column({ type: 'decimal', precision: 28, scale: 8, default: 0 })
+  debit_usdc: number;
+
+  @Column({ type: 'decimal', precision: 28, scale: 8, default: 0 })
+  credit_usdc: number;
 
   @Column({ type: 'enum', enum: LedgerCurrency, default: LedgerCurrency.NGN })
   currency: LedgerCurrency;

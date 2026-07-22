@@ -12,13 +12,9 @@ import { WalletAsset } from '../../../database/entities';
 
 export class CreateOfframpDto {
   @ApiProperty({
-    description: 'Wallet ID (source of crypto)',
-    example: '550e8400-e29b-41d4-a716-446655440000',
+    description: 'Cryptocurrency asset to sell',
+    enum: WalletAsset,
   })
-  @IsUUID()
-  wallet_id: string;
-
-  @ApiProperty({ description: 'Cryptocurrency asset to sell', enum: WalletAsset })
   @IsEnum(WalletAsset)
   crypto_asset: WalletAsset;
 
@@ -32,8 +28,7 @@ export class CreateOfframpDto {
   crypto_amount: number;
 
   @ApiProperty({
-    description:
-      'CC recipient ID for the bank account to receive NGN payout. Register via POST /wallets/withdrawal-addresses.',
+    description: 'CC recipient ID for the bank account to receive NGN payout.',
     example: 'rec_6a0ce75269321c4cb5eafe7d',
   })
   @IsString()

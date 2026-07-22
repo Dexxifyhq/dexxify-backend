@@ -8,7 +8,7 @@ import {
   Index,
 } from 'typeorm';
 import { ApiKey } from './api-key.entity';
-import { Wallet } from './wallet.entity';
+import { DepositAccount } from './wallet.entity';
 import { Payout } from './payout.entity';
 import { CryptoTransaction } from './crypto-transaction.entity';
 import { KycVerification } from './kyc-verification.entity';
@@ -97,8 +97,8 @@ export class Developer {
   @OneToMany(() => ApiKey, (key) => key.developer)
   api_keys: ApiKey[];
 
-  @OneToMany(() => Wallet, (w) => w.developer)
-  wallets: Wallet[];
+  @OneToMany(() => DepositAccount, (w) => w.developer)
+  deposit_accounts: DepositAccount[];
 
   @OneToMany(() => Payout, (p) => p.developer)
   payouts: Payout[];

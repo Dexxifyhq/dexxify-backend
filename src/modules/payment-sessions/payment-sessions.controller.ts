@@ -26,8 +26,8 @@ import {
 import { DualAuth, GetDeveloper, Public } from '../../common/decorators';
 
 @ApiTags('Payment Sessions')
+@ApiBearerAuth('api-key')
 @DualAuth()
-// @ApiBearerAuth('api-key')
 @Controller('payment-sessions')
 export class PaymentSessionsController {
   constructor(private readonly sessionsService: PaymentSessionsService) {}

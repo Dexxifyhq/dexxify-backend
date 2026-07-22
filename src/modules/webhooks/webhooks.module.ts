@@ -14,7 +14,7 @@ import {
   Payout,
   LedgerEntry,
   Invoice,
-  Wallet,
+  DepositAccount,
   SwapRecord,
   CryptoTransaction,
 } from '../../database/entities';
@@ -29,7 +29,7 @@ import {
       Payout,
       LedgerEntry,
       Invoice,
-      Wallet,
+      DepositAccount,
       SwapRecord,
       CryptoTransaction,
     ]),

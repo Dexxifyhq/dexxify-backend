@@ -7,13 +7,12 @@ import {
   Body,
   Param,
   Query,
-  UseGuards,
   ParseUUIDPipe,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { DashboardService } from './dashboard.service';
 import { CreateApiKeyDto, UpdateApiKeyDto } from './dto';
-import { CookieAuth, GetDeveloper } from '../../common/decorators';
+import { CookieAuth, DualAuth, GetDeveloper } from '../../common/decorators';
 import {
   ApiOperation,
   ApiTags,
@@ -24,9 +23,8 @@ import {
 } from '@nestjs/swagger';
 
 @ApiTags('Dashboard')
-// @ApiBearerAuth('api-key')
-@CookieAuth()
-@UseGuards(AuthGuard('jwt'))
+@ApiBearerAuth('api-key')
+@DualAuth()
 @Controller('dashboard')
 export class DashboardController {
   constructor(private readonly dashboardService: DashboardService) {}

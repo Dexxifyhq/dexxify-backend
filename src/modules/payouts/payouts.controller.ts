@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import { PayoutsService } from './payouts.service';
 import { CreatePayoutDto, BatchPayoutDto, ResolveAccountDto } from './dto';
-import { GetDeveloper } from '../../common/decorators';
+import { DualAuth, GetDeveloper } from '../../common/decorators';
 import {
   ApiOperation,
   ApiTags,
@@ -20,6 +20,7 @@ import {
 
 @ApiTags('Payouts')
 @ApiBearerAuth('api-key')
+@DualAuth()
 @Controller('payouts')
 export class PayoutsController {
   constructor(private readonly payoutsService: PayoutsService) {}

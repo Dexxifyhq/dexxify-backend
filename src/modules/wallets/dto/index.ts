@@ -5,17 +5,13 @@ import {
   IsString,
   IsNumber,
   IsUUID,
+  IsNumberString,
+  Length,
   Min,
   IsBoolean,
+  ValidateIf,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-
-// export enum WalletAsset {
-//   BTC = 'BTC',
-//   USDT = 'USDT',
-//   ETH = 'ETH',
-//   USDC = 'USDC',
-// }
 
 export enum WithdrawalNetwork {
   ERC20 = 'ERC20',
@@ -30,41 +26,59 @@ export enum WithdrawalToken {
   USDC = 'USDC',
 }
 
+export enum DepositIdentityType {
+  STATIC_DEPOSIT_ADDRESS = 'static_deposit_address',
+  NGN_VIRTUAL_ACCOUNT = 'ngn_virtual_account',
+}
+
+// Chains supported by the CC deposit identity API (subset of WalletNetwork)
+export enum DepositIdentityChain {
+  BITCOIN = 'bitcoin',
+  ETHEREUM = 'ethereum',
+  SOLANA = 'solana',
+  BSC = 'bsc',
+  TRON = 'tron',
+  BASE = 'base',
+  ARBITRUM = 'arbitrum',
+}
+
+export class IssueDepositIdentityDto {
+  @ApiProperty({
+    enum: DepositIdentityType,
+    example: DepositIdentityType.STATIC_DEPOSIT_ADDRESS,
+    description:
+      'static_deposit_address issues a crypto address; ngn_virtual_account issues an NGN bank account',
+  })
+  @IsEnum(DepositIdentityType)
+  type: DepositIdentityType;
+
+  @ApiPropertyOptional({
+    enum: DepositIdentityChain,
+    example: DepositIdentityChain.TRON,
+    description: 'Required when type is static_deposit_address',
+  })
+  @ValidateIf((o) => o.type === DepositIdentityType.STATIC_DEPOSIT_ADDRESS)
+  @IsEnum(DepositIdentityChain)
+  chain?: DepositIdentityChain;
+
+  @ApiPropertyOptional({
+    example: '12345678901',
+    description: 'BVN of the account holder (11 digits). Required when type is ngn_virtual_account',
+  })
+  @ValidateIf((o) => o.type === DepositIdentityType.NGN_VIRTUAL_ACCOUNT)
+  @IsNumberString()
+  @Length(11, 11, { message: 'bvn must be exactly 11 digits' })
+  bvn?: string;
+}
+
 export class CreateWalletDto {
-  // @ApiProperty({ description: 'Wallet ID', example: 'wallet_123' })
-  // @IsString()
-  // @IsNotEmpty()
-  // wallet_id: string;
-
-  @ApiProperty({ description: 'Wallet label', example: 'Wallet' })
-  @IsString()
-  @IsNotEmpty()
-  label: string;
-
-  @ApiPropertyOptional({ description: 'Bank ID', example: '39' })
+  @ApiPropertyOptional({
+    description: 'CC Customer ID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
   @IsString()
   @IsOptional()
-  // @IsNotEmpty()
-  bank_id: string;
-
-  @ApiPropertyOptional({ description: 'Account number', example: '2249098732' })
-  @IsString()
-  @IsOptional()
-  // @IsNotEmpty()
-  account_number: string;
-
-  // @ApiPropertyOptional({
-  //   description: 'Enable auto settlement',
-  //   example: true,
-  // })
-  // @IsOptional()
-  // @IsBoolean()
-  // auto_settlement: boolean;
-
-  // @ApiProperty({ description: 'Asset ID', example: '6930298330b92dbdfc0267a4' })
-  // @IsString()
-  // @IsNotEmpty()
-  // asset_id: string;
+  customer_id?: string;
 }
 
 export class TransferDto {

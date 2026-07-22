@@ -23,8 +23,8 @@ import { CreateCustomerDto, CustomerQueryDto, UpdateCustomerDto } from './dto';
 import { DualAuth, GetDeveloper } from '../../common/decorators';
 
 @ApiTags('Customers')
+@ApiBearerAuth('api-key')
 @DualAuth()
-// @ApiBearerAuth('api-key')
 @Controller('customers')
 export class CustomersController {
   constructor(private readonly customersService: CustomersService) {}

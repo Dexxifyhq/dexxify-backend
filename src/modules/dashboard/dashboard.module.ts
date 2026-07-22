@@ -4,7 +4,7 @@ import { DashboardController } from './dashboard.controller';
 import { DashboardService } from './dashboard.service';
 import {
   ApiKey,
-  Wallet,
+  DepositAccount,
   Payout,
   CryptoTransaction,
   KycVerification,
@@ -15,7 +15,7 @@ import {
   imports: [
     TypeOrmModule.forFeature([
       ApiKey,
-      Wallet,
+      DepositAccount,
       Payout,
       CryptoTransaction,
       KycVerification,

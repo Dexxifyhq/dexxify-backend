@@ -137,7 +137,6 @@ export class AuthController {
     summary: 'Logout',
     description: 'Clear authentication cookies and logout developer',
   })
-  // @ApiBearerAuth('api-key')
   @UseGuards(AuthGuard('jwt'))
   @Post('logout')
   @HttpCode(HttpStatus.OK)
@@ -149,7 +148,6 @@ export class AuthController {
     summary: 'Get profile',
     description: 'Get authenticated developer profile information',
   })
-  // @ApiBearerAuth('api-key')
   @UseGuards(AuthGuard('jwt'))
   @Get('profile')
   async getProfile(@GetDeveloper() developer: any) {

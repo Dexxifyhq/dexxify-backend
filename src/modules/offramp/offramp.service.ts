@@ -58,11 +58,6 @@ export class OfframpService {
   }
 
   async create(developerId: string, dto: CreateOfframpDto) {
-    const wallet = await this.walletsService.findOne(
-      developerId,
-      dto.wallet_id,
-    );
-
     // 1. Get CC swap quotation (crypto → NGN)
     let quotation: any;
     let swap: any;

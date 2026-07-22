@@ -53,6 +53,10 @@ export class LedgerService {
       .addSelect('SUM(le.debit_ngn)', 'totalDebitNgn')
       .addSelect('SUM(le.credit_usd)', 'totalCreditUsd')
       .addSelect('SUM(le.debit_usd)', 'totalDebitUsd')
+      .addSelect('SUM(le.credit_usdt)', 'totalCreditUsdt')
+      .addSelect('SUM(le.debit_usdt)', 'totalDebitUsdt')
+      .addSelect('SUM(le.credit_usdc)', 'totalCreditUsdc')
+      .addSelect('SUM(le.debit_usdc)', 'totalDebitUsdc')
       .where('le.developer_id = :developerId', { developerId })
       .andWhere('le.status IN (:...statuses)', {
         statuses: [
@@ -67,6 +71,10 @@ export class LedgerService {
     const debitNgn = Number(result?.totalDebitNgn ?? 0);
     const creditUsd = Number(result?.totalCreditUsd ?? 0);
     const debitUsd = Number(result?.totalDebitUsd ?? 0);
+    const creditUsdt = Number(result?.totalCreditUsdt ?? 0);
+    const debitUsdt = Number(result?.totalDebitUsdt ?? 0);
+    const creditUsdc = Number(result?.totalCreditUsdc ?? 0);
+    const debitUsdc = Number(result?.totalDebitUsdc ?? 0);
 
     return {
       ngn: {
@@ -78,6 +86,16 @@ export class LedgerService {
         credits: creditUsd,
         debits: debitUsd,
         balance: creditUsd - debitUsd,
+      },
+      usdt: {
+        credits: creditUsdt,
+        debits: debitUsdt,
+        balance: creditUsdt - debitUsdt,
+      },
+      usdc: {
+        credits: creditUsdc,
+        debits: debitUsdc,
+        balance: creditUsdc - debitUsdc,
       },
       synced_at: new Date(),
     };
@@ -103,9 +121,23 @@ export class LedgerService {
       total_credits_ngn: 0,
       total_debits_usd: 0,
       total_credits_usd: 0,
+      total_debits_usdt: 0,
+      total_credits_usdt: 0,
+      total_debits_usdc: 0,
+      total_credits_usdc: 0,
       by_type: {} as Record<
         string,
-        { count: number; debit_ngn: number; credit_ngn: number; debit_usd: number; credit_usd: number }
+        {
+          count: number;
+          debit_ngn: number;
+          credit_ngn: number;
+          debit_usd: number;
+          credit_usd: number;
+          debit_usdt: number;
+          credit_usdt: number;
+          debit_usdc: number;
+          credit_usdc: number;
+        }
       >,
     };
 
@@ -114,6 +146,10 @@ export class LedgerService {
       summary.total_credits_ngn += Number(entry.credit_ngn);
       summary.total_debits_usd += Number(entry.debit_usd);
       summary.total_credits_usd += Number(entry.credit_usd);
+      summary.total_debits_usdt += Number(entry.debit_usdt);
+      summary.total_credits_usdt += Number(entry.credit_usdt);
+      summary.total_debits_usdc += Number(entry.debit_usdc);
+      summary.total_credits_usdc += Number(entry.credit_usdc);
 
       if (!summary.by_type[entry.tx_type]) {
         summary.by_type[entry.tx_type] = {
@@ -122,6 +158,10 @@ export class LedgerService {
           credit_ngn: 0,
           debit_usd: 0,
           credit_usd: 0,
+          debit_usdt: 0,
+          credit_usdt: 0,
+          debit_usdc: 0,
+          credit_usdc: 0,
         };
       }
       summary.by_type[entry.tx_type].count++;
@@ -129,6 +169,10 @@ export class LedgerService {
       summary.by_type[entry.tx_type].credit_ngn += Number(entry.credit_ngn);
       summary.by_type[entry.tx_type].debit_usd += Number(entry.debit_usd);
       summary.by_type[entry.tx_type].credit_usd += Number(entry.credit_usd);
+      summary.by_type[entry.tx_type].debit_usdt += Number(entry.debit_usdt);
+      summary.by_type[entry.tx_type].credit_usdt += Number(entry.credit_usdt);
+      summary.by_type[entry.tx_type].debit_usdc += Number(entry.debit_usdc);
+      summary.by_type[entry.tx_type].credit_usdc += Number(entry.credit_usdc);
     }
 
     return { summary, entries };

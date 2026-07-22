@@ -27,6 +27,7 @@ import {
 import { DualAuth, GetDeveloper } from '../../common/decorators';
 
 @ApiTags('Payment Pages')
+@ApiBearerAuth('api-key')
 @DualAuth()
 @Controller('payment-pages')
 export class PaymentPagesController {

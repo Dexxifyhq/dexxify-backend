@@ -3,17 +3,28 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { WalletsController } from './wallets.controller';
 import { WalletsService } from './wallets.service';
 import {
-  Wallet,
+  DepositAccount,
   LedgerEntry,
   WithdrawalWallet,
   Payout,
+  Customer,
+  Developer,
 } from '../../database/entities';
 import { CoincircuitModule } from '../../providers/coincircuit/coincircuit.module';
+import { CustomersModule } from '../customers/customers.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Wallet, WithdrawalWallet, LedgerEntry, Payout]),
+    TypeOrmModule.forFeature([
+      DepositAccount,
+      WithdrawalWallet,
+      LedgerEntry,
+      Payout,
+      Customer,
+      Developer,
+    ]),
     CoincircuitModule,
+    CustomersModule,
   ],
   controllers: [WalletsController],
   providers: [WalletsService],

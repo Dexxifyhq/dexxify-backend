@@ -42,6 +42,8 @@ export class ApiKeyGuard implements CanActivate {
 
     const request = context.switchToHttp().getRequest();
     const authHeader = request.headers['authorization'];
+    // console.log('Auth header:', authHeader);
+    // console.log('Headers:', request.headers);
 
     // ── Dual auth: API key OR cookie JWT ────────────────
     if (authType === 'dual') {
@@ -60,7 +62,10 @@ export class ApiKeyGuard implements CanActivate {
     return this.validateApiKey(request, authHeader);
   }
 
-  private async validateApiKey(request: any, authHeader: string): Promise<boolean> {
+  private async validateApiKey(
+    request: any,
+    authHeader: string,
+  ): Promise<boolean> {
     const apiKey = authHeader.startsWith('Bearer ')
       ? authHeader.slice(7)
       : authHeader;

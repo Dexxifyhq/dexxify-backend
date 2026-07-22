@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { OfframpService } from './offramp.service';
 import { CreateOfframpDto } from './dto';
-import { GetDeveloper } from '../../common/decorators';
+import { DualAuth, GetDeveloper } from '../../common/decorators';
 import {
   ApiOperation,
   ApiTags,
@@ -19,6 +19,7 @@ import {
 
 @ApiTags('Off-Ramp')
 @ApiBearerAuth('api-key')
+@DualAuth()
 @Controller()
 export class OfframpController {
   constructor(private readonly offrampService: OfframpService) {}

@@ -15,7 +15,7 @@ import {
   LedgerCurrency,
   Invoice,
   InvoiceStatus,
-  Wallet,
+  DepositAccount,
   WalletAsset,
   WalletNetwork,
   SwapRecord,
@@ -77,8 +77,8 @@ export class CoincircuitWebhooksService {
     private readonly ledgerRepo: Repository<LedgerEntry>,
     @InjectRepository(Invoice)
     private readonly invoiceRepo: Repository<Invoice>,
-    @InjectRepository(Wallet)
-    private readonly walletRepo: Repository<Wallet>,
+    @InjectRepository(DepositAccount)
+    private readonly walletRepo: Repository<DepositAccount>,
     @InjectRepository(SwapRecord)
     private readonly swapRecordRepo: Repository<SwapRecord>,
     @InjectRepository(CryptoTransaction)
@@ -317,16 +317,29 @@ export class CoincircuitWebhooksService {
         },
       );
 
-      // Credit developer ledger
+      // Credit developer ledger — split by settlement currency
+      const asset = (session.crypto_asset ?? 'USDT').toUpperCase();
+      const isNGN = settlementCurrency === 'NGN';
+      const isUSDT = asset === 'USDT';
+      const isUSDC = asset === 'USDC';
+      const paymentCurrency = isNGN
+        ? LedgerCurrency.NGN
+        : isUSDT
+          ? LedgerCurrency.USDT
+          : isUSDC
+            ? LedgerCurrency.USDC
+            : LedgerCurrency.USD;
+
       await em.getRepository(LedgerEntry).save(
         em.getRepository(LedgerEntry).create({
           developer_id: session.developer_id,
           tx_type: TxType.DEPOSIT,
           reference_type: 'payment_session',
           reference_id: session.id,
-          currency: settlementCurrency === 'NGN' ? LedgerCurrency.NGN : LedgerCurrency.USD,
-          credit_ngn: settlementCurrency === 'NGN' ? creditAmount : 0,
-          credit_usd: settlementCurrency === 'USD' ? creditAmount : 0,
+          currency: paymentCurrency,
+          credit_ngn: isNGN ? creditAmount : 0,
+          credit_usdt: isUSDT ? creditAmount : 0,
+          credit_usdc: isUSDC ? creditAmount : 0,
           debit_ngn: 0,
           asset: session.crypto_asset ?? 'USDT',
           status: LedgerEntryStatus.COMPLETED,
@@ -677,89 +690,227 @@ export class CoincircuitWebhooksService {
   // ── Deposit account handlers ─────────────────────────
 
   private async handleDepositProcessing(data: any): Promise<void> {
-    // Blockchain tx detected but not yet confirmed — nothing to credit yet
     this.logger.log(
       `Deposit processing: ${data.id} — ${data.amount} ${data.currency} (${data.type})`,
     );
-  }
 
-  private async handleDepositCompleted(data: any): Promise<void> {
-    if (!data.depositAccountId) {
-      this.logger.warn(
-        `deposit.completed: missing depositAccountId in payload`,
-      );
-      return;
-    }
+    if (!data.depositAccountId) return;
 
-    // Wallet.id === CC deposit account ID
-    const wallet = await this.walletRepo.findOne({
+    const account = await this.walletRepo.findOne({
       where: { id: data.depositAccountId },
       select: ['id', 'developer_id'],
     });
+    if (!account) return;
 
-    if (!wallet) {
-      this.logger.warn(
-        `deposit.completed: no wallet found for account ${data.depositAccountId}`,
-      );
-      return;
-    }
+    // Idempotent — skip if already recorded
+    const existing = await this.cryptoTxRepo.findOne({
+      where: { cc_transaction_id: data.id },
+    });
+    if (existing) return;
 
-    const netAmount = Number(data.netAmount);
-    const currency: string = data.currency; // 'USDT' | 'NGN' | ...
-    const asset: string = data.crypto?.asset ?? currency;
-
-    await this.ledgerRepo.save(
-      this.ledgerRepo.create({
-        developer_id: wallet.developer_id,
-        tx_type: TxType.DEPOSIT,
-        reference_type: 'deposit',
-        reference_id: data.id,
-        wallet_address: data.depositAccountId,
-        currency: currency === 'NGN' ? LedgerCurrency.NGN : LedgerCurrency.USD,
-        credit_ngn: currency === 'NGN' ? netAmount : 0,
-        credit_usd: currency === 'USDT' ? netAmount : 0,
-        debit_ngn: 0,
-        asset,
-        status: LedgerEntryStatus.COMPLETED,
-        description: `${data.type === 'crypto' ? 'Crypto' : 'Bank'} deposit: ${data.amount} ${currency}`,
+    const isCrypto = data.type === 'crypto';
+    await this.cryptoTxRepo.save(
+      this.cryptoTxRepo.create({
+        developer_id: account.developer_id,
+        direction: CryptoTxDirection.INBOUND,
+        cc_transaction_id: data.id,
+        deposit_type: data.type ?? null,
+        crypto_asset: isCrypto ? this.toCryptoAsset(data.crypto?.asset) : null,
+        network: isCrypto ? this.toCryptoNetwork(data.crypto?.chain) : null,
+        crypto_amount: isCrypto && data.crypto?.amount != null ? Number(data.crypto.amount) : null,
+        from_address: isCrypto
+          ? (data.crypto?.fromAddress ?? null)
+          : (data.fiat?.payerAccountNumber ?? null),
+        wallet_address: isCrypto ? (data.crypto?.toAddress ?? null) : null,
+        tx_hash: data.crypto?.txHash ?? null,
+        fiat_amount: Number(data.amount),
+        fiat_currency: data.currency,
+        fee: data.fee != null ? Number(data.fee) : 0,
+        status: CryptoTxStatus.PROCESSING,
+        provider_reference: data.depositAccountId,
+        description: `${isCrypto ? 'Crypto' : 'Bank'} deposit processing: ${data.amount} ${data.currency}`,
         metadata: {
-          depositId: data.id,
-          txHash: data.crypto?.txHash ?? null,
-          chain: data.crypto?.chain ?? null,
           customerId: data.customer?.id ?? null,
+          customerEmail: data.customer?.email ?? null,
+          payerName: data.fiat?.payerName ?? null,
+          payerBank: data.fiat?.payerBankName ?? null,
+          narration: data.fiat?.narration ?? null,
+          sessionId: data.fiat?.sessionId ?? null,
+          confirmations: data.crypto?.confirmations ?? null,
         },
       }),
     );
   }
 
+  private async handleDepositCompleted(data: any): Promise<void> {
+    if (!data.depositAccountId) {
+      this.logger.warn(`deposit.completed: missing depositAccountId in payload`);
+      return;
+    }
+
+    const account = await this.walletRepo.findOne({
+      where: { id: data.depositAccountId },
+      select: ['id', 'developer_id'],
+    });
+
+    if (!account) {
+      this.logger.warn(
+        `deposit.completed: no deposit account found for ${data.depositAccountId}`,
+      );
+      return;
+    }
+
+    const isCrypto = data.type === 'crypto';
+    const netAmount = Number(data.netAmount ?? data.amount);
+    const currency: string = data.currency;
+    const asset: string = data.crypto?.asset ?? currency;
+    const isNGN = currency === 'NGN';
+    const isUSDT = asset.toUpperCase() === 'USDT';
+    const isUSDC = asset.toUpperCase() === 'USDC';
+    const ledgerCurrency = isNGN
+      ? LedgerCurrency.NGN
+      : isUSDT
+        ? LedgerCurrency.USDT
+        : isUSDC
+          ? LedgerCurrency.USDC
+          : LedgerCurrency.USD;
+
+    await this.dataSource.transaction(async (em) => {
+      // Update existing CryptoTransaction if it was created at processing time
+      const txUpdates: Partial<CryptoTransaction> = {
+        status: CryptoTxStatus.COMPLETED,
+        completed_at: new Date(),
+        fiat_amount: Number(data.amount),
+        fiat_currency: currency,
+        tx_hash: data.crypto?.txHash ?? undefined,
+      };
+
+      const updateResult = await em
+        .getRepository(CryptoTransaction)
+        .update({ cc_transaction_id: data.id }, txUpdates);
+
+      // If no existing record (deposit.processing may not have fired), create it now
+      if (updateResult.affected === 0) {
+        await em.getRepository(CryptoTransaction).save(
+          em.getRepository(CryptoTransaction).create({
+            developer_id: account.developer_id,
+            direction: CryptoTxDirection.INBOUND,
+            cc_transaction_id: data.id,
+            deposit_type: data.type ?? null,
+            crypto_asset: isCrypto ? this.toCryptoAsset(data.crypto?.asset) : null,
+            network: isCrypto ? this.toCryptoNetwork(data.crypto?.chain) : null,
+            from_address: isCrypto
+              ? (data.crypto?.fromAddress ?? null)
+              : (data.fiat?.payerAccountNumber ?? null),
+            wallet_address: isCrypto ? (data.crypto?.toAddress ?? null) : null,
+            tx_hash: data.crypto?.txHash ?? null,
+            fiat_amount: Number(data.amount),
+            fiat_currency: currency,
+            fee: data.fee != null ? Number(data.fee) : 0,
+            status: CryptoTxStatus.COMPLETED,
+            completed_at: new Date(),
+            provider_reference: data.depositAccountId,
+            description: `${isCrypto ? 'Crypto' : 'Bank'} deposit: ${data.amount} ${currency}`,
+            metadata: {
+              customerId: data.customer?.id ?? null,
+              customerEmail: data.customer?.email ?? null,
+              payerName: data.fiat?.payerName ?? null,
+              narration: data.fiat?.narration ?? null,
+            },
+          }),
+        );
+      }
+
+      // Credit developer ledger
+      await em.getRepository(LedgerEntry).save(
+        em.getRepository(LedgerEntry).create({
+          developer_id: account.developer_id,
+          tx_type: TxType.DEPOSIT,
+          reference_type: 'deposit',
+          reference_id: data.id,
+          wallet_address: data.depositAccountId,
+          currency: ledgerCurrency,
+          credit_ngn: isNGN ? netAmount : 0,
+          credit_usdt: isUSDT ? netAmount : 0,
+          credit_usdc: isUSDC ? netAmount : 0,
+          debit_ngn: 0,
+          asset,
+          status: LedgerEntryStatus.COMPLETED,
+          description: `${isCrypto ? 'Crypto' : 'Bank'} deposit: ${data.amount} ${currency}`,
+          metadata: {
+            depositId: data.id,
+            netAmount,
+            fee: data.fee ?? null,
+            txHash: data.crypto?.txHash ?? null,
+            chain: data.crypto?.chain ?? null,
+            fromAddress: data.crypto?.fromAddress ?? null,
+            toAddress: data.crypto?.toAddress ?? null,
+            customerId: data.customer?.id ?? null,
+            payerName: data.fiat?.payerName ?? null,
+            payerBank: data.fiat?.payerBankName ?? null,
+            narration: data.fiat?.narration ?? null,
+          },
+        }),
+      );
+    });
+
+    this.logger.log(
+      `Deposit completed: ${data.id} — ${data.netAmount ?? data.amount} ${currency} credited to ${account.developer_id}`,
+    );
+  }
+
   private async handleDepositFailed(data: any): Promise<void> {
     this.logger.warn(
-      `Deposit failed (compliance): ${data.id} — ${data.amount} ${data.currency}`,
+      `Deposit failed: ${data.id} — ${data.amount} ${data.currency}`,
     );
 
     if (!data.depositAccountId) return;
 
-    const wallet = await this.walletRepo.findOne({
+    const account = await this.walletRepo.findOne({
       where: { id: data.depositAccountId },
       select: ['developer_id'],
     });
-    if (!wallet) return;
+    if (!account) return;
 
-    // Record a rejected entry for audit trail
+    // Update CryptoTransaction status if it exists
+    await this.cryptoTxRepo.update(
+      { cc_transaction_id: data.id },
+      { status: CryptoTxStatus.FAILED },
+    );
+
+    // Rejected ledger entry for audit trail
+    const currency: string = data.currency;
+    const asset: string = data.crypto?.asset ?? currency;
+    const isNGN = currency === 'NGN';
+    const isUSDT = asset.toUpperCase() === 'USDT';
+    const isUSDC = asset.toUpperCase() === 'USDC';
+
     await this.ledgerRepo.save(
       this.ledgerRepo.create({
-        developer_id: wallet.developer_id,
+        developer_id: account.developer_id,
         tx_type: TxType.DEPOSIT,
         reference_type: 'deposit',
         reference_id: data.id,
         wallet_address: data.depositAccountId,
-        currency: data.currency === 'NGN' ? LedgerCurrency.NGN : LedgerCurrency.USD,
+        currency: isNGN
+          ? LedgerCurrency.NGN
+          : isUSDT
+            ? LedgerCurrency.USDT
+            : isUSDC
+              ? LedgerCurrency.USDC
+              : LedgerCurrency.USD,
         credit_ngn: 0,
+        credit_usdt: 0,
+        credit_usdc: 0,
         debit_ngn: 0,
-        asset: data.crypto?.asset ?? data.currency,
+        asset,
         status: LedgerEntryStatus.REJECTED,
-        description: `Failed deposit: ${data.amount} ${data.currency}`,
-        metadata: { txHash: data.crypto?.txHash ?? null },
+        description: `Failed deposit: ${data.amount} ${currency}`,
+        metadata: {
+          depositId: data.id,
+          txHash: data.crypto?.txHash ?? null,
+          customerId: data.customer?.id ?? null,
+        },
       }),
     );
   }

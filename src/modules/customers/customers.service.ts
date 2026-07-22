@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  BadRequestException,
   Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -31,37 +32,26 @@ export class CustomersService {
       );
     }
 
+    // Call CC first — if it fails, nothing is written to the DB
+    const ccResult = await this.cc.syncCustomer({
+      email: dto.email,
+      firstName: dto.first_name,
+      lastName: dto.last_name,
+      phone: dto.phone,
+      metadata: dto.metadata,
+    });
+
     const customer = this.customerRepo.create({
       developer_id: developerId,
       email: dto.email,
       phone: dto.phone,
       first_name: dto.first_name,
       last_name: dto.last_name,
+      cc_customer_id: ccResult.data?.id ?? null,
       metadata: dto.metadata || {},
     });
 
-    const saved = await this.customerRepo.save(customer);
-
-    // Sync to CoincircuitMCP — upserts on email so safe to call on every create
-    try {
-      const ccResult = await this.cc.syncCustomer({
-        email: dto.email,
-        firstName: dto.first_name,
-        lastName: dto.last_name,
-        phone: dto.phone,
-        metadata: dto.metadata,
-      });
-      await this.customerRepo.update(saved.id, {
-        cc_customer_id: ccResult.data?.id ?? null,
-      });
-      saved.cc_customer_id = ccResult.data?.id ?? null;
-    } catch (err) {
-      this.logger.warn(
-        `CC customer sync failed for ${saved.id}: ${err.message}`,
-      );
-    }
-
-    return saved;
+    return this.customerRepo.save(customer);
   }
 
   async findAll(developerId: string, query: CustomerQueryDto) {
@@ -142,22 +132,26 @@ export class CustomersService {
   async getDepositAccount(developerId: string, customerId: string) {
     const customer = await this.findOne(developerId, customerId);
 
-    if (customer.cc_customer_id) {
-      try {
-        const existing = await this.cc.getCustomerDepositAccount(
-          customer.cc_customer_id,
-        );
-        return existing.data;
-      } catch {
-        // No account yet — create one linked to this customer
-      }
-      const created = await this.cc.createDepositAccount(
-        customer.cc_customer_id,
+    if (!customer.cc_customer_id) {
+      throw new BadRequestException(
+        'Customer is not synced with payment provider.',
       );
-      return created.data;
     }
 
-    const created = await this.cc.createDepositAccount();
+    try {
+      const result = await this.cc.getCustomerDepositAccount(
+        customer.cc_customer_id,
+      );
+      return result.data;
+    } catch (err) {
+      // Only fall through to create if CC says "not found"
+      const status = err?.response?.status ?? err?.status;
+      if (status !== 404) throw err;
+    }
+
+    const created = await this.cc.createDepositAccount(
+      customer.cc_customer_id,
+    );
     return created.data;
   }
 }

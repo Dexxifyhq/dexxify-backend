@@ -7,7 +7,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import {
-  Wallet,
+  DepositAccount,
   LedgerEntry,
   LedgerEntryStatus,
   LedgerCurrency,
@@ -15,11 +15,15 @@ import {
   WithdrawalWallet,
   Payout,
   PayoutStatus,
+  Developer,
+  Customer,
 } from '../../database/entities';
 import {
   CreateWalletDto,
   InitiateFiatWithdrawalDto,
   InitiateStableCoinWithdrawalDto,
+  IssueDepositIdentityDto,
+  DepositIdentityType,
   WalletQueryDto,
 } from './dto';
 import { parsePagination, buildPaginationMeta } from '../../common/utils';
@@ -30,6 +34,7 @@ import {
   WithdrawalWalletNetwork,
   WithdrawalWalletToken,
 } from '../../database/entities/withdrawal-wallet.entity';
+import { CustomersService } from '../customers/customers.service';
 
 // Maps WithdrawalNetwork values → CC chain identifiers
 const WITHDRAWAL_CHAIN_MAP: Record<string, string> = {
@@ -47,53 +52,103 @@ export class WalletsService {
   private readonly FIAT_WITHDRAWAL_FEE_PERCENT = 1.5;
 
   constructor(
-    @InjectRepository(Wallet)
-    private readonly walletRepo: Repository<Wallet>,
+    @InjectRepository(DepositAccount)
+    private readonly walletRepo: Repository<DepositAccount>,
+    @InjectRepository(Developer)
+    private readonly developerRepo: Repository<Developer>,
     @InjectRepository(WithdrawalWallet)
     private readonly withdrawalWalletRepo: Repository<WithdrawalWallet>,
     @InjectRepository(LedgerEntry)
     private readonly ledgerRepo: Repository<LedgerEntry>,
+    @InjectRepository(Customer)
+    private readonly customerRepo: Repository<Customer>,
     @InjectRepository(Payout)
     private readonly payoutRepo: Repository<Payout>,
     private readonly cc: CoincircuitService,
+    private readonly customer: CustomersService,
     private readonly platformCtx: PlatformContextService,
   ) {}
 
   async create(developerId: string, dto: CreateWalletDto) {
-    const existing = await this.walletRepo.findOne({
-      where: { label: dto.label },
-    });
+    let ccCustomerId: string | null = null;
+    let localCustomer: Customer | null = null;
 
-    if (existing) {
+    if (dto.customer_id) {
+      // CC customer ID supplied — resolve the matching local customer record
+      localCustomer = await this.customerRepo.findOne({
+        where: { developer_id: developerId, cc_customer_id: dto.customer_id },
+      });
+      if (!localCustomer) {
+        throw new BadRequestException(
+          'No customer found for the provided customer ID.',
+        );
+      }
+      ccCustomerId = dto.customer_id;
+    } else {
+      // No customer ID supplied — find or create from the developer's own profile
+      const developer = await this.developerRepo.findOne({
+        where: { id: developerId },
+      });
+      if (!developer) throw new BadRequestException('Developer not found.');
+
+      const existingCustomer = await this.customerRepo.findOne({
+        where: { developer_id: developerId, email: developer.email },
+      });
+
+      if (existingCustomer) {
+        localCustomer = existingCustomer;
+        ccCustomerId = existingCustomer.cc_customer_id;
+
+        // Return the existing deposit account if one was already created
+        if (localCustomer.id) {
+          const existingWallet = await this.walletRepo.findOne({
+            where: { developer_id: developerId, customer_id: localCustomer.id },
+          });
+          if (existingWallet) {
+            return this.getDepositAddress(developerId, existingWallet);
+          }
+        }
+        // Customer exists but has no deposit account yet — fall through
+      } else {
+        localCustomer = await this.customer.create(developerId, {
+          email: developer.email,
+          first_name: developer.first_name,
+          last_name: developer.last_name,
+          phone: developer.phone,
+        });
+        ccCustomerId = localCustomer.cc_customer_id;
+      }
+    }
+
+    if (!ccCustomerId || !localCustomer) {
       throw new BadRequestException(
-        `Wallet with label "${dto.label}" already exists for a developer.`,
+        'Customer is not synced with payment provider.',
       );
     }
 
     try {
-      const account = await this.cc.createDepositAccount();
+      const account = await this.cc.createDepositAccount(ccCustomerId);
       const ccAccount = account.data;
+      this.logger.log(`Created deposit account: ${ccAccount.id}`);
 
       const wallet = Object.assign(this.walletRepo.create(), {
         id: ccAccount.id,
         developer_id: developerId,
-        // asset_id: dto.asset_id,
+        customer_id: localCustomer.id,
         deposit_addresses: ccAccount.staticDepositAddresses || [],
         ngn_virtual_accounts: ccAccount.ngnVirtualAccounts || [],
-        label: dto.label,
-        bank_id: dto.bank_id || null,
-        account_number: dto.account_number || null,
-      } as Wallet);
+      });
 
       return this.walletRepo.save(wallet);
     } catch (err) {
-      this.logger.error(`Wallet creation failed: ${err.message}`);
+      this.logger.error(`Deposit account creation failed: ${err.message}`);
       throw new BadRequestException(
-        'Failed to create wallet with crypto provider.',
+        'Failed to create deposit account with payment provider.',
       );
     }
   }
 
+  // Wallet ID === DepositAccountID
   async findOne(developerId: string, walletId: string) {
     const wallet = await this.walletRepo.findOne({
       where: { id: walletId, developer_id: developerId },
@@ -116,9 +171,6 @@ export class WalletsService {
     if (query.wallet_id) {
       qb.andWhere('w.id = :uid', { uid: query.wallet_id });
     }
-    if (query.asset_id) {
-      qb.andWhere('w.asset_id = :assetId', { assetId: query.asset_id });
-    }
 
     const [wallets, total] = await qb.getManyAndCount();
 
@@ -128,21 +180,22 @@ export class WalletsService {
     };
   }
 
-  async getDepositAddress(developerId: string, walletId: string) {
-    const wallet = await this.findOne(developerId, walletId);
-
+  async getDepositAddress(developerId: string, wallet: DepositAccount) {
     if (wallet.deposit_addresses?.length === 0) {
       try {
+        // console.log('wallet', wallet);
         const account = await this.cc.getDepositAccount(wallet.id);
         const addresses = account.data?.staticDepositAddresses || [];
         const ngnAccounts = account.data?.ngnVirtualAccounts || [];
+        // console.log('addresses', addresses);
         if (addresses.length !== 0) {
-          await this.walletRepo.update(walletId, {
+          await this.walletRepo.update(wallet.id, {
             deposit_addresses: addresses,
             ngn_virtual_accounts: ngnAccounts,
           });
         }
         return {
+          id: wallet.id,
           deposit_addresses: addresses,
           ngn_virtual_accounts: ngnAccounts,
         };
@@ -152,9 +205,38 @@ export class WalletsService {
     }
 
     return {
+      id: wallet.id,
       deposit_addresses: wallet.deposit_addresses,
       ngn_virtual_accounts: wallet.ngn_virtual_accounts,
     };
+  }
+
+  async issueIdentity(
+    developerId: string,
+    walletId: string,
+    dto: IssueDepositIdentityDto,
+  ) {
+    await this.findOne(developerId, walletId);
+
+    const result = await this.cc.issueDepositIdentity(walletId, {
+      type: dto.type,
+      chain: dto.chain ?? undefined,
+      bvn: dto.bvn ?? undefined,
+      currency:
+        dto.type === DepositIdentityType.NGN_VIRTUAL_ACCOUNT
+          ? 'NGN'
+          : undefined,
+    });
+
+    const account = result.data;
+
+    // Sync updated address arrays back to local DB (fire-and-forget, don't await)
+    this.walletRepo.update(walletId, {
+      deposit_addresses: account.staticDepositAddresses ?? [],
+      ngn_virtual_accounts: account.ngnVirtualAccounts ?? [],
+    });
+
+    return account;
   }
 
   async getWalletDetails(walletId: string): Promise<any> {
@@ -311,7 +393,14 @@ export class WalletsService {
 
     const payoutId: string = result.data?.id;
 
-    const withdrawalCurrency = isStablecoin ? LedgerCurrency.USD : LedgerCurrency.NGN;
+    const token = dto.token.toUpperCase();
+    const isUSDT = token === 'USDT';
+    const isUSDC = token === 'USDC';
+    const withdrawalCurrency = isUSDT
+      ? LedgerCurrency.USDT
+      : isUSDC
+        ? LedgerCurrency.USDC
+        : LedgerCurrency.NGN;
 
     // Withdrawal debit — pending until payout.success fires
     await this.ledgerRepo.save(
@@ -322,7 +411,8 @@ export class WalletsService {
         reference_id: payoutId,
         currency: withdrawalCurrency,
         debit_ngn: isStablecoin ? 0 : netAmount,
-        debit_usd: isStablecoin ? netAmount : 0,
+        debit_usdt: isUSDT ? netAmount : 0,
+        debit_usdc: isUSDC ? netAmount : 0,
         credit_ngn: 0,
         asset: dto.token,
         status: LedgerEntryStatus.PENDING,
@@ -340,7 +430,8 @@ export class WalletsService {
         reference_id: payoutId,
         currency: withdrawalCurrency,
         debit_ngn: isStablecoin ? 0 : feeAmount,
-        debit_usd: isStablecoin ? feeAmount : 0,
+        debit_usdt: isUSDT ? feeAmount : 0,
+        debit_usdc: isUSDC ? feeAmount : 0,
         credit_ngn: 0,
         asset: dto.token,
         status: LedgerEntryStatus.COMPLETED,
@@ -353,7 +444,8 @@ export class WalletsService {
         reference_id: payoutId,
         currency: withdrawalCurrency,
         credit_ngn: isStablecoin ? 0 : feeAmount,
-        credit_usd: isStablecoin ? feeAmount : 0,
+        credit_usdt: isUSDT ? feeAmount : 0,
+        credit_usdc: isUSDC ? feeAmount : 0,
         debit_ngn: 0,
         asset: dto.token,
         status: LedgerEntryStatus.COMPLETED,

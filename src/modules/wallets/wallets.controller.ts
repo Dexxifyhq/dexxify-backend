@@ -15,6 +15,7 @@ import {
   AddWithdrawalAddressDto,
   InitiateStableCoinWithdrawalDto,
   InitiateFiatWithdrawalDto,
+  IssueDepositIdentityDto,
 } from './dto';
 import { GetDeveloper, DualAuth } from '../../common/decorators';
 import {
@@ -26,8 +27,10 @@ import {
   ApiTags,
   ApiPropertyOptional,
   ApiProperty,
+  ApiCreatedResponse,
 } from '@nestjs/swagger';
 import { IsOptional, IsNumber, IsString, IsNotEmpty } from 'class-validator';
+import { DepositAccount } from 'src/database/entities';
 
 export class CustomQueryDto {
   @ApiPropertyOptional({ description: 'Page number', example: 1 })
@@ -84,6 +87,10 @@ export class WalletsController {
   @ApiOperation({
     summary: 'Create a new wallet',
     description: 'Create a new crypto wallet for the authenticated developer',
+  })
+  @ApiCreatedResponse({
+    description: 'Deposit account created successfully',
+    type: DepositAccount,
   })
   @ApiBody({ type: CreateWalletDto })
   async create(
@@ -146,22 +153,38 @@ export class WalletsController {
     return this.walletsService.getAllWalletDetails();
   }
 
-  @Get(':wallet_id/address')
+  @Post(':wallet_id/identities')
   @ApiOperation({
-    summary: 'Get deposit address',
-    description: 'Get the deposit address for a specific wallet',
+    summary: 'Issue a deposit identity',
+    description:
+      'Provisions a new static crypto deposit address (per chain) or an NGN virtual bank account onto an existing deposit account.',
   })
-  @ApiParam({
-    name: 'wallet_id',
-    description: 'Wallet unique identifier',
-    example: '67063f653b4a1f6c7a60ec57',
-  })
-  async getDepositAddress(
+  @ApiParam({ name: 'wallet_id', description: 'Deposit account ID' })
+  @ApiBody({ type: IssueDepositIdentityDto })
+  async issueIdentity(
     @GetDeveloper('id') developerId: string,
     @Param('wallet_id') walletId: string,
+    @Body() dto: IssueDepositIdentityDto,
   ) {
-    return this.walletsService.getDepositAddress(developerId, walletId);
+    return this.walletsService.issueIdentity(developerId, walletId, dto);
   }
+
+  // @Get(':wallet_id/address')
+  // @ApiOperation({
+  //   summary: 'Get deposit address',
+  //   description: 'Get the deposit address for a specific wallet',
+  // })
+  // @ApiParam({
+  //   name: 'wallet_id',
+  //   description: 'Wallet unique identifier',
+  //   example: '67063f653b4a1f6c7a60ec57',
+  // })
+  // async getDepositAddress(
+  //   @GetDeveloper('id') developerId: string,
+  //   @Param('wallet_id') walletId: string,
+  // ) {
+  //   return this.walletsService.getDepositAddress(developerId, walletId);
+  // }
 
   // @Get('/transactions/all')
   // @ApiOperation({

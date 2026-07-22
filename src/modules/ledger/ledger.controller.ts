@@ -11,8 +11,8 @@ import {
 } from '@nestjs/swagger';
 
 @ApiTags('Ledger')
+@ApiBearerAuth('api-key')
 @DualAuth()
-// @ApiBearerAuth('api-key')
 @Controller()
 export class LedgerController {
   constructor(private readonly ledgerService: LedgerService) {}

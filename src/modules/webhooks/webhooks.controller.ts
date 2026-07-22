@@ -20,10 +20,12 @@ import {
   ApiParam,
   ApiBody,
   ApiHeader,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
 import type { Request } from 'express';
 
 @ApiTags('Webhooks')
+@ApiBearerAuth('api-key')
 @DualAuth()
 @Controller('webhooks')
 export class WebhooksController {
@@ -61,9 +63,7 @@ export class WebhooksController {
 export class IncomingWebhooksController {
   private readonly logger = new Logger(IncomingWebhooksController.name);
 
-  constructor(
-    private readonly ccWebhooksService: CoincircuitWebhooksService,
-  ) {}
+  constructor(private readonly ccWebhooksService: CoincircuitWebhooksService) {}
 
   @ApiOperation({
     summary: 'Handle CoincircuitMCP webhooks',

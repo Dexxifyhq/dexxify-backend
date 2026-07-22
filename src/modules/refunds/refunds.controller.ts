@@ -26,8 +26,8 @@ import {
 import { DualAuth, GetDeveloper } from '../../common/decorators';
 
 @ApiTags('Refunds')
+@ApiBearerAuth('api-key')
 @DualAuth()
-// @ApiBearerAuth('api-key')
 @Controller('refunds')
 export class RefundsController {
   constructor(private readonly refundsService: RefundsService) {}

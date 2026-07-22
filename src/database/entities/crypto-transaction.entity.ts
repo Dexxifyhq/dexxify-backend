@@ -48,6 +48,12 @@ export class CryptoTransaction {
   network: WalletNetwork | null;
 
   @Column({ type: 'text', nullable: true })
+  deposit_type: string | null; // 'crypto' | 'fiat'
+
+  @Column({ type: 'text', nullable: true })
+  from_address: string | null;
+
+  @Column({ type: 'text', nullable: true })
   wallet_address: string | null;
 
   @Column({ type: 'text', nullable: true })

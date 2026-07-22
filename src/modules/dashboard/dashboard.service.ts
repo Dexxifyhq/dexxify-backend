@@ -7,7 +7,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, MoreThanOrEqual } from 'typeorm';
 import {
   ApiKey,
-  Wallet,
+  DepositAccount,
   Payout,
   PayoutStatus,
   CryptoTransaction,
@@ -24,8 +24,8 @@ export class DashboardService {
   constructor(
     @InjectRepository(ApiKey)
     private readonly apiKeyRepo: Repository<ApiKey>,
-    @InjectRepository(Wallet)
-    private readonly walletRepo: Repository<Wallet>,
+    @InjectRepository(DepositAccount)
+    private readonly walletRepo: Repository<DepositAccount>,
     @InjectRepository(Payout)
     private readonly payoutRepo: Repository<Payout>,
     @InjectRepository(CryptoTransaction)

@@ -5,11 +5,11 @@ import {
   UpdateDateColumn,
   ManyToOne,
   JoinColumn,
-  Unique,
   Index,
   PrimaryColumn,
 } from 'typeorm';
 import { Developer } from './developer.entity';
+import { Customer } from './customer.entity';
 
 export enum WalletAsset {
   // BCH = 'BCH',
@@ -44,15 +44,13 @@ export enum WalletNetwork {
   TON = 'TON',
 }
 
-export enum WalletStatus {
+export enum DepositAccountStatus {
   ACTIVE = 'active',
-  FROZEN = 'frozen',
-  CLOSED = 'closed',
+  INACTIVE = 'inactive',
 }
 
-@Entity('wallets')
-@Unique(['label'])
-export class Wallet {
+@Entity('deposit_accounts')
+export class DepositAccount {
   @PrimaryColumn('text')
   id: string;
 
@@ -60,11 +58,20 @@ export class Wallet {
   @Column({ type: 'uuid' })
   developer_id: string;
 
-  @Column({ type: 'text' })
-  label: string;
+  @Index()
+  @Column({ type: 'uuid', nullable: true })
+  customer_id: string | null;
 
-  // @Column({ type: 'text' })
-  // asset_id: string;
+  @ManyToOne(() => Customer, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'customer_id' })
+  customer: Customer | null;
+
+  @Column({
+    type: 'enum',
+    enum: DepositAccountStatus,
+    default: DepositAccountStatus.ACTIVE,
+  })
+  status: DepositAccountStatus;
 
   @Column({ type: 'jsonb', default: [] })
   deposit_addresses: Array<{
@@ -84,22 +91,15 @@ export class Wallet {
     createdAt: string;
   }>;
 
-  @Column({ type: 'text', nullable: true })
-  bank_id: string;
-
-  @Column({ type: 'text', nullable: true })
-  account_number: string;
-
-  @Column({ type: 'enum', enum: WalletStatus, default: WalletStatus.ACTIVE })
-  status: WalletStatus;
-
   @CreateDateColumn({ type: 'timestamptz' })
   created_at: Date;
 
   @UpdateDateColumn({ type: 'timestamptz' })
   updated_at: Date;
 
-  @ManyToOne(() => Developer, (dev) => dev.wallets, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Developer, (dev) => dev.deposit_accounts, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'developer_id' })
   developer: Developer;
 }

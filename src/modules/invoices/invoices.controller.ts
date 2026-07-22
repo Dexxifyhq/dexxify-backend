@@ -21,8 +21,8 @@ import { CreateInvoiceDto, InvoicePaymentDto, InvoiceQueryDto } from './dto';
 import { DualAuth, GetDeveloper, Public } from '../../common/decorators';
 
 @ApiTags('Invoices')
+@ApiBearerAuth('api-key')
 @DualAuth()
-// @ApiBearerAuth('api-key')
 @Controller('invoices')
 export class InvoicesController {
   constructor(private readonly invoicesService: InvoicesService) {}

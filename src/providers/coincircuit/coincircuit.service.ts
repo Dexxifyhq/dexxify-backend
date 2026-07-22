@@ -324,9 +324,9 @@ export class CoincircuitService {
 
   // ── Deposit Accounts ──────────────────────────────────
 
-  async createDepositAccount(customerId?: string) {
+  async createDepositAccount(customerId: string) {
     return this.request<{ data: any }>('POST', '/api/v1/deposits/accounts', {
-      ...(customerId ? { customerId } : {}),
+      customerId,
     });
   }
 
@@ -350,6 +350,22 @@ export class CoincircuitService {
       '/api/v1/deposits/accounts',
       undefined,
       params,
+    );
+  }
+
+  async issueDepositIdentity(
+    accountId: string,
+    dto: {
+      type: 'static_deposit_address' | 'ngn_virtual_account';
+      chain?: string;
+      bvn?: string;
+      currency?: 'NGN';
+    },
+  ) {
+    return this.request<{ data: any }>(
+      'POST',
+      `/api/v1/deposits/accounts/${accountId}/identities`,
+      dto,
     );
   }
 
