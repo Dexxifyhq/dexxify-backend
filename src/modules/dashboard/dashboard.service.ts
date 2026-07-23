@@ -7,14 +7,17 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, MoreThanOrEqual } from 'typeorm';
 import {
   ApiKey,
-  DepositAccount,
+  LedgerEntry,
+  LedgerEntryStatus,
+  TxType,
   Payout,
   PayoutStatus,
-  CryptoTransaction,
-  CryptoTxStatus,
-  CryptoTxDirection,
-  KycVerification,
-  LedgerEntry,
+  Customer,
+  PaymentSession,
+  PaymentSessionStatus,
+  Invoice,
+  InvoiceStatus,
+  DepositAccount,
 } from '../../database/entities';
 import { CreateApiKeyDto, UpdateApiKeyDto } from './dto';
 import { generateApiKey } from '../../common/utils';
@@ -24,16 +27,18 @@ export class DashboardService {
   constructor(
     @InjectRepository(ApiKey)
     private readonly apiKeyRepo: Repository<ApiKey>,
-    @InjectRepository(DepositAccount)
-    private readonly walletRepo: Repository<DepositAccount>,
-    @InjectRepository(Payout)
-    private readonly payoutRepo: Repository<Payout>,
-    @InjectRepository(CryptoTransaction)
-    private readonly cryptoTxRepo: Repository<CryptoTransaction>,
-    @InjectRepository(KycVerification)
-    private readonly kycRepo: Repository<KycVerification>,
     @InjectRepository(LedgerEntry)
     private readonly ledgerRepo: Repository<LedgerEntry>,
+    @InjectRepository(Payout)
+    private readonly payoutRepo: Repository<Payout>,
+    @InjectRepository(Customer)
+    private readonly customerRepo: Repository<Customer>,
+    @InjectRepository(PaymentSession)
+    private readonly sessionRepo: Repository<PaymentSession>,
+    @InjectRepository(Invoice)
+    private readonly invoiceRepo: Repository<Invoice>,
+    @InjectRepository(DepositAccount)
+    private readonly depositAccountRepo: Repository<DepositAccount>,
   ) {}
 
   // ── API Key Management ──────────────────────────────────
@@ -55,18 +60,18 @@ export class DashboardService {
 
     const { key, prefix, hash } = generateApiKey(dto.environment);
 
-    const apiKeyEntity = this.apiKeyRepo.create({
-      developer_id: developerId,
-      key_hash: hash,
-      key_prefix: prefix,
-      label: dto.label || `${dto.environment} key`,
-      environment: dto.environment,
-    });
+    const saved = await this.apiKeyRepo.save(
+      this.apiKeyRepo.create({
+        developer_id: developerId,
+        key_hash: hash,
+        key_prefix: prefix,
+        label: dto.label || `${dto.environment} key`,
+        environment: dto.environment,
+      }),
+    );
 
-    const saved = await this.apiKeyRepo.save(apiKeyEntity);
     const { key_hash, ...safeResult } = saved;
-
-    return { ...safeResult, key }; // Full key only shown once
+    return { ...safeResult, key };
   }
 
   async listApiKeys(developerId: string) {
@@ -91,7 +96,6 @@ export class DashboardService {
       { id: keyId, developer_id: developerId },
       { is_active: false },
     );
-
     if (result.affected === 0)
       throw new NotFoundException('API key not found.');
     return { revoked: true, id: keyId };
@@ -106,7 +110,6 @@ export class DashboardService {
       { id: keyId, developer_id: developerId },
       updates,
     );
-
     if (result.affected === 0)
       throw new NotFoundException('API key not found.');
 
@@ -124,91 +127,256 @@ export class DashboardService {
     });
   }
 
-  // ── Usage & Stats ───────────────────────────────────────
+  // ── Dashboard Stats ─────────────────────────────────────
 
   async getOverview(developerId: string) {
-    const [walletCount, payouts, cryptoTxs, kycCount] = await Promise.all([
-      this.walletRepo.count({ where: { developer_id: developerId } }),
-      this.payoutRepo.find({
-        where: { developer_id: developerId },
-        select: ['amount', 'status'],
+    const startOfMonth = new Date(
+      new Date().getFullYear(),
+      new Date().getMonth(),
+      1,
+    );
+
+    const [
+      balances,
+      sessionRows,
+      invoiceRows,
+      totalCustomers,
+      newCustomers,
+      depositAccounts,
+      pendingPayouts,
+    ] = await Promise.all([
+      // Current balances + lifetime received per currency
+      this.ledgerRepo
+        .createQueryBuilder('l')
+        .select('SUM(l.credit_ngn) - SUM(l.debit_ngn)', 'balance_ngn')
+        .addSelect('SUM(l.credit_usdt) - SUM(l.debit_usdt)', 'balance_usdt')
+        .addSelect('SUM(l.credit_usdc) - SUM(l.debit_usdc)', 'balance_usdc')
+        .addSelect('SUM(l.credit_ngn)', 'received_ngn')
+        .addSelect('SUM(l.credit_usdt)', 'received_usdt')
+        .addSelect('SUM(l.credit_usdc)', 'received_usdc')
+        .where('l.developer_id = :developerId', { developerId })
+        .andWhere('l.status = :status', { status: LedgerEntryStatus.COMPLETED })
+        .getRawOne(),
+
+      // Payment sessions grouped by status
+      this.sessionRepo
+        .createQueryBuilder('s')
+        .select('s.status', 'status')
+        .addSelect('COUNT(*)', 'count')
+        .addSelect('COALESCE(SUM(s.amount), 0)', 'volume')
+        .where('s.developer_id = :developerId', { developerId })
+        .groupBy('s.status')
+        .getRawMany(),
+
+      // Invoices grouped by status
+      this.invoiceRepo
+        .createQueryBuilder('i')
+        .select('i.status', 'status')
+        .addSelect('COUNT(*)', 'count')
+        .addSelect('COALESCE(SUM(i.total), 0)', 'volume')
+        .where('i.developer_id = :developerId', { developerId })
+        .groupBy('i.status')
+        .getRawMany(),
+
+      // Total customers
+      this.customerRepo.count({ where: { developer_id: developerId } }),
+
+      // New customers this calendar month
+      this.customerRepo.count({
+        where: {
+          developer_id: developerId,
+          created_at: MoreThanOrEqual(startOfMonth),
+        },
       }),
-      this.cryptoTxRepo.find({
-        where: { developer_id: developerId },
-        select: ['fiat_amount', 'status', 'direction'],
-      }),
-      this.kycRepo.count({ where: { developer_id: developerId } }),
+
+      // Deposit accounts
+      this.depositAccountRepo.count({ where: { developer_id: developerId } }),
+
+      // Pending / processing payouts
+      this.payoutRepo
+        .createQueryBuilder('p')
+        .select('COUNT(*)', 'count')
+        .addSelect('COALESCE(SUM(p.amount), 0)', 'total_amount')
+        .where('p.developer_id = :developerId', { developerId })
+        .andWhere('p.status IN (:...statuses)', {
+          statuses: [PayoutStatus.PENDING, PayoutStatus.PROCESSING],
+        })
+        .getRawOne(),
     ]);
 
-    const totalPayoutVolume = payouts
-      .filter((p) => p.status === PayoutStatus.COMPLETED)
-      .reduce((sum, p) => sum + Number(p.amount), 0);
+    // Shape session breakdown
+    const sessions: Record<string, { count: number; volume: number }> = {};
+    let totalSessions = 0;
+    for (const row of sessionRows) {
+      sessions[row.status] = {
+        count: parseInt(row.count, 10),
+        volume: Number(row.volume),
+      };
+      totalSessions += parseInt(row.count, 10);
+    }
 
-    const inbound = cryptoTxs.filter(
-      (t) => t.direction === CryptoTxDirection.INBOUND,
-    );
-    const outbound = cryptoTxs.filter(
-      (t) => t.direction === CryptoTxDirection.OUTBOUND,
-    );
-
-    const totalInboundVolume = inbound
-      .filter((t) => t.status === CryptoTxStatus.COMPLETED)
-      .reduce((sum, t) => sum + Number(t.fiat_amount ?? 0), 0);
-
-    const totalOutboundVolume = outbound
-      .filter((t) => t.status === CryptoTxStatus.COMPLETED)
-      .reduce((sum, t) => sum + Number(t.fiat_amount ?? 0), 0);
-
-    return {
-      wallets: { total: walletCount },
-      payouts: { total: payouts.length, volume_ngn: totalPayoutVolume },
-      crypto_inbound: { total: inbound.length, volume_ngn: totalInboundVolume },
-      crypto_outbound: {
-        total: outbound.length,
-        volume_ngn: totalOutboundVolume,
-      },
-      kyc_verifications: { total: kycCount },
-      total_volume_ngn:
-        totalPayoutVolume + totalInboundVolume + totalOutboundVolume,
-    };
-  }
-
-  async getUsageStats(developerId: string, query: { days?: number }) {
-    const days = Math.min(90, Math.max(1, Number(query.days) || 30));
-    const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
-
-    const entries = await this.ledgerRepo.find({
-      where: {
-        developer_id: developerId,
-        created_at: MoreThanOrEqual(since),
-      },
-      select: ['tx_type', 'asset', 'debit_ngn', 'credit_ngn', 'created_at'],
-      order: { created_at: 'ASC' },
-    });
-
-    const dailyStats: Record<
-      string,
-      { transactions: number; volume_debit: number; volume_credit: number }
-    > = {};
-
-    for (const entry of entries) {
-      const day = entry.created_at.toISOString().split('T')[0];
-      if (!dailyStats[day]) {
-        dailyStats[day] = {
-          transactions: 0,
-          volume_debit: 0,
-          volume_credit: 0,
-        };
-      }
-      dailyStats[day].transactions++;
-      dailyStats[day].volume_debit += Number(entry.debit_ngn);
-      dailyStats[day].volume_credit += Number(entry.credit_ngn);
+    // Shape invoice breakdown
+    const invoices: Record<string, { count: number; volume?: number }> = {};
+    let totalInvoices = 0;
+    for (const row of invoiceRows) {
+      invoices[row.status] = {
+        count: parseInt(row.count, 10),
+        ...(row.status === InvoiceStatus.PAID
+          ? { volume: Number(row.volume) }
+          : {}),
+      };
+      totalInvoices += parseInt(row.count, 10);
     }
 
     return {
-      period_days: days,
-      total_transactions: entries.length,
-      daily: dailyStats,
+      balances: {
+        ngn: Number(balances?.balance_ngn ?? 0),
+        usdt: Number(balances?.balance_usdt ?? 0),
+        usdc: Number(balances?.balance_usdc ?? 0),
+      },
+      total_received: {
+        ngn: Number(balances?.received_ngn ?? 0),
+        usdt: Number(balances?.received_usdt ?? 0),
+        usdc: Number(balances?.received_usdc ?? 0),
+      },
+      payment_sessions: {
+        total: totalSessions,
+        ...sessions,
+      },
+      invoices: {
+        total: totalInvoices,
+        ...invoices,
+      },
+      customers: {
+        total: totalCustomers,
+        new_this_month: newCustomers,
+      },
+      deposit_accounts: depositAccounts,
+      pending_payouts: {
+        count: parseInt(pendingPayouts?.count ?? '0', 10),
+        total_amount: Number(pendingPayouts?.total_amount ?? 0),
+      },
+    };
+  }
+
+  async getRevenueChart(developerId: string, days = 30) {
+    const clampedDays = Math.min(365, Math.max(1, days));
+    const since = new Date(Date.now() - clampedDays * 24 * 60 * 60 * 1000);
+
+    const rows = await this.ledgerRepo
+      .createQueryBuilder('l')
+      .select("DATE(l.created_at AT TIME ZONE 'UTC')", 'date')
+      .addSelect('COALESCE(SUM(l.credit_ngn), 0)', 'ngn')
+      .addSelect('COALESCE(SUM(l.credit_usdt), 0)', 'usdt')
+      .addSelect('COALESCE(SUM(l.credit_usdc), 0)', 'usdc')
+      .addSelect('COUNT(*)', 'tx_count')
+      .where('l.developer_id = :developerId', { developerId })
+      .andWhere('l.tx_type = :type', { type: TxType.DEPOSIT })
+      .andWhere('l.status = :status', { status: LedgerEntryStatus.COMPLETED })
+      .andWhere('l.created_at >= :since', { since })
+      .groupBy("DATE(l.created_at AT TIME ZONE 'UTC')")
+      .orderBy('date', 'ASC')
+      .getRawMany();
+
+    return {
+      period_days: clampedDays,
+      data: rows.map((r) => ({
+        date: r.date,
+        ngn: Number(r.ngn),
+        usdt: Number(r.usdt),
+        usdc: Number(r.usdc),
+        tx_count: parseInt(r.tx_count, 10),
+      })),
+    };
+  }
+
+  async getAssetDistribution(developerId: string) {
+    const rows = await this.sessionRepo
+      .createQueryBuilder('s')
+      .select('s.crypto_asset', 'asset')
+      .addSelect('COUNT(*)', 'total_sessions')
+      .addSelect(
+        `SUM(CASE WHEN s.status = '${PaymentSessionStatus.COMPLETED}' THEN 1 ELSE 0 END)`,
+        'completed',
+      )
+      .addSelect(
+        `SUM(CASE WHEN s.status = '${PaymentSessionStatus.PENDING}' THEN 1 ELSE 0 END)`,
+        'pending',
+      )
+      .addSelect('COALESCE(SUM(s.amount), 0)', 'total_volume')
+      .where('s.developer_id = :developerId', { developerId })
+      .andWhere('s.crypto_asset IS NOT NULL')
+      .groupBy('s.crypto_asset')
+      .orderBy('total_sessions', 'DESC')
+      .getRawMany();
+
+    return {
+      data: rows.map((r) => ({
+        asset: r.asset,
+        total_sessions: parseInt(r.total_sessions, 10),
+        completed: parseInt(r.completed, 10),
+        pending: parseInt(r.pending, 10),
+        total_volume: Number(r.total_volume),
+      })),
+    };
+  }
+
+  async getRecentActivity(developerId: string, limit = 10) {
+    const take = Math.min(50, Math.max(1, limit));
+
+    const entries = await this.ledgerRepo.find({
+      where: { developer_id: developerId },
+      order: { created_at: 'DESC' },
+      take,
+      select: [
+        'id',
+        'tx_type',
+        'asset',
+        'currency',
+        'credit_ngn',
+        'debit_ngn',
+        'credit_usdt',
+        'debit_usdt',
+        'credit_usdc',
+        'debit_usdc',
+        'status',
+        'description',
+        'created_at',
+      ],
+    });
+
+    return {
+      data: entries.map((e) => {
+        const creditNgn = Number(e.credit_ngn);
+        const creditUsdt = Number(e.credit_usdt);
+        const creditUsdc = Number(e.credit_usdc);
+        const debitNgn = Number(e.debit_ngn);
+        const debitUsdt = Number(e.debit_usdt);
+        const debitUsdc = Number(e.debit_usdc);
+
+        const isCredit = creditNgn > 0 || creditUsdt > 0 || creditUsdc > 0;
+        const amount = isCredit
+          ? creditNgn || creditUsdt || creditUsdc
+          : debitNgn || debitUsdt || debitUsdc;
+        const displayCurrency =
+          creditNgn > 0 || debitNgn > 0
+            ? 'NGN'
+            : creditUsdt > 0 || debitUsdt > 0
+              ? 'USDT'
+              : 'USDC';
+
+        return {
+          id: e.id,
+          type: e.tx_type,
+          direction: isCredit ? 'credit' : 'debit',
+          amount,
+          currency: displayCurrency,
+          asset: e.asset,
+          status: e.status,
+          description: e.description,
+          created_at: e.created_at,
+        };
+      }),
     };
   }
 }

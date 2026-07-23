@@ -6,9 +6,10 @@ import {
   ApiKey,
   DepositAccount,
   Payout,
-  CryptoTransaction,
-  KycVerification,
   LedgerEntry,
+  Customer,
+  PaymentSession,
+  Invoice,
 } from '../../database/entities';
 
 @Module({
@@ -17,9 +18,10 @@ import {
       ApiKey,
       DepositAccount,
       Payout,
-      CryptoTransaction,
-      KycVerification,
       LedgerEntry,
+      Customer,
+      PaymentSession,
+      Invoice,
     ]),
   ],
   controllers: [DashboardController],

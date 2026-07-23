@@ -8,11 +8,12 @@ import {
   Param,
   Query,
   ParseUUIDPipe,
+  ParseIntPipe,
+  DefaultValuePipe,
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
 import { DashboardService } from './dashboard.service';
 import { CreateApiKeyDto, UpdateApiKeyDto } from './dto';
-import { CookieAuth, DualAuth, GetDeveloper } from '../../common/decorators';
+import { DualAuth, GetDeveloper } from '../../common/decorators';
 import {
   ApiOperation,
   ApiTags,
@@ -31,10 +32,7 @@ export class DashboardController {
 
   // ── API Keys ────────────────────────────────────────────
 
-  @ApiOperation({
-    summary: 'Create API key',
-    description: 'Generate a new API key for authentication',
-  })
+  @ApiOperation({ summary: 'Create API key' })
   @ApiBody({ type: CreateApiKeyDto })
   @Post('api-keys')
   async createApiKey(
@@ -44,24 +42,14 @@ export class DashboardController {
     return this.dashboardService.createApiKey(developerId, dto);
   }
 
-  @ApiOperation({
-    summary: 'List API keys',
-    description: 'Retrieve all API keys for the developer account',
-  })
+  @ApiOperation({ summary: 'List API keys' })
   @Get('api-keys')
   async listApiKeys(@GetDeveloper('id') developerId: string) {
     return this.dashboardService.listApiKeys(developerId);
   }
 
-  @ApiOperation({
-    summary: 'Update API key',
-    description: 'Update API key settings (name, environment)',
-  })
-  @ApiParam({
-    name: 'id',
-    description: 'API key unique identifier',
-    example: '550e8400-e29b-41d4-a716-446655440000',
-  })
+  @ApiOperation({ summary: 'Update API key label or IP whitelist' })
+  @ApiParam({ name: 'id', description: 'API key ID' })
   @ApiBody({ type: UpdateApiKeyDto })
   @Patch('api-keys/:id')
   async updateApiKey(
@@ -72,15 +60,8 @@ export class DashboardController {
     return this.dashboardService.updateApiKey(developerId, keyId, dto);
   }
 
-  @ApiOperation({
-    summary: 'Revoke API key',
-    description: 'Revoke and delete an API key',
-  })
-  @ApiParam({
-    name: 'id',
-    description: 'API key unique identifier',
-    example: '550e8400-e29b-41d4-a716-446655440000',
-  })
+  @ApiOperation({ summary: 'Revoke API key' })
+  @ApiParam({ name: 'id', description: 'API key ID' })
   @Delete('api-keys/:id')
   async revokeApiKey(
     @GetDeveloper('id') developerId: string,
@@ -89,12 +70,12 @@ export class DashboardController {
     return this.dashboardService.revokeApiKey(developerId, keyId);
   }
 
-  // ── Stats ───────────────────────────────────────────────
+  // ── Insights ────────────────────────────────────────────
 
   @ApiOperation({
-    summary: 'Get dashboard overview',
+    summary: 'Dashboard overview',
     description:
-      'Get account overview including balances, transactions, and recent activity',
+      'Balances, total received, payment session breakdown, invoice stats, customer counts, deposit accounts, and pending payouts.',
   })
   @Get('overview')
   async getOverview(@GetDeveloper('id') developerId: string) {
@@ -102,20 +83,49 @@ export class DashboardController {
   }
 
   @ApiOperation({
-    summary: 'Get usage statistics',
-    description: 'Get API usage statistics for the specified time period',
+    summary: 'Revenue chart',
+    description:
+      'Daily credit totals (NGN, USDT, USDC) from completed deposits over the last N days.',
   })
   @ApiQuery({
     name: 'days',
-    description: 'Number of days to include in stats',
-    example: 30,
     required: false,
+    example: 30,
+    description: 'Number of days to include (1–365, default 30)',
   })
-  @Get('usage')
-  async getUsageStats(
+  @Get('revenue-chart')
+  async getRevenueChart(
     @GetDeveloper('id') developerId: string,
-    @Query() query: { days?: number },
+    @Query('days', new DefaultValuePipe(30), ParseIntPipe) days: number,
   ) {
-    return this.dashboardService.getUsageStats(developerId, query);
+    return this.dashboardService.getRevenueChart(developerId, days);
+  }
+
+  @ApiOperation({
+    summary: 'Asset distribution',
+    description:
+      'Payment sessions grouped by crypto asset — counts and volumes.',
+  })
+  @Get('asset-distribution')
+  async getAssetDistribution(@GetDeveloper('id') developerId: string) {
+    return this.dashboardService.getAssetDistribution(developerId);
+  }
+
+  @ApiOperation({
+    summary: 'Recent activity',
+    description: 'Latest ledger entries with direction, amount, and currency.',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    example: 10,
+    description: 'Number of entries to return (1–50, default 10)',
+  })
+  @Get('recent-activity')
+  async getRecentActivity(
+    @GetDeveloper('id') developerId: string,
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
+  ) {
+    return this.dashboardService.getRecentActivity(developerId, limit);
   }
 }
