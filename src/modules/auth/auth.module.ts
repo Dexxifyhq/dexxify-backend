@@ -7,11 +7,17 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
-import { Developer, ApiKey, OtpCode } from '../../database/entities';
+import {
+  User,
+  BusinessUser,
+  Business,
+  ApiKey,
+  OtpCode,
+} from '../../database/entities';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Developer, ApiKey, OtpCode]),
+    TypeOrmModule.forFeature([User, BusinessUser, Business, ApiKey, OtpCode]),
     PassportModule,
     JwtModule.registerAsync({
       global: true,

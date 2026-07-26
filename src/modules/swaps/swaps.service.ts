@@ -39,7 +39,7 @@ export class SwapsService {
     return this.cc.getSwapQuotation(quotationId);
   }
 
-  async executeQuotation(developerId: string, quotationId: string) {
+  async executeQuotation(businessId: string, quotationId: string) {
     const result = await this.cc.executeSwap(quotationId);
 
     const swap = result?.data;
@@ -47,7 +47,7 @@ export class SwapsService {
       try {
         await this.swapRecordRepo.save(
           this.swapRecordRepo.create({
-            developer_id: developerId,
+            business_id: businessId,
             cc_swap_id: swap.id,
             from_currency: swap.fromCurrency,
             to_currency: swap.toCurrency,

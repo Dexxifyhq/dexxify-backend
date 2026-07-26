@@ -28,11 +28,12 @@ export class WebhooksService {
     this.retryDelay = this.config.get<number>('webhook.retryDelayMs') || 5000;
   }
 
-  async create(developerId: string, dto: CreateWebhookDto) {
+  async create(businessId: string, mode: 'live' | 'test', dto: CreateWebhookDto) {
     const secret = `whsec_${randomBytes(24).toString('base64url')}`;
 
     const endpoint = this.endpointRepo.create({
-      developer_id: developerId,
+      business_id: businessId,
+      mode,
       url: dto.url,
       secret,
       events: dto.events,
@@ -43,9 +44,9 @@ export class WebhooksService {
     return { ...saved, secret }; // Show secret only on creation
   }
 
-  async findAll(developerId: string) {
+  async findAll(businessId: string, mode: 'live' | 'test') {
     return this.endpointRepo.find({
-      where: { developer_id: developerId },
+      where: { business_id: businessId, mode },
       select: [
         'id',
         'url',
@@ -59,9 +60,9 @@ export class WebhooksService {
     });
   }
 
-  async remove(developerId: string, webhookId: string) {
+  async remove(businessId: string, mode: 'live' | 'test', webhookId: string) {
     const endpoint = await this.endpointRepo.findOne({
-      where: { id: webhookId, developer_id: developerId },
+      where: { id: webhookId, business_id: businessId, mode },
     });
 
     if (!endpoint) throw new NotFoundException('Webhook endpoint not found.');
@@ -72,13 +73,13 @@ export class WebhooksService {
 
   /** Dispatch an event to all matching webhook endpoints for a developer */
   async dispatch(
-    developerId: string,
+    businessId: string,
     eventType: WebhookEventType,
     payload: Record<string, any>,
   ) {
     const endpoints = await this.endpointRepo.find({
       where: {
-        developer_id: developerId,
+        business_id: businessId,
         is_active: true,
       },
     });
@@ -90,7 +91,7 @@ export class WebhooksService {
 
     if (!matching.length) {
       this.logger.debug(
-        `No webhook endpoints for ${eventType} (dev: ${developerId})`,
+        `No webhook endpoints for ${eventType} (dev: ${businessId})`,
       );
       return;
     }
@@ -105,7 +106,7 @@ export class WebhooksService {
 
       const event = this.eventRepo.create({
         webhook_endpoint_id: endpoint.id,
-        developer_id: developerId,
+        business_id: businessId,
         event_type: eventType,
         payload: eventPayload,
         status: WebhookEventStatus.PENDING,

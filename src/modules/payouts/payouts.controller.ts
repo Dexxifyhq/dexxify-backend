@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import { PayoutsService } from './payouts.service';
 import { CreatePayoutDto, BatchPayoutDto, ResolveAccountDto } from './dto';
-import { DualAuth, GetDeveloper } from '../../common/decorators';
+import { DualAuth, GetBusinessId, GetMode } from '../../common/decorators';
 import {
   ApiOperation,
   ApiTags,
@@ -32,10 +32,11 @@ export class PayoutsController {
   @ApiBody({ type: CreatePayoutDto })
   @Post()
   async create(
-    @GetDeveloper('id') developerId: string,
+    @GetBusinessId() businessId: string,
+    @GetMode() mode: 'live' | 'test',
     @Body() dto: CreatePayoutDto,
   ) {
-    return this.payoutsService.create(developerId, dto);
+    return this.payoutsService.create(businessId, mode, dto);
   }
 
   @ApiOperation({
@@ -45,10 +46,11 @@ export class PayoutsController {
   @ApiBody({ type: BatchPayoutDto })
   @Post('batch')
   async createBatch(
-    @GetDeveloper('id') developerId: string,
+    @GetBusinessId() businessId: string,
+    @GetMode() mode: 'live' | 'test',
     @Body() dto: BatchPayoutDto,
   ) {
-    return this.payoutsService.createBatch(developerId, dto);
+    return this.payoutsService.createBatch(businessId, mode, dto);
   }
 
   @ApiOperation({
@@ -72,9 +74,10 @@ export class PayoutsController {
   })
   @Get(':payout_id')
   async findOne(
-    @GetDeveloper('id') developerId: string,
+    @GetBusinessId() businessId: string,
+    @GetMode() mode: 'live' | 'test',
     @Param('payout_id', ParseUUIDPipe) payoutId: string,
   ) {
-    return this.payoutsService.findOne(developerId, payoutId);
+    return this.payoutsService.findOne(businessId, mode, payoutId);
   }
 }

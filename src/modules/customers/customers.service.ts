@@ -22,9 +22,9 @@ export class CustomersService {
     private readonly cc: CoincircuitService,
   ) {}
 
-  async create(developerId: string, dto: CreateCustomerDto) {
+  async create(businessId: string, mode: 'live' | 'test', dto: CreateCustomerDto) {
     const existing = await this.customerRepo.findOne({
-      where: { developer_id: developerId, email: dto.email },
+      where: { business_id: businessId, email: dto.email, mode },
     });
     if (existing) {
       throw new ConflictException(
@@ -42,7 +42,8 @@ export class CustomersService {
     });
 
     const customer = this.customerRepo.create({
-      developer_id: developerId,
+      business_id: businessId,
+      mode,
       email: dto.email,
       phone: dto.phone,
       first_name: dto.first_name,
@@ -54,12 +55,13 @@ export class CustomersService {
     return this.customerRepo.save(customer);
   }
 
-  async findAll(developerId: string, query: CustomerQueryDto) {
+  async findAll(businessId: string, mode: 'live' | 'test', query: CustomerQueryDto) {
     const { page, limit, offset } = parsePagination(query);
 
     const qb = this.customerRepo
       .createQueryBuilder('c')
-      .where('c.developer_id = :developerId', { developerId })
+      .where('c.business_id = :businessId', { businessId })
+      .andWhere('c.mode = :mode', { mode })
       .addSelect(
         `(SELECT COUNT(*) FROM payment_sessions ps
         WHERE ps.customer_id = c.id AND ps.status = 'completed') > 0`,
@@ -87,20 +89,21 @@ export class CustomersService {
     };
   }
 
-  async findOne(developerId: string, customerId: string) {
+  async findOne(businessId: string, mode: 'live' | 'test', customerId: string) {
     const customer = await this.customerRepo.findOne({
-      where: { id: customerId, developer_id: developerId },
+      where: { id: customerId, business_id: businessId, mode },
     });
     if (!customer) throw new NotFoundException('Customer not found.');
     return customer;
   }
 
   async update(
-    developerId: string,
+    businessId: string,
+    mode: 'live' | 'test',
     customerId: string,
     dto: UpdateCustomerDto,
   ) {
-    const customer = await this.findOne(developerId, customerId);
+    const customer = await this.findOne(businessId, mode, customerId);
     Object.assign(customer, dto);
     const saved = await this.customerRepo.save(customer);
 
@@ -123,14 +126,14 @@ export class CustomersService {
     return saved;
   }
 
-  async remove(developerId: string, customerId: string) {
-    const customer = await this.findOne(developerId, customerId);
+  async remove(businessId: string, mode: 'live' | 'test', customerId: string) {
+    const customer = await this.findOne(businessId, mode, customerId);
     await this.customerRepo.remove(customer);
     return { message: 'Customer deleted.' };
   }
 
-  async getDepositAccount(developerId: string, customerId: string) {
-    const customer = await this.findOne(developerId, customerId);
+  async getDepositAccount(businessId: string, mode: 'live' | 'test', customerId: string) {
+    const customer = await this.findOne(businessId, mode, customerId);
 
     if (!customer.cc_customer_id) {
       throw new BadRequestException(

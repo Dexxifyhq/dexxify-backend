@@ -29,7 +29,7 @@ export class AdminService {
   ) {}
 
   async getPlatformBalance() {
-    const platformId = this.platform.getDeveloperId();
+    const platformId = this.platform.getBusinessId();
 
     const result = await this.ledgerRepo
       .createQueryBuilder('le')
@@ -41,7 +41,7 @@ export class AdminService {
         'COALESCE(SUM(le.debit_usd), 0)  AS total_withdrawn_usd',
         'COALESCE(SUM(le.credit_usd) - SUM(le.debit_usd), 0) AS available_usd',
       ])
-      .where('le.developer_id = :platformId', { platformId })
+      .where('le.business_id = :platformId', { platformId })
       .andWhere('le.status IN (:...statuses)', {
         statuses: [
           LedgerEntryStatus.COMPLETED,
@@ -67,7 +67,7 @@ export class AdminService {
   }
 
   async withdrawFees(dto: WithdrawFeesDto) {
-    const platformId = this.platform.getDeveloperId();
+    const platformId = this.platform.getBusinessId();
 
     // Guard against withdrawing more than what's available
     const balance = await this.getPlatformBalance();
@@ -89,11 +89,11 @@ export class AdminService {
 
     const payoutId: string = result.data.id;
 
-    // Save under the platform developer_id.
+    // Save under the platform business_id.
     // payout.success webhook writes the debit ledger entry automatically.
     await this.payoutRepo.save(
       this.payoutRepo.create({
-        developer_id: platformId,
+        business_id: platformId,
         amount: dto.amount,
         fee: 0,
         narration: dto.narration || 'Platform fee withdrawal',
@@ -116,11 +116,11 @@ export class AdminService {
   }
 
   async getPlatformLedger(page = 1, limit = 20) {
-    const platformId = this.platform.getDeveloperId();
+    const platformId = this.platform.getBusinessId();
     const offset = (page - 1) * limit;
 
     const [entries, total] = await this.ledgerRepo.findAndCount({
-      where: { developer_id: platformId },
+      where: { business_id: platformId },
       order: { created_at: 'DESC' },
       skip: offset,
       take: limit,

@@ -3,6 +3,7 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
+  IsUUID,
   Length,
   MinLength,
 } from 'class-validator';
@@ -24,16 +25,6 @@ export class RegisterDto {
   @IsString()
   @MinLength(8)
   password: string;
-
-  @ApiProperty({ description: 'Business name', example: 'Survey Corps' })
-  @IsString()
-  @IsNotEmpty()
-  business_name: string;
-
-  @ApiPropertyOptional({ description: 'Business type', example: 'technology' })
-  @IsString()
-  @IsOptional()
-  business_type?: string;
 
   @ApiProperty({ description: 'First name', example: 'John' })
   @IsString()
@@ -142,4 +133,13 @@ export class ResetPasswordDto {
   @IsString()
   @MinLength(8)
   new_password: string;
+}
+
+export class SelectBusinessDto {
+  @ApiProperty({
+    description: 'ID of the business workspace to activate',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  })
+  @IsUUID()
+  business_id: string;
 }

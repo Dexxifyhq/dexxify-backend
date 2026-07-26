@@ -239,7 +239,7 @@ export class CoincircuitWebhooksService {
 
       await em.getRepository(CryptoTransaction).save(
         em.getRepository(CryptoTransaction).create({
-          developer_id: session.developer_id,
+          business_id: session.business_id,
           direction: CryptoTxDirection.INBOUND,
           cc_transaction_id: tx.id,
           tx_hash: tx.txHash ?? null,
@@ -332,7 +332,7 @@ export class CoincircuitWebhooksService {
 
       await em.getRepository(LedgerEntry).save(
         em.getRepository(LedgerEntry).create({
-          developer_id: session.developer_id,
+          business_id: session.business_id,
           tx_type: TxType.DEPOSIT,
           reference_type: 'payment_session',
           reference_id: session.id,
@@ -423,7 +423,7 @@ export class CoincircuitWebhooksService {
 
     await this.ledgerRepo.save(
       this.ledgerRepo.create({
-        developer_id: invoice.developer_id,
+        business_id: invoice.business_id,
         tx_type: TxType.DEPOSIT,
         reference_type: 'invoice',
         reference_id: invoice.id,
@@ -466,7 +466,7 @@ export class CoincircuitWebhooksService {
 
     await this.ledgerRepo.save(
       this.ledgerRepo.create({
-        developer_id: payout.developer_id,
+        business_id: payout.business_id,
         tx_type: TxType.PAYOUT,
         reference_type: 'payout',
         reference_id: payout.id,
@@ -499,21 +499,21 @@ export class CoincircuitWebhooksService {
     const refund = data.refund;
     if (!refund) return;
 
-    // Resolve developer_id from the entity the refund belongs to
+    // Resolve business_id from the entity the refund belongs to
     let developerId: string | null = null;
 
     if (refund.entity === 'session') {
       const session = await this.sessionRepo.findOne({
         where: { provider_session_reference: refund.reference },
-        select: ['developer_id'],
+        select: ['business_id'],
       });
-      developerId = session?.developer_id ?? null;
+      developerId = session?.business_id ?? null;
     } else if (refund.entity === 'invoice') {
       const invoice = await this.invoiceRepo.findOne({
         where: { provider_invoice_reference: refund.reference },
-        select: ['developer_id'],
+        select: ['business_id'],
       });
-      developerId = invoice?.developer_id ?? null;
+      developerId = invoice?.business_id ?? null;
     }
 
     if (!developerId) {
@@ -530,7 +530,7 @@ export class CoincircuitWebhooksService {
 
     await this.ledgerRepo.save(
       this.ledgerRepo.create({
-        developer_id: developerId,
+        business_id: developerId,
         tx_type: TxType.REFUND,
         reference_type: refund.entity,
         reference_id: refund.id,
@@ -577,7 +577,7 @@ export class CoincircuitWebhooksService {
     // Swap ledger entry — debit source, credit target (applies to all swap types)
     await this.ledgerRepo.save(
       this.ledgerRepo.create({
-        developer_id: record.developer_id,
+        business_id: record.business_id,
         tx_type: TxType.SWAP,
         reference_type: 'swap',
         reference_id: record.id,
@@ -608,10 +608,10 @@ export class CoincircuitWebhooksService {
     const netNgn = grossNgn - feeNgn;
 
     // Fee debit from developer + matching credit to platform (double-entry)
-    const platformId = this.platformCtx.getDeveloperId();
+    const platformId = this.platformCtx.getBusinessId();
     await this.ledgerRepo.save([
       this.ledgerRepo.create({
-        developer_id: record.developer_id,
+        business_id: record.business_id,
         tx_type: TxType.FEE,
         reference_type: 'swap',
         reference_id: record.id,
@@ -623,7 +623,7 @@ export class CoincircuitWebhooksService {
         description: `Offramp fee (${meta.feePercent ?? 1.5}%)`,
       }),
       this.ledgerRepo.create({
-        developer_id: platformId,
+        business_id: platformId,
         tx_type: TxType.FEE,
         reference_type: 'swap',
         reference_id: record.id,
@@ -656,7 +656,7 @@ export class CoincircuitWebhooksService {
     // Save Payout record — payout.success webhook writes the debit ledger entry
     await this.payoutRepo.save(
       this.payoutRepo.create({
-        developer_id: record.developer_id,
+        business_id: record.business_id,
         amount: netNgn,
         fee: feeNgn,
         bank_code: null,
@@ -698,7 +698,7 @@ export class CoincircuitWebhooksService {
 
     const account = await this.walletRepo.findOne({
       where: { id: data.depositAccountId },
-      select: ['id', 'developer_id'],
+      select: ['id', 'business_id'],
     });
     if (!account) return;
 
@@ -711,7 +711,7 @@ export class CoincircuitWebhooksService {
     const isCrypto = data.type === 'crypto';
     await this.cryptoTxRepo.save(
       this.cryptoTxRepo.create({
-        developer_id: account.developer_id,
+        business_id: account.business_id,
         direction: CryptoTxDirection.INBOUND,
         cc_transaction_id: data.id,
         deposit_type: data.type ?? null,
@@ -750,7 +750,7 @@ export class CoincircuitWebhooksService {
 
     const account = await this.walletRepo.findOne({
       where: { id: data.depositAccountId },
-      select: ['id', 'developer_id'],
+      select: ['id', 'business_id'],
     });
 
     if (!account) {
@@ -793,7 +793,7 @@ export class CoincircuitWebhooksService {
       if (updateResult.affected === 0) {
         await em.getRepository(CryptoTransaction).save(
           em.getRepository(CryptoTransaction).create({
-            developer_id: account.developer_id,
+            business_id: account.business_id,
             direction: CryptoTxDirection.INBOUND,
             cc_transaction_id: data.id,
             deposit_type: data.type ?? null,
@@ -824,7 +824,7 @@ export class CoincircuitWebhooksService {
       // Credit developer ledger
       await em.getRepository(LedgerEntry).save(
         em.getRepository(LedgerEntry).create({
-          developer_id: account.developer_id,
+          business_id: account.business_id,
           tx_type: TxType.DEPOSIT,
           reference_type: 'deposit',
           reference_id: data.id,
@@ -855,7 +855,7 @@ export class CoincircuitWebhooksService {
     });
 
     this.logger.log(
-      `Deposit completed: ${data.id} — ${data.netAmount ?? data.amount} ${currency} credited to ${account.developer_id}`,
+      `Deposit completed: ${data.id} — ${data.netAmount ?? data.amount} ${currency} credited to ${account.business_id}`,
     );
   }
 
@@ -868,7 +868,7 @@ export class CoincircuitWebhooksService {
 
     const account = await this.walletRepo.findOne({
       where: { id: data.depositAccountId },
-      select: ['developer_id'],
+      select: ['business_id'],
     });
     if (!account) return;
 
@@ -887,7 +887,7 @@ export class CoincircuitWebhooksService {
 
     await this.ledgerRepo.save(
       this.ledgerRepo.create({
-        developer_id: account.developer_id,
+        business_id: account.business_id,
         tx_type: TxType.DEPOSIT,
         reference_type: 'deposit',
         reference_id: data.id,

@@ -18,7 +18,7 @@ import {
 } from '@nestjs/swagger';
 import { InvoicesService } from './invoices.service';
 import { CreateInvoiceDto, InvoicePaymentDto, InvoiceQueryDto } from './dto';
-import { DualAuth, GetDeveloper, Public } from '../../common/decorators';
+import { DualAuth, GetBusinessId, GetMode, Public } from '../../common/decorators';
 
 @ApiTags('Invoices')
 @ApiBearerAuth('api-key')
@@ -35,19 +35,21 @@ export class InvoicesController {
   @ApiBody({ type: CreateInvoiceDto })
   @Post()
   create(
-    @GetDeveloper('id') developerId: string,
+    @GetBusinessId() businessId: string,
+    @GetMode() mode: 'live' | 'test',
     @Body() dto: CreateInvoiceDto,
   ) {
-    return this.invoicesService.create(developerId, dto);
+    return this.invoicesService.create(businessId, mode, dto);
   }
 
   @ApiOperation({ summary: 'List invoices' })
   @Get()
   findAll(
-    @GetDeveloper('id') developerId: string,
+    @GetBusinessId() businessId: string,
+    @GetMode() mode: 'live' | 'test',
     @Query() query: InvoiceQueryDto,
   ) {
-    return this.invoicesService.findAll(developerId, query);
+    return this.invoicesService.findAll(businessId, mode, query);
   }
 
   @ApiOperation({
@@ -57,10 +59,11 @@ export class InvoicesController {
   @ApiParam({ name: 'invoice_id', description: 'Invoice UUID' })
   @Get(':invoice_id')
   findOne(
-    @GetDeveloper('id') developerId: string,
+    @GetBusinessId() businessId: string,
+    @GetMode() mode: 'live' | 'test',
     @Param('invoice_id', ParseUUIDPipe) invoiceId: string,
   ) {
-    return this.invoicesService.findOneEnriched(developerId, invoiceId);
+    return this.invoicesService.findOneEnriched(businessId, mode, invoiceId);
   }
 
   @ApiOperation({
@@ -103,10 +106,11 @@ export class InvoicesController {
   @HttpCode(HttpStatus.OK)
   @Post(':invoice_id/mark-paid')
   markPaid(
-    @GetDeveloper('id') developerId: string,
+    @GetBusinessId() businessId: string,
+    @GetMode() mode: 'live' | 'test',
     @Param('invoice_id', ParseUUIDPipe) invoiceId: string,
   ) {
-    return this.invoicesService.markPaid(developerId, invoiceId);
+    return this.invoicesService.markPaid(businessId, mode, invoiceId);
   }
 
   @ApiOperation({ summary: 'Cancel an invoice' })
@@ -114,10 +118,11 @@ export class InvoicesController {
   @HttpCode(HttpStatus.OK)
   @Post(':invoice_id/cancel')
   cancel(
-    @GetDeveloper('id') developerId: string,
+    @GetBusinessId() businessId: string,
+    @GetMode() mode: 'live' | 'test',
     @Param('invoice_id', ParseUUIDPipe) invoiceId: string,
   ) {
-    return this.invoicesService.cancel(developerId, invoiceId);
+    return this.invoicesService.cancel(businessId, mode, invoiceId);
   }
 
   @ApiOperation({ summary: 'Void a paid invoice' })
@@ -125,9 +130,10 @@ export class InvoicesController {
   @HttpCode(HttpStatus.OK)
   @Post(':invoice_id/void')
   void(
-    @GetDeveloper('id') developerId: string,
+    @GetBusinessId() businessId: string,
+    @GetMode() mode: 'live' | 'test',
     @Param('invoice_id', ParseUUIDPipe) invoiceId: string,
   ) {
-    return this.invoicesService.void(developerId, invoiceId);
+    return this.invoicesService.void(businessId, mode, invoiceId);
   }
 }

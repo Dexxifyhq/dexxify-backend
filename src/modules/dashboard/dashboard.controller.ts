@@ -13,7 +13,7 @@ import {
 } from '@nestjs/common';
 import { DashboardService } from './dashboard.service';
 import { CreateApiKeyDto, UpdateApiKeyDto } from './dto';
-import { DualAuth, GetDeveloper } from '../../common/decorators';
+import { DualAuth, GetUser, GetBusinessId, GetMode } from '../../common/decorators';
 import {
   ApiOperation,
   ApiTags,
@@ -36,16 +36,17 @@ export class DashboardController {
   @ApiBody({ type: CreateApiKeyDto })
   @Post('api-keys')
   async createApiKey(
-    @GetDeveloper('id') developerId: string,
+    @GetUser('id') userId: string,
+    @GetBusinessId() businessId: string,
     @Body() dto: CreateApiKeyDto,
   ) {
-    return this.dashboardService.createApiKey(developerId, dto);
+    return this.dashboardService.createApiKey(userId, businessId, dto);
   }
 
   @ApiOperation({ summary: 'List API keys' })
   @Get('api-keys')
-  async listApiKeys(@GetDeveloper('id') developerId: string) {
-    return this.dashboardService.listApiKeys(developerId);
+  async listApiKeys(@GetUser('id') userId: string) {
+    return this.dashboardService.listApiKeys(userId);
   }
 
   @ApiOperation({ summary: 'Update API key label or IP whitelist' })
@@ -53,21 +54,21 @@ export class DashboardController {
   @ApiBody({ type: UpdateApiKeyDto })
   @Patch('api-keys/:id')
   async updateApiKey(
-    @GetDeveloper('id') developerId: string,
+    @GetUser('id') userId: string,
     @Param('id', ParseUUIDPipe) keyId: string,
     @Body() dto: UpdateApiKeyDto,
   ) {
-    return this.dashboardService.updateApiKey(developerId, keyId, dto);
+    return this.dashboardService.updateApiKey(userId, keyId, dto);
   }
 
   @ApiOperation({ summary: 'Revoke API key' })
   @ApiParam({ name: 'id', description: 'API key ID' })
   @Delete('api-keys/:id')
   async revokeApiKey(
-    @GetDeveloper('id') developerId: string,
+    @GetUser('id') userId: string,
     @Param('id', ParseUUIDPipe) keyId: string,
   ) {
-    return this.dashboardService.revokeApiKey(developerId, keyId);
+    return this.dashboardService.revokeApiKey(userId, keyId);
   }
 
   // ── Insights ────────────────────────────────────────────
@@ -78,8 +79,11 @@ export class DashboardController {
       'Balances, total received, payment session breakdown, invoice stats, customer counts, deposit accounts, and pending payouts.',
   })
   @Get('overview')
-  async getOverview(@GetDeveloper('id') developerId: string) {
-    return this.dashboardService.getOverview(developerId);
+  async getOverview(
+    @GetBusinessId() businessId: string,
+    @GetMode() mode: 'live' | 'test',
+  ) {
+    return this.dashboardService.getOverview(businessId, mode);
   }
 
   @ApiOperation({
@@ -95,10 +99,11 @@ export class DashboardController {
   })
   @Get('revenue-chart')
   async getRevenueChart(
-    @GetDeveloper('id') developerId: string,
+    @GetBusinessId() businessId: string,
+    @GetMode() mode: 'live' | 'test',
     @Query('days', new DefaultValuePipe(30), ParseIntPipe) days: number,
   ) {
-    return this.dashboardService.getRevenueChart(developerId, days);
+    return this.dashboardService.getRevenueChart(businessId, mode, days);
   }
 
   @ApiOperation({
@@ -107,8 +112,11 @@ export class DashboardController {
       'Payment sessions grouped by crypto asset — counts and volumes.',
   })
   @Get('asset-distribution')
-  async getAssetDistribution(@GetDeveloper('id') developerId: string) {
-    return this.dashboardService.getAssetDistribution(developerId);
+  async getAssetDistribution(
+    @GetBusinessId() businessId: string,
+    @GetMode() mode: 'live' | 'test',
+  ) {
+    return this.dashboardService.getAssetDistribution(businessId, mode);
   }
 
   @ApiOperation({
@@ -123,9 +131,10 @@ export class DashboardController {
   })
   @Get('recent-activity')
   async getRecentActivity(
-    @GetDeveloper('id') developerId: string,
+    @GetBusinessId() businessId: string,
+    @GetMode() mode: 'live' | 'test',
     @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
   ) {
-    return this.dashboardService.getRecentActivity(developerId, limit);
+    return this.dashboardService.getRecentActivity(businessId, mode, limit);
   }
 }

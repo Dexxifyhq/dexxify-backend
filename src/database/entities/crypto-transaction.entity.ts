@@ -8,7 +8,7 @@ import {
   JoinColumn,
   Index,
 } from 'typeorm';
-import { Developer } from './developer.entity';
+import { Business } from './business.entity';
 import { WalletAsset, WalletNetwork } from './wallet.entity';
 
 export enum CryptoTxDirection {
@@ -32,7 +32,10 @@ export class CryptoTransaction {
 
   @Index()
   @Column({ type: 'uuid' })
-  developer_id: string;
+  business_id: string;
+
+  @Column({ type: 'text', default: 'test' })
+  mode: 'live' | 'test';
 
   @Index()
   @Column({ type: 'enum', enum: CryptoTxDirection })
@@ -48,7 +51,7 @@ export class CryptoTransaction {
   network: WalletNetwork | null;
 
   @Column({ type: 'text', nullable: true })
-  deposit_type: string | null; // 'crypto' | 'fiat'
+  deposit_type: string | null;
 
   @Column({ type: 'text', nullable: true })
   from_address: string | null;
@@ -104,7 +107,7 @@ export class CryptoTransaction {
   @UpdateDateColumn({ type: 'timestamptz' })
   updated_at: Date;
 
-  @ManyToOne(() => Developer)
-  @JoinColumn({ name: 'developer_id' })
-  developer: Developer;
+  @ManyToOne(() => Business, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'business_id' })
+  business: Business;
 }

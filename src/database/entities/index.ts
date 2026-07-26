@@ -1,8 +1,15 @@
+export { User, UserStatus, SubscriptionPlan } from './user.entity';
 export {
-  Developer,
-  DeveloperStatus,
-  SubscriptionPlan,
-} from './developer.entity';
+  BusinessUser,
+  BusinessRole,
+  BusinessUserStatus,
+} from './business-user.entity';
+export {
+  Business,
+  BusinessType,
+  SettlementCurrency,
+  PayoutMethod,
+} from './business.entity';
 export { ApiKey } from './api-key.entity';
 export { Bank } from './bank.entity';
 export {

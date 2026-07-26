@@ -8,15 +8,10 @@ import {
   Index,
   PrimaryColumn,
 } from 'typeorm';
-import { Developer } from './developer.entity';
+import { Business } from './business.entity';
 import { Customer } from './customer.entity';
 
 export enum WalletAsset {
-  // BCH = 'BCH',
-  // DOGE = 'DOGE',
-  // LTC = 'LTC',
-  // XRP = 'XRP',
-  // AVAX = 'AVAX',
   BTC = 'BTC',
   TRX = 'TRX',
   BNB = 'BNB',
@@ -28,12 +23,6 @@ export enum WalletAsset {
 }
 
 export enum WalletNetwork {
-  // BITCOIN_CASH = 'Bitcoin_Cash',
-  // DOGECOIN = 'Dogecoin',
-  // LITECOIN = 'Litecoin',
-  // AVALANCHE = 'Avalanche',
-  // POLYGON = 'Polygon',
-  // XRP = 'XRP',
   BITCOIN = 'Bitcoin',
   BINANCE_SMART_CHAIN = 'Binance_Smart_Chain',
   ETHEREUM = 'Ethereum',
@@ -56,15 +45,14 @@ export class DepositAccount {
 
   @Index()
   @Column({ type: 'uuid' })
-  developer_id: string;
+  business_id: string;
+
+  @Column({ type: 'text', default: 'test' })
+  mode: 'live' | 'test';
 
   @Index()
   @Column({ type: 'uuid', nullable: true })
   customer_id: string | null;
-
-  @ManyToOne(() => Customer, { nullable: true, onDelete: 'SET NULL' })
-  @JoinColumn({ name: 'customer_id' })
-  customer: Customer | null;
 
   @Column({
     type: 'enum',
@@ -97,9 +85,11 @@ export class DepositAccount {
   @UpdateDateColumn({ type: 'timestamptz' })
   updated_at: Date;
 
-  @ManyToOne(() => Developer, (dev) => dev.deposit_accounts, {
-    onDelete: 'CASCADE',
-  })
-  @JoinColumn({ name: 'developer_id' })
-  developer: Developer;
+  @ManyToOne(() => Business, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'business_id' })
+  business: Business;
+
+  @ManyToOne(() => Customer, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'customer_id' })
+  customer: Customer | null;
 }

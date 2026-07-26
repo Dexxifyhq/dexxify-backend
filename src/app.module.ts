@@ -9,7 +9,7 @@ import configuration from './config/configuration';
 
 // Database
 import { DatabaseModule } from './database/database.module';
-import { ApiKey, Developer } from './database/entities';
+import { ApiKey, Business, User, BusinessUser } from './database/entities';
 
 // Common
 import { GlobalExceptionFilter } from './common/filters/http-exception.filter';
@@ -35,6 +35,9 @@ import { SwapsModule } from './modules/swaps/swaps.module';
 import { RefundsModule } from './modules/refunds/refunds.module';
 import { PlatformModule } from './modules/platform/platform.module';
 import { AdminModule } from './modules/admin/admin.module';
+import { BusinessesModule } from './modules/businesses/businesses.module';
+import { TeamsModule } from './modules/teams/teams.module';
+import { DevelopersModule } from './modules/developers/developers.module';
 
 @Module({
   imports: [
@@ -58,7 +61,7 @@ import { AdminModule } from './modules/admin/admin.module';
     DatabaseModule,
 
     // Entities needed by the global ApiKeyGuard
-    TypeOrmModule.forFeature([ApiKey, Developer]),
+    TypeOrmModule.forFeature([ApiKey, User, Business, BusinessUser]),
 
     // Feature modules
     MailModule,
@@ -79,6 +82,9 @@ import { AdminModule } from './modules/admin/admin.module';
     RefundsModule,
     PlatformModule,
     AdminModule,
+    BusinessesModule,
+    TeamsModule,
+    DevelopersModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ApiKeyGuard },

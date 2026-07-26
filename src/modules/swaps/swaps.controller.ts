@@ -19,7 +19,7 @@ import {
   CreateSwapQuotationDto,
   SwapQueryDto,
 } from './dto';
-import { DualAuth, GetDeveloper } from '../../common/decorators';
+import { DualAuth, GetBusinessId } from '../../common/decorators';
 
 @ApiTags('Swaps')
 @ApiBearerAuth('api-key')
@@ -61,10 +61,10 @@ export class SwapsController {
   @ApiParam({ name: 'quotationId', description: 'Quotation ID to execute' })
   @Post('quotation/:quotationId/execute')
   executeQuotation(
-    @GetDeveloper('id') developerId: string,
+    @GetBusinessId() businessId: string,
     @Param('quotationId') quotationId: string,
   ) {
-    return this.swapsService.executeQuotation(developerId, quotationId);
+    return this.swapsService.executeQuotation(businessId, quotationId);
   }
 
   @ApiOperation({ summary: 'List swap history' })

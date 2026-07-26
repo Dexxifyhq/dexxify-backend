@@ -8,7 +8,7 @@ import {
   JoinColumn,
   Index,
 } from 'typeorm';
-import { Developer } from './developer.entity';
+import { Business } from './business.entity';
 import { Customer } from './customer.entity';
 
 export enum InvoiceStatus {
@@ -35,7 +35,10 @@ export class Invoice {
 
   @Index()
   @Column({ type: 'uuid' })
-  developer_id: string;
+  business_id: string;
+
+  @Column({ type: 'text', default: 'test' })
+  mode: 'live' | 'test';
 
   @Index()
   @Column({ type: 'uuid', nullable: true })
@@ -95,10 +98,9 @@ export class Invoice {
   @UpdateDateColumn({ type: 'timestamptz' })
   updated_at: Date;
 
-  // Relations
-  @ManyToOne(() => Developer, (dev) => dev.invoices)
-  @JoinColumn({ name: 'developer_id' })
-  developer: Developer;
+  @ManyToOne(() => Business, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'business_id' })
+  business: Business;
 
   @ManyToOne(() => Customer, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'customer_id' })

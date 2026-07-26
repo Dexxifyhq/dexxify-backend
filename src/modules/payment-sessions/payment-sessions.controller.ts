@@ -23,7 +23,7 @@ import {
   EstimatePaymentDto,
   PaymentSessionQueryDto,
 } from './dto';
-import { DualAuth, GetDeveloper, Public } from '../../common/decorators';
+import { DualAuth, GetBusinessId, GetMode, Public } from '../../common/decorators';
 
 @ApiTags('Payment Sessions')
 @ApiBearerAuth('api-key')
@@ -40,19 +40,21 @@ export class PaymentSessionsController {
   @ApiBody({ type: CreatePaymentSessionDto })
   @Post()
   create(
-    @GetDeveloper('id') developerId: string,
+    @GetBusinessId() businessId: string,
+    @GetMode() mode: 'live' | 'test',
     @Body() dto: CreatePaymentSessionDto,
   ) {
-    return this.sessionsService.create(developerId, dto);
+    return this.sessionsService.create(businessId, mode, dto);
   }
 
   @ApiOperation({ summary: 'List payment sessions' })
   @Get()
   findAll(
-    @GetDeveloper('id') developerId: string,
+    @GetBusinessId() businessId: string,
+    @GetMode() mode: 'live' | 'test',
     @Query() query: PaymentSessionQueryDto,
   ) {
-    return this.sessionsService.findAll(developerId, query);
+    return this.sessionsService.findAll(businessId, mode, query);
   }
 
   @Public()
@@ -60,7 +62,7 @@ export class PaymentSessionsController {
   @ApiParam({ name: 'session_id', description: 'Payment session UUID' })
   @Get(':session_id')
   findOne(
-    // @GetDeveloper('id') developerId: string,
+    // @GetBusinessId() businessId: string,
     @Param('session_id', ParseUUIDPipe) sessionId: string,
   ) {
     return this.sessionsService.findOne(sessionId);
@@ -70,10 +72,10 @@ export class PaymentSessionsController {
   @ApiParam({ name: 'reference', description: 'Session reference (ps_...)' })
   @Get('ref/:reference')
   findByReference(
-    @GetDeveloper('id') developerId: string,
+    @GetBusinessId() businessId: string,
     @Param('reference') reference: string,
   ) {
-    return this.sessionsService.findByReference(developerId, reference);
+    return this.sessionsService.findByReference(businessId, reference);
   }
 
   @ApiOperation({

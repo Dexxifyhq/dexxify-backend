@@ -9,7 +9,11 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { ApiKey, Developer, DeveloperStatus } from '../../database/entities';
+import {
+  ApiKey,
+  User,
+  UserStatus,
+} from '../../database/entities';
 import { IS_PUBLIC_KEY, AUTH_TYPE_KEY } from '../decorators';
 import { hashApiKey } from '../utils';
 
@@ -18,8 +22,8 @@ export class ApiKeyGuard implements CanActivate {
   constructor(
     @InjectRepository(ApiKey)
     private readonly apiKeyRepo: Repository<ApiKey>,
-    @InjectRepository(Developer)
-    private readonly developerRepo: Repository<Developer>,
+    @InjectRepository(User)
+    private readonly userRepo: Repository<User>,
     private readonly reflector: Reflector,
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
@@ -42,8 +46,6 @@ export class ApiKeyGuard implements CanActivate {
 
     const request = context.switchToHttp().getRequest();
     const authHeader = request.headers['authorization'];
-    // console.log('Auth header:', authHeader);
-    // console.log('Headers:', request.headers);
 
     // ── Dual auth: API key OR cookie JWT ────────────────
     if (authType === 'dual') {
@@ -77,7 +79,7 @@ export class ApiKeyGuard implements CanActivate {
     const keyHash = hashApiKey(apiKey);
     const keyRecord = await this.apiKeyRepo.findOne({
       where: { key_hash: keyHash, is_active: true },
-      relations: ['developer'],
+      relations: ['user'],
     });
 
     if (!keyRecord) {
@@ -97,14 +99,16 @@ export class ApiKeyGuard implements CanActivate {
       }
     }
 
-    if (keyRecord.developer?.status !== 'active') {
-      throw new UnauthorizedException('Developer account is not active.');
+    if (keyRecord.user?.status !== UserStatus.ACTIVE) {
+      throw new UnauthorizedException('User account is not active.');
     }
 
     this.apiKeyRepo.update(keyRecord.id, { last_used_at: new Date() });
 
-    request.developer = keyRecord.developer;
-    request.apiKeyEnvironment = keyRecord.environment;
+    request.user = keyRecord.user;
+    request.developer = keyRecord.user; // backward compat
+    request.apiKeyEnvironment = keyRecord.mode;
+    request.active_business_id = keyRecord.business_id ?? null;
 
     return true;
   }
@@ -127,23 +131,29 @@ export class ApiKeyGuard implements CanActivate {
         email: string;
         type: string;
         mode?: 'live' | 'test';
+        business_id?: string | null;
       }>(token, { secret });
 
       if (payload.type !== 'access') {
         throw new UnauthorizedException('Invalid token type.');
       }
 
-      const developer = await this.developerRepo.findOne({
-        where: { id: payload.sub, status: DeveloperStatus.ACTIVE },
+      const user = await this.userRepo.findOne({
+        where: { id: payload.sub, status: UserStatus.ACTIVE },
       });
 
-      if (!developer) {
+      if (!user) {
         throw new UnauthorizedException('Invalid or inactive account.');
       }
 
-      request.developer = Object.assign(developer, {
+      const enrichedUser = Object.assign(user, {
         mode: payload.mode ?? 'test',
+        active_business_id: payload.business_id ?? null,
       });
+
+      request.user = enrichedUser;
+      request.developer = enrichedUser; // backward compat
+      request.active_business_id = payload.business_id ?? null;
 
       return true;
     } catch (err) {

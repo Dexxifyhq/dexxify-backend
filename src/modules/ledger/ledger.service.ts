@@ -12,12 +12,12 @@ export class LedgerService {
     private readonly ledgerRepo: Repository<LedgerEntry>,
   ) {}
 
-  async findAll(developerId: string, query: LedgerQueryDto) {
+  async findAll(businessId: string, query: LedgerQueryDto) {
     const { offset, limit, page } = parsePagination(query);
 
     const qb = this.ledgerRepo
       .createQueryBuilder('le')
-      .where('le.developer_id = :developerId', { developerId })
+      .where('le.business_id = :businessId', { businessId })
       .orderBy('le.created_at', 'DESC')
       .skip(offset)
       .take(limit);
@@ -38,15 +38,15 @@ export class LedgerService {
     return { data, meta: buildPaginationMeta(total, page, limit) };
   }
 
-  async findOne(developerId: string, txId: string) {
+  async findOne(businessId: string, txId: string) {
     const entry = await this.ledgerRepo.findOne({
-      where: { id: txId, developer_id: developerId },
+      where: { id: txId, business_id: businessId },
     });
     if (!entry) throw new NotFoundException('Transaction not found.');
     return entry;
   }
 
-  async getBalance(developerId: string) {
+  async getBalance(businessId: string) {
     const result = await this.ledgerRepo
       .createQueryBuilder('le')
       .select('SUM(le.credit_ngn)', 'totalCreditNgn')
@@ -57,7 +57,7 @@ export class LedgerService {
       .addSelect('SUM(le.debit_usdt)', 'totalDebitUsdt')
       .addSelect('SUM(le.credit_usdc)', 'totalCreditUsdc')
       .addSelect('SUM(le.debit_usdc)', 'totalDebitUsdc')
-      .where('le.developer_id = :developerId', { developerId })
+      .where('le.business_id = :businessId', { businessId })
       .andWhere('le.status IN (:...statuses)', {
         statuses: [
           LedgerEntryStatus.COMPLETED,
@@ -101,14 +101,14 @@ export class LedgerService {
     };
   }
 
-  async getSettlementReport(developerId: string, query: { date?: string }) {
+  async getSettlementReport(businessId: string, query: { date?: string }) {
     const targetDate = query.date || new Date().toISOString().split('T')[0];
     const startOfDay = new Date(`${targetDate}T00:00:00.000Z`);
     const endOfDay = new Date(`${targetDate}T23:59:59.999Z`);
 
     const entries = await this.ledgerRepo.find({
       where: {
-        developer_id: developerId,
+        business_id: businessId,
         created_at: Between(startOfDay, endOfDay),
       },
       order: { created_at: 'ASC' },

@@ -125,6 +125,49 @@ export class MailService {
     await this.send(to, subject, html, text);
   }
 
+  async sendTeamInviteEmail(
+    to: string,
+    inviterName: string,
+    businessName: string,
+    role: string,
+    acceptUrl: string,
+  ): Promise<boolean> {
+    const subject = `You've been invited to join ${businessName} on Dexxify`;
+
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto;">
+        <h2 style="color: #1a1a1a;">You have a team invitation</h2>
+        <p>Hi,</p>
+        <p><strong>${inviterName}</strong> has invited you to join <strong>${businessName}</strong> on Dexxify as a <strong>${role}</strong>.</p>
+        <div style="margin: 32px 0; text-align: center;">
+          <a href="${acceptUrl}" style="
+            display: inline-block;
+            background: #2563EB;
+            color: white;
+            text-decoration: none;
+            padding: 14px 28px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 15px;
+          ">Accept Invitation</a>
+        </div>
+        <p style="color: #6b7280; font-size: 14px;">
+          Or copy and paste this link into your browser:<br />
+          <a href="${acceptUrl}" style="color: #2563EB;">${acceptUrl}</a>
+        </p>
+        <p style="color: #6b7280; font-size: 14px;">
+          This invitation expires in 7 days. If you weren't expecting this invitation, you can safely ignore this email.
+        </p>
+        <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;" />
+        <p style="color: #9ca3af; font-size: 12px;">Dexxify - Crypto Infrastructure API</p>
+      </div>
+    `;
+
+    const text = `${inviterName} invited you to join ${businessName} on Dexxify as a ${role}.\n\nAccept your invitation: ${acceptUrl}\n\nThis invitation expires in 7 days.`;
+
+    return this.send(to, subject, html, text);
+  }
+
   private async send(
     to: string,
     subject: string,

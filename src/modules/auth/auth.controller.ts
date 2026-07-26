@@ -20,8 +20,9 @@ import {
   ForgotPasswordDto,
   ResetPasswordDto,
   SwitchModeDto,
+  SelectBusinessDto,
 } from './dto';
-import { Public, CookieAuth, GetDeveloper } from '../../common/decorators';
+import { Public, CookieAuth, GetUser } from '../../common/decorators';
 import { ApiOperation, ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 
 @ApiTags('Authentication')
@@ -111,10 +112,26 @@ export class AuthController {
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   async refresh(
-    @GetDeveloper() developer: any,
+    @GetUser() developer: any,
     @Res({ passthrough: true }) res: Response,
   ) {
     return this.authService.refresh(developer, res);
+  }
+
+  @ApiOperation({
+    summary: 'Select active business',
+    description:
+      'Activate a specific business workspace. Required after login when the developer owns multiple businesses. Issues a new JWT with the selected business_id embedded.',
+  })
+  @UseGuards(AuthGuard('jwt'))
+  @Post('select-business')
+  @HttpCode(HttpStatus.OK)
+  async selectBusiness(
+    @GetUser() developer: any,
+    @Body() dto: SelectBusinessDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    return this.authService.selectBusiness(developer, dto, res);
   }
 
   @ApiOperation({
@@ -126,7 +143,7 @@ export class AuthController {
   @Post('mode')
   @HttpCode(HttpStatus.OK)
   async switchMode(
-    @GetDeveloper() developer: any,
+    @GetUser() developer: any,
     @Body() dto: SwitchModeDto,
     @Res({ passthrough: true }) res: Response,
   ) {
@@ -150,7 +167,7 @@ export class AuthController {
   })
   @UseGuards(AuthGuard('jwt'))
   @Get('profile')
-  async getProfile(@GetDeveloper() developer: any) {
+  async getProfile(@GetUser() developer: any) {
     return this.authService.getProfile(developer);
   }
 }

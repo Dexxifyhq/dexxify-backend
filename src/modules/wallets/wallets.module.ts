@@ -8,7 +8,8 @@ import {
   WithdrawalWallet,
   Payout,
   Customer,
-  Developer,
+  User,
+  Business,
 } from '../../database/entities';
 import { CoincircuitModule } from '../../providers/coincircuit/coincircuit.module';
 import { CustomersModule } from '../customers/customers.module';
@@ -21,7 +22,8 @@ import { CustomersModule } from '../customers/customers.module';
       LedgerEntry,
       Payout,
       Customer,
-      Developer,
+      User,
+      Business,
     ]),
     CoincircuitModule,
     CustomersModule,

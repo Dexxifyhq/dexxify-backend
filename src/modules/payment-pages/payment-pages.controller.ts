@@ -24,7 +24,7 @@ import {
   UpdatePaymentPageDto,
   PaymentPageQueryDto,
 } from './dto';
-import { DualAuth, GetDeveloper } from '../../common/decorators';
+import { DualAuth, GetBusinessId, GetMode } from '../../common/decorators';
 
 @ApiTags('Payment Pages')
 @ApiBearerAuth('api-key')
@@ -37,29 +37,32 @@ export class PaymentPagesController {
   @ApiBody({ type: CreatePaymentPageDto })
   @Post()
   create(
-    @GetDeveloper('id') developerId: string,
+    @GetBusinessId() businessId: string,
+    @GetMode() mode: 'live' | 'test',
     @Body() dto: CreatePaymentPageDto,
   ) {
-    return this.pagesService.create(developerId, dto);
+    return this.pagesService.create(businessId, mode, dto);
   }
 
   @ApiOperation({ summary: 'List payment pages' })
   @Get()
   findAll(
-    @GetDeveloper('id') developerId: string,
+    @GetBusinessId() businessId: string,
+    @GetMode() mode: 'live' | 'test',
     @Query() query: PaymentPageQueryDto,
   ) {
-    return this.pagesService.findAll(developerId, query);
+    return this.pagesService.findAll(businessId, mode, query);
   }
 
   @ApiOperation({ summary: 'Get a payment page by ID' })
   @ApiParam({ name: 'page_id', description: 'Payment page UUID' })
   @Get(':page_id')
   findOne(
-    @GetDeveloper('id') developerId: string,
+    @GetBusinessId() businessId: string,
+    @GetMode() mode: 'live' | 'test',
     @Param('page_id', ParseUUIDPipe) pageId: string,
   ) {
-    return this.pagesService.findOne(developerId, pageId);
+    return this.pagesService.findOne(businessId, mode, pageId);
   }
 
   @ApiOperation({ summary: 'Update a payment page' })
@@ -67,11 +70,12 @@ export class PaymentPagesController {
   @ApiBody({ type: UpdatePaymentPageDto })
   @Put(':page_id')
   update(
-    @GetDeveloper('id') developerId: string,
+    @GetBusinessId() businessId: string,
+    @GetMode() mode: 'live' | 'test',
     @Param('page_id', ParseUUIDPipe) pageId: string,
     @Body() dto: UpdatePaymentPageDto,
   ) {
-    return this.pagesService.update(developerId, pageId, dto);
+    return this.pagesService.update(businessId, mode, pageId, dto);
   }
 
   @ApiOperation({ summary: 'Delete a payment page' })
@@ -79,20 +83,22 @@ export class PaymentPagesController {
   @HttpCode(HttpStatus.OK)
   @Delete(':page_id')
   remove(
-    @GetDeveloper('id') developerId: string,
+    @GetBusinessId() businessId: string,
+    @GetMode() mode: 'live' | 'test',
     @Param('page_id', ParseUUIDPipe) pageId: string,
   ) {
-    return this.pagesService.remove(developerId, pageId);
+    return this.pagesService.remove(businessId, mode, pageId);
   }
 
   @ApiOperation({ summary: 'List all payment sessions through a page' })
   @ApiParam({ name: 'page_id', description: 'Payment page UUID' })
   @Get(':page_id/sessions')
   getSessions(
-    @GetDeveloper('id') developerId: string,
+    @GetBusinessId() businessId: string,
+    @GetMode() mode: 'live' | 'test',
     @Param('page_id', ParseUUIDPipe) pageId: string,
     @Query() query: PaymentPageQueryDto,
   ) {
-    return this.pagesService.getSessions(developerId, pageId, query);
+    return this.pagesService.getSessions(businessId, mode, pageId, query);
   }
 }

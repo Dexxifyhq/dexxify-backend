@@ -52,7 +52,7 @@ export class PaymentPagesService {
     // this.webhookUrl = `${this.config.get<string>('app.apiPrefix') || ''}/webhooks/incoming/coincircuit`;
   }
 
-  async create(developerId: string, dto: CreatePaymentPageDto) {
+  async create(businessId: string, mode: 'live' | 'test', dto: CreatePaymentPageDto) {
     if (!dto.amount) {
       throw new BadRequestException('amount is required.');
     }
@@ -60,7 +60,8 @@ export class PaymentPagesService {
     const slug = await this.resolveUniqueSlug(dto.slug || dto.title);
 
     const page = this.pageRepo.create({
-      developer_id: developerId,
+      business_id: businessId,
+      mode,
       title: dto.title,
       description: dto.description || null,
       slug,
@@ -74,12 +75,13 @@ export class PaymentPagesService {
     return this.formatWithUrl(saved);
   }
 
-  async findAll(developerId: string, query: PaymentPageQueryDto) {
+  async findAll(businessId: string, mode: 'live' | 'test', query: PaymentPageQueryDto) {
     const { page, limit, offset } = parsePagination(query);
 
     const qb = this.pageRepo
       .createQueryBuilder('pp')
-      .where('pp.developer_id = :developerId', { developerId });
+      .where('pp.business_id = :businessId', { businessId })
+      .andWhere('pp.mode = :mode', { mode });
 
     if (query.status)
       qb.andWhere('pp.status = :status', { status: query.status });
@@ -94,17 +96,17 @@ export class PaymentPagesService {
     };
   }
 
-  async findOne(developerId: string, pageId: string) {
+  async findOne(businessId: string, mode: 'live' | 'test', pageId: string) {
     const page = await this.pageRepo.findOne({
-      where: { id: pageId, developer_id: developerId },
+      where: { id: pageId, business_id: businessId, mode },
     });
     if (!page) throw new NotFoundException('Payment page not found.');
     return this.formatWithUrl(page);
   }
 
-  async update(developerId: string, pageId: string, dto: UpdatePaymentPageDto) {
+  async update(businessId: string, mode: 'live' | 'test', pageId: string, dto: UpdatePaymentPageDto) {
     const page = await this.pageRepo.findOne({
-      where: { id: pageId, developer_id: developerId },
+      where: { id: pageId, business_id: businessId, mode },
     });
     if (!page) throw new NotFoundException('Payment page not found.');
 
@@ -113,9 +115,9 @@ export class PaymentPagesService {
     return this.formatWithUrl(saved);
   }
 
-  async remove(developerId: string, pageId: string) {
+  async remove(businessId: string, mode: 'live' | 'test', pageId: string) {
     const page = await this.pageRepo.findOne({
-      where: { id: pageId, developer_id: developerId },
+      where: { id: pageId, business_id: businessId, mode },
     });
     if (!page) throw new NotFoundException('Payment page not found.');
     await this.pageRepo.remove(page);
@@ -123,17 +125,19 @@ export class PaymentPagesService {
   }
 
   async getSessions(
-    developerId: string,
+    businessId: string,
+    mode: 'live' | 'test',
     pageId: string,
     query: PaymentPageQueryDto,
   ) {
-    await this.findOne(developerId, pageId);
+    await this.findOne(businessId, mode, pageId);
 
     const { page, limit, offset } = parsePagination(query);
 
     const [data, total] = await this.sessionRepo
       .createQueryBuilder('ps')
       .where('ps.payment_page_id = :pageId', { pageId })
+      .andWhere('ps.mode = :mode', { mode })
       .orderBy('ps.created_at', 'DESC')
       .skip(offset)
       .take(limit)
@@ -177,16 +181,17 @@ export class PaymentPagesService {
     // console.log(ccAsset);
     // console.log(ccChain);
 
-    // Find or create our local customer record
+    // Find or create our local customer record (scoped to the page's mode)
     const existingCustomer = await this.customerRepo.findOne({
-      where: { email: dto.email, developer_id: page.developer_id },
+      where: { email: dto.email, business_id: page.business_id, mode: page.mode },
     });
 
     const customer: Customer = existingCustomer
       ? existingCustomer
       : await this.customerRepo.save(
           this.customerRepo.create({
-            developer_id: page.developer_id,
+            business_id: page.business_id,
+            mode: page.mode,
             first_name: dto.first_name,
             last_name: dto.last_name,
             email: dto.email,
@@ -213,7 +218,8 @@ export class PaymentPagesService {
 
     const session = await this.sessionRepo.save(
       this.sessionRepo.create({
-        developer_id: page.developer_id,
+        business_id: page.business_id,
+        mode: page.mode,
         customer_id: customer.id,
         payment_page_id: page.id,
         reference: `ps_${generateUniqueId().slice(0, 16)}`,

@@ -40,17 +40,18 @@ export class PaymentSessionsService {
     private readonly cc: CoincircuitService,
   ) {}
 
-  async create(developerId: string, dto: CreatePaymentSessionDto) {
+  async create(businessId: string, mode: 'live' | 'test', dto: CreatePaymentSessionDto) {
     // Find or create our local customer record
     const existingCustomer = await this.customerRepo.findOne({
-      where: { email: dto.customer_email, developer_id: developerId },
+      where: { email: dto.customer_email, business_id: businessId, mode },
     });
 
     const customer: Customer = existingCustomer
       ? existingCustomer
       : await this.customerRepo.save(
           this.customerRepo.create({
-            developer_id: developerId,
+            business_id: businessId,
+            mode,
             first_name: dto.first_name,
             last_name: dto.last_name,
             email: dto.customer_email,
@@ -85,7 +86,8 @@ export class PaymentSessionsService {
       const ccData = ccResult?.data;
 
       const session = this.sessionRepo.create({
-        developer_id: developerId,
+        business_id: businessId,
+        mode,
         customer_id: customer?.id || null,
         reference: `ps_${generateUniqueId().slice(4, 12)}`,
         amount: dto.amount,
@@ -113,12 +115,13 @@ export class PaymentSessionsService {
     }
   }
 
-  async findAll(developerId: string, query: PaymentSessionQueryDto) {
+  async findAll(businessId: string, mode: 'live' | 'test', query: PaymentSessionQueryDto) {
     const { page, limit, offset } = parsePagination(query);
 
     const qb = this.sessionRepo
       .createQueryBuilder('ps')
-      .where('ps.developer_id = :developerId', { developerId });
+      .where('ps.business_id = :businessId', { businessId })
+      .andWhere('ps.mode = :mode', { mode });
 
     if (query.status)
       qb.andWhere('ps.status = :status', { status: query.status });
@@ -143,9 +146,9 @@ export class PaymentSessionsService {
     return session;
   }
 
-  async findByReference(developerId: string, reference: string) {
+  async findByReference(businessId: string, reference: string) {
     const session = await this.sessionRepo.findOne({
-      where: { reference, developer_id: developerId },
+      where: { reference, business_id: businessId },
       relations: ['customer'],
     });
     if (!session) throw new NotFoundException('Payment session not found.');

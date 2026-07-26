@@ -8,7 +8,7 @@ import {
   JoinColumn,
   Index,
 } from 'typeorm';
-import { Developer } from './developer.entity';
+import { Business } from './business.entity';
 
 export enum SwapRecordStatus {
   PENDING = 'pending',
@@ -28,7 +28,7 @@ export class SwapRecord {
 
   @Index()
   @Column({ type: 'uuid' })
-  developer_id: string;
+  business_id: string;
 
   @Index({ unique: true })
   @Column({ type: 'text' })
@@ -61,7 +61,7 @@ export class SwapRecord {
   @UpdateDateColumn({ type: 'timestamptz' })
   updated_at: Date;
 
-  @ManyToOne(() => Developer)
-  @JoinColumn({ name: 'developer_id' })
-  developer: Developer;
+  @ManyToOne(() => Business, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'business_id' })
+  business: Business;
 }

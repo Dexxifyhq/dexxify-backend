@@ -6,7 +6,7 @@ import {
   VerifyDocumentDto,
   LivenessCheckDto,
 } from './dto';
-import { GetDeveloper, DualAuth } from '../../common/decorators';
+import { GetBusinessId, DualAuth } from '../../common/decorators';
 import {
   ApiOperation,
   ApiTags,
@@ -30,10 +30,10 @@ export class KycController {
   @ApiBody({ type: VerifyBvnDto })
   @Post('bvn')
   async verifyBvn(
-    @GetDeveloper('id') developerId: string,
+    @GetBusinessId() businessId: string,
     @Body() dto: VerifyBvnDto,
   ) {
-    return this.kycService.verifyBvn(developerId, dto);
+    return this.kycService.verifyBvn(businessId, dto);
   }
 
   @ApiOperation({
@@ -44,10 +44,10 @@ export class KycController {
   @ApiBody({ type: VerifyNinDto })
   @Post('nin')
   async verifyNin(
-    @GetDeveloper('id') developerId: string,
+    @GetBusinessId() businessId: string,
     @Body() dto: VerifyNinDto,
   ) {
-    return this.kycService.verifyNin(developerId, dto);
+    return this.kycService.verifyNin(businessId, dto);
   }
 
   @ApiOperation({
@@ -58,10 +58,10 @@ export class KycController {
   @ApiBody({ type: VerifyDocumentDto })
   @Post('document')
   async verifyDocument(
-    @GetDeveloper('id') developerId: string,
+    @GetBusinessId() businessId: string,
     @Body() dto: VerifyDocumentDto,
   ) {
-    return this.kycService.verifyDocument(developerId, dto);
+    return this.kycService.verifyDocument(businessId, dto);
   }
 
   // @ApiOperation({
@@ -72,10 +72,10 @@ export class KycController {
   // @ApiBody({ type: LivenessCheckDto })
   // @Post('liveness')
   // async livenessCheck(
-  //   @GetDeveloper('id') developerId: string,
+  //   @GetBusinessId() businessId: string,
   //   @Body() dto: LivenessCheckDto,
   // ) {
-  // return this.kycService.livenessCheck(developerId, dto);
+  // return this.kycService.livenessCheck(businessId, dto);
   // }
 
   @ApiOperation({
@@ -83,7 +83,7 @@ export class KycController {
     description: 'Retrieve KYC verification status for a specific user',
   })
   @Get('status')
-  async getStatus(@GetDeveloper('id') developerId: string) {
-    return this.kycService.getStatus(developerId);
+  async getStatus(@GetBusinessId() businessId: string) {
+    return this.kycService.getStatus(businessId);
   }
 }

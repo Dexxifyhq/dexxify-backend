@@ -45,15 +45,16 @@ export class InvoicesService {
     private readonly cc: CoincircuitService,
   ) {}
 
-  async create(developerId: string, dto: CreateInvoiceDto) {
+  async create(businessId: string, mode: 'live' | 'test', dto: CreateInvoiceDto) {
     let customer = await this.customerRepo.findOne({
-      where: { email: dto.customer.email, developer_id: developerId },
+      where: { email: dto.customer.email, business_id: businessId, mode },
     });
 
     if (!customer) {
       const created = await this.customerRepo.save(
         this.customerRepo.create({
-          developer_id: developerId,
+          business_id: businessId,
+          mode,
           email: dto.customer.email,
           first_name: dto.customer.first_name,
           last_name: dto.customer.last_name,
@@ -72,7 +73,8 @@ export class InvoicesService {
     );
 
     const invoice = this.invoiceRepo.create({
-      developer_id: developerId,
+      business_id: businessId,
+      mode,
       customer_id: customer.id,
       invoice_number: `INV-${generateUniqueId().toUpperCase().slice(0, 10)}`,
       status: InvoiceStatus.SENT,
@@ -93,12 +95,13 @@ export class InvoicesService {
     return saved;
   }
 
-  async findAll(developerId: string, query: InvoiceQueryDto) {
+  async findAll(businessId: string, mode: 'live' | 'test', query: InvoiceQueryDto) {
     const { page, limit, offset } = parsePagination(query);
 
     const qb = this.invoiceRepo
       .createQueryBuilder('inv')
-      .where('inv.developer_id = :developerId', { developerId });
+      .where('inv.business_id = :businessId', { businessId })
+      .andWhere('inv.mode = :mode', { mode });
 
     if (query.status)
       qb.andWhere('inv.status = :status', { status: query.status });
@@ -114,17 +117,17 @@ export class InvoicesService {
     return { data, meta: buildPaginationMeta(total, page, limit) };
   }
 
-  async findOne(developerId: string, invoiceId: string) {
+  async findOne(businessId: string, mode: 'live' | 'test', invoiceId: string) {
     const invoice = await this.invoiceRepo.findOne({
-      where: { id: invoiceId, developer_id: developerId },
+      where: { id: invoiceId, business_id: businessId, mode },
       relations: ['customer'],
     });
     if (!invoice) throw new NotFoundException('Invoice not found.');
     return invoice;
   }
 
-  async findOneEnriched(developerId: string, invoiceId: string) {
-    const invoice = await this.findOne(developerId, invoiceId);
+  async findOneEnriched(businessId: string, mode: 'live' | 'test', invoiceId: string) {
+    const invoice = await this.findOne(businessId, mode, invoiceId);
 
     if (invoice.provider_invoice_reference) {
       try {
@@ -193,7 +196,8 @@ export class InvoicesService {
 
     const session = await this.sessionRepo.save(
       this.sessionRepo.create({
-        developer_id: invoice.developer_id,
+        business_id: invoice.business_id,
+        mode: invoice.mode,
         customer_id: invoice.customer_id,
         invoice_id: invoice.id,
         reference: `ps_${generateUniqueId().slice(4, 12)}`,
@@ -215,8 +219,8 @@ export class InvoicesService {
     return session;
   }
 
-  async markPaid(developerId: string, invoiceId: string) {
-    const invoice = await this.findOne(developerId, invoiceId);
+  async markPaid(businessId: string, mode: 'live' | 'test', invoiceId: string) {
+    const invoice = await this.findOne(businessId, mode, invoiceId);
 
     if (
       invoice.status !== InvoiceStatus.SENT &&
@@ -233,8 +237,8 @@ export class InvoicesService {
     return this.invoiceRepo.save(invoice);
   }
 
-  async cancel(developerId: string, invoiceId: string) {
-    const invoice = await this.findOne(developerId, invoiceId);
+  async cancel(businessId: string, mode: 'live' | 'test', invoiceId: string) {
+    const invoice = await this.findOne(businessId, mode, invoiceId);
 
     if (
       invoice.status === InvoiceStatus.PAID ||
@@ -249,8 +253,8 @@ export class InvoicesService {
     return this.invoiceRepo.save(invoice);
   }
 
-  async void(developerId: string, invoiceId: string) {
-    const invoice = await this.findOne(developerId, invoiceId);
+  async void(businessId: string, mode: 'live' | 'test', invoiceId: string) {
+    const invoice = await this.findOne(businessId, mode, invoiceId);
 
     if (invoice.status !== InvoiceStatus.PAID) {
       throw new BadRequestException('Only paid invoices can be voided.');

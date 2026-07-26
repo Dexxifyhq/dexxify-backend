@@ -8,20 +8,10 @@ import {
   Index,
   PrimaryColumn,
 } from 'typeorm';
-import { Developer } from './developer.entity';
-
-// export enum BankType {
-//   NUBAN = 'nuban',
-//   MOBILE_MONEY = 'mobile_money',
-// }
-
-// export enum BankCurrency {
-//   NGN = 'ngn',
-//   GHS = 'ghs',
-// }
+import { Business } from './business.entity';
 
 @Entity('banks')
-@Index(['developer_id', 'account_number'])
+@Index(['business_id', 'account_number'])
 export class Bank {
   @PrimaryColumn('text')
   id: string;
@@ -30,15 +20,12 @@ export class Bank {
   @Column({ type: 'text' })
   provider_recipient_id: string;
 
-  @ManyToOne(() => Developer, (developer) => developer.banks, {
-    onDelete: 'CASCADE',
-  })
-  @JoinColumn({ name: 'developer_id' })
-  developer: Developer;
-
   @Index()
-  @Column({ type: 'text' })
-  developer_id: string;
+  @Column({ type: 'uuid' })
+  business_id: string;
+
+  @Column({ type: 'text', default: 'test' })
+  mode: 'live' | 'test';
 
   @Column({ type: 'text' })
   account_name: string;
@@ -49,17 +36,11 @@ export class Bank {
   @Column({ type: 'text' })
   bank_code: string;
 
-  // @Column({ type: 'boolean', default: false })
-  // auto_settlement: boolean;
-
   @Column({ type: 'text' })
   bank_name: string;
 
   @Column({ type: 'text' })
   currency: string;
-
-  // @Column({ type: 'boolean', default: false })
-  // disabled: boolean;
 
   @Column({ type: 'text', nullable: true })
   label: string;
@@ -78,4 +59,8 @@ export class Bank {
 
   @UpdateDateColumn({ type: 'timestamptz' })
   updated_at: Date;
+
+  @ManyToOne(() => Business, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'business_id' })
+  business: Business;
 }

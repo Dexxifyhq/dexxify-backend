@@ -4,7 +4,7 @@ import { randomBytes, createHash, createHmac } from 'crypto';
  * Generate a Dexxify API key.
  * Format: dex_{env}_{32 random chars}
  */
-export function generateApiKey(environment: 'sandbox' | 'live'): {
+export function generateApiKey(environment: 'test' | 'live'): {
   key: string;
   prefix: string;
   hash: string;

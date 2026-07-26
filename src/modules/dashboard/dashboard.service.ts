@@ -43,30 +43,31 @@ export class DashboardService {
 
   // ── API Key Management ──────────────────────────────────
 
-  async createApiKey(developerId: string, dto: CreateApiKeyDto) {
+  async createApiKey(userId: string, businessId: string, dto: CreateApiKeyDto) {
     const count = await this.apiKeyRepo.count({
       where: {
-        developer_id: developerId,
-        environment: dto.environment,
+        business_id: businessId,
+        mode: dto.mode,
         is_active: true,
       },
     });
 
     if (count >= 5) {
       throw new BadRequestException(
-        `Maximum 5 active ${dto.environment} API keys allowed.`,
+        `Maximum 5 active ${dto.mode} API keys allowed.`,
       );
     }
 
-    const { key, prefix, hash } = generateApiKey(dto.environment);
+    const { key, prefix, hash } = generateApiKey(dto.mode);
 
     const saved = await this.apiKeyRepo.save(
       this.apiKeyRepo.create({
-        developer_id: developerId,
+        user_id: userId,
+        business_id: businessId,
         key_hash: hash,
         key_prefix: prefix,
-        label: dto.label || `${dto.environment} key`,
-        environment: dto.environment,
+        label: dto.label || `${dto.mode} key`,
+        mode: dto.mode,
       }),
     );
 
@@ -74,14 +75,14 @@ export class DashboardService {
     return { ...safeResult, key };
   }
 
-  async listApiKeys(developerId: string) {
+  async listApiKeys(userId: string) {
     return this.apiKeyRepo.find({
-      where: { developer_id: developerId },
+      where: { user_id: userId },
       select: [
         'id',
         'key_prefix',
         'label',
-        'environment',
+        'mode',
         'is_active',
         'last_used_at',
         'ip_whitelist',
@@ -91,9 +92,9 @@ export class DashboardService {
     });
   }
 
-  async revokeApiKey(developerId: string, keyId: string) {
+  async revokeApiKey(userId: string, keyId: string) {
     const result = await this.apiKeyRepo.update(
-      { id: keyId, developer_id: developerId },
+      { id: keyId, user_id: userId },
       { is_active: false },
     );
     if (result.affected === 0)
@@ -101,13 +102,13 @@ export class DashboardService {
     return { revoked: true, id: keyId };
   }
 
-  async updateApiKey(developerId: string, keyId: string, dto: UpdateApiKeyDto) {
+  async updateApiKey(userId: string, keyId: string, dto: UpdateApiKeyDto) {
     const updates: Partial<ApiKey> = {};
     if (dto.label !== undefined) updates.label = dto.label;
     if (dto.ip_whitelist !== undefined) updates.ip_whitelist = dto.ip_whitelist;
 
     const result = await this.apiKeyRepo.update(
-      { id: keyId, developer_id: developerId },
+      { id: keyId, user_id: userId },
       updates,
     );
     if (result.affected === 0)
@@ -119,7 +120,7 @@ export class DashboardService {
         'id',
         'key_prefix',
         'label',
-        'environment',
+        'mode',
         'is_active',
         'ip_whitelist',
         'last_used_at',
@@ -129,7 +130,7 @@ export class DashboardService {
 
   // ── Dashboard Stats ─────────────────────────────────────
 
-  async getOverview(developerId: string) {
+  async getOverview(businessId: string, mode: 'live' | 'test') {
     const startOfMonth = new Date(
       new Date().getFullYear(),
       new Date().getMonth(),
@@ -154,7 +155,8 @@ export class DashboardService {
         .addSelect('SUM(l.credit_ngn)', 'received_ngn')
         .addSelect('SUM(l.credit_usdt)', 'received_usdt')
         .addSelect('SUM(l.credit_usdc)', 'received_usdc')
-        .where('l.developer_id = :developerId', { developerId })
+        .where('l.business_id = :businessId', { businessId })
+        .andWhere('l.mode = :mode', { mode })
         .andWhere('l.status = :status', { status: LedgerEntryStatus.COMPLETED })
         .getRawOne(),
 
@@ -164,7 +166,8 @@ export class DashboardService {
         .select('s.status', 'status')
         .addSelect('COUNT(*)', 'count')
         .addSelect('COALESCE(SUM(s.amount), 0)', 'volume')
-        .where('s.developer_id = :developerId', { developerId })
+        .where('s.business_id = :businessId', { businessId })
+        .andWhere('s.mode = :mode', { mode })
         .groupBy('s.status')
         .getRawMany(),
 
@@ -174,30 +177,33 @@ export class DashboardService {
         .select('i.status', 'status')
         .addSelect('COUNT(*)', 'count')
         .addSelect('COALESCE(SUM(i.total), 0)', 'volume')
-        .where('i.developer_id = :developerId', { developerId })
+        .where('i.business_id = :businessId', { businessId })
+        .andWhere('i.mode = :mode', { mode })
         .groupBy('i.status')
         .getRawMany(),
 
       // Total customers
-      this.customerRepo.count({ where: { developer_id: developerId } }),
+      this.customerRepo.count({ where: { business_id: businessId, mode } }),
 
       // New customers this calendar month
       this.customerRepo.count({
         where: {
-          developer_id: developerId,
+          business_id: businessId,
+          mode,
           created_at: MoreThanOrEqual(startOfMonth),
         },
       }),
 
       // Deposit accounts
-      this.depositAccountRepo.count({ where: { developer_id: developerId } }),
+      this.depositAccountRepo.count({ where: { business_id: businessId, mode } }),
 
       // Pending / processing payouts
       this.payoutRepo
         .createQueryBuilder('p')
         .select('COUNT(*)', 'count')
         .addSelect('COALESCE(SUM(p.amount), 0)', 'total_amount')
-        .where('p.developer_id = :developerId', { developerId })
+        .where('p.business_id = :businessId', { businessId })
+        .andWhere('p.mode = :mode', { mode })
         .andWhere('p.status IN (:...statuses)', {
           statuses: [PayoutStatus.PENDING, PayoutStatus.PROCESSING],
         })
@@ -259,7 +265,7 @@ export class DashboardService {
     };
   }
 
-  async getRevenueChart(developerId: string, days = 30) {
+  async getRevenueChart(businessId: string, mode: 'live' | 'test', days = 30) {
     const clampedDays = Math.min(365, Math.max(1, days));
     const since = new Date(Date.now() - clampedDays * 24 * 60 * 60 * 1000);
 
@@ -270,7 +276,8 @@ export class DashboardService {
       .addSelect('COALESCE(SUM(l.credit_usdt), 0)', 'usdt')
       .addSelect('COALESCE(SUM(l.credit_usdc), 0)', 'usdc')
       .addSelect('COUNT(*)', 'tx_count')
-      .where('l.developer_id = :developerId', { developerId })
+      .where('l.business_id = :businessId', { businessId })
+      .andWhere('l.mode = :mode', { mode })
       .andWhere('l.tx_type = :type', { type: TxType.DEPOSIT })
       .andWhere('l.status = :status', { status: LedgerEntryStatus.COMPLETED })
       .andWhere('l.created_at >= :since', { since })
@@ -290,7 +297,7 @@ export class DashboardService {
     };
   }
 
-  async getAssetDistribution(developerId: string) {
+  async getAssetDistribution(businessId: string, mode: 'live' | 'test') {
     const rows = await this.sessionRepo
       .createQueryBuilder('s')
       .select('s.crypto_asset', 'asset')
@@ -304,7 +311,8 @@ export class DashboardService {
         'pending',
       )
       .addSelect('COALESCE(SUM(s.amount), 0)', 'total_volume')
-      .where('s.developer_id = :developerId', { developerId })
+      .where('s.business_id = :businessId', { businessId })
+      .andWhere('s.mode = :mode', { mode })
       .andWhere('s.crypto_asset IS NOT NULL')
       .groupBy('s.crypto_asset')
       .orderBy('total_sessions', 'DESC')
@@ -321,11 +329,11 @@ export class DashboardService {
     };
   }
 
-  async getRecentActivity(developerId: string, limit = 10) {
+  async getRecentActivity(businessId: string, mode: 'live' | 'test', limit = 10) {
     const take = Math.min(50, Math.max(1, limit));
 
     const entries = await this.ledgerRepo.find({
-      where: { developer_id: developerId },
+      where: { business_id: businessId, mode },
       order: { created_at: 'DESC' },
       take,
       select: [

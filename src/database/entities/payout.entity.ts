@@ -8,7 +8,7 @@ import {
   JoinColumn,
   Index,
 } from 'typeorm';
-import { Developer } from './developer.entity';
+import { Business } from './business.entity';
 
 export enum PayoutStatus {
   PENDING = 'pending',
@@ -24,7 +24,10 @@ export class Payout {
 
   @Index()
   @Column({ type: 'uuid' })
-  developer_id: string;
+  business_id: string;
+
+  @Column({ type: 'text', default: 'test' })
+  mode: 'live' | 'test';
 
   @Column({ type: 'decimal', precision: 18, scale: 2 })
   amount: number;
@@ -32,16 +35,16 @@ export class Payout {
   @Column({ type: 'decimal', precision: 18, scale: 2, default: 0 })
   fee: number;
 
-  @Column({ type: 'varchar', length: 10, nullable: true })
+  @Column({ type: 'text', nullable: true })
   bank_code: string | null;
 
-  @Column({ type: 'varchar', length: 20, nullable: true })
+  @Column({ type: 'text', nullable: true })
   account_number: string | null;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
+  @Column({ type: 'text', nullable: true })
   account_name: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
+  @Column({ type: 'text', nullable: true })
   narration: string;
 
   @Index()
@@ -52,10 +55,10 @@ export class Payout {
   @Column({ type: 'uuid', nullable: true })
   batch_id: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
+  @Column({ type: 'text', nullable: true })
   provider_reference: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
+  @Column({ type: 'text', nullable: true })
   provider_payout_id: string;
 
   @Column({ type: 'text', nullable: true })
@@ -73,8 +76,7 @@ export class Payout {
   @UpdateDateColumn({ type: 'timestamptz' })
   updated_at: Date;
 
-  // Relations
-  @ManyToOne(() => Developer, (dev) => dev.payouts)
-  @JoinColumn({ name: 'developer_id' })
-  developer: Developer;
+  @ManyToOne(() => Business, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'business_id' })
+  business: Business;
 }

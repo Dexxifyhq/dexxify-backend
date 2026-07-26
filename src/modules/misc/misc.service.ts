@@ -40,7 +40,7 @@ export class MiscService {
   }
 
   async addBank(
-    developerId: string,
+    businessId: string,
     bankData: {
       accountNumber: string;
       bankCode: string;
@@ -49,7 +49,7 @@ export class MiscService {
     },
   ) {
     const existing = await this.bankRepo.find({
-      where: { developer_id: developerId },
+      where: { business_id: businessId },
     });
     if (existing.some((b) => b.account_number === bankData.accountNumber)) {
       throw new ConflictException('Bank account already added');
@@ -73,7 +73,7 @@ export class MiscService {
       id: generateUniqueId(),
       provider_recipient_id: recipient.id,
       label: recipient.label ?? '',
-      developer_id: developerId,
+      business_id: businessId,
       account_name: details.accountName ?? '',
       account_number: bankData.accountNumber,
       bank_name: details.bankName ?? '',
@@ -92,13 +92,13 @@ export class MiscService {
     return { ...recipient, local_id: saved.id };
   }
 
-  async getSavedBanks(developerId: string) {
-    return this.bankRepo.find({ where: { developer_id: developerId } });
+  async getSavedBanks(businessId: string) {
+    return this.bankRepo.find({ where: { business_id: businessId } });
   }
 
-  async getSavedBanksById(developerId: string, accountNumber: string) {
+  async getSavedBanksById(businessId: string, accountNumber: string) {
     return this.bankRepo.findOne({
-      where: { developer_id: developerId, account_number: accountNumber },
+      where: { business_id: businessId, account_number: accountNumber },
     });
   }
 

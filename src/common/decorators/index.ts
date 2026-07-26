@@ -34,15 +34,26 @@ export const DualAuth = () => SetMetadata(AUTH_TYPE_KEY, 'dual');
 // ── Param decorators ────────────────────────────────────────
 
 /**
- * Extract the authenticated developer from request.
- * Works with both auth systems — both attach developer to request.
- * Usage: @GetDeveloper() developer | @GetDeveloper('id') developerId
+ * Extract the authenticated user from request.
+ * Usage: @GetUser() user | @GetUser('id') userId
  */
-export const GetDeveloper = createParamDecorator(
+export const GetUser = createParamDecorator(
   (data: string, ctx: ExecutionContext) => {
     const request = ctx.switchToHttp().getRequest();
-    const developer = request.developer || request.user;
-    return data ? developer?.[data] : developer;
+    const user = request.user || request.developer;
+    return data ? user?.[data] : user;
+  },
+);
+
+/**
+ * Extract the active business_id from the request.
+ * Set by ApiKeyGuard from the JWT `business_id` claim or from the API key's business.
+ * Returns null when no business context is active (e.g. token issued before selection).
+ */
+export const GetBusinessId = createParamDecorator(
+  (_data: unknown, ctx: ExecutionContext): string | null => {
+    const request = ctx.switchToHttp().getRequest();
+    return request.active_business_id ?? null;
   },
 );
 

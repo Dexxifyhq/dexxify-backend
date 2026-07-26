@@ -3,6 +3,7 @@ import {
   ConflictException,
   UnauthorizedException,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -11,11 +12,17 @@ import { Repository, MoreThan } from 'typeorm';
 import { Response } from 'express';
 import * as bcrypt from 'bcryptjs';
 import {
-  Developer,
-  DeveloperStatus,
+  User,
+  UserStatus,
+  BusinessUser,
+  BusinessRole,
+  BusinessUserStatus,
+  Business,
   ApiKey,
   OtpCode,
   OtpType,
+  SettlementCurrency,
+  PayoutMethod,
 } from '../../database/entities';
 import {
   RegisterDto,
@@ -24,9 +31,16 @@ import {
   ResendOtpDto,
   ForgotPasswordDto,
   ResetPasswordDto,
+  SelectBusinessDto,
 } from './dto';
 import { generateApiKey, generateOtp, hashOtp } from '../../common/utils';
 import { MailService } from '../mail/mail.service';
+
+export interface BusinessSummary {
+  id: string;
+  name: string;
+  logo_url: string | null;
+}
 
 @Injectable()
 export class AuthService {
@@ -40,10 +54,14 @@ export class AuthService {
   private readonly otpResendCooldown: number;
 
   constructor(
-    @InjectRepository(Developer)
-    private readonly developerRepo: Repository<Developer>,
+    @InjectRepository(User)
+    private readonly userRepo: Repository<User>,
+    @InjectRepository(BusinessUser)
+    private readonly businessUserRepo: Repository<BusinessUser>,
     @InjectRepository(ApiKey) private readonly apiKeyRepo: Repository<ApiKey>,
     @InjectRepository(OtpCode) private readonly otpRepo: Repository<OtpCode>,
+    @InjectRepository(Business)
+    private readonly businessRepo: Repository<Business>,
     private readonly jwtService: JwtService,
     private readonly config: ConfigService,
     private readonly mailService: MailService,
@@ -61,76 +79,100 @@ export class AuthService {
       this.config.get<number>('otp.resendCooldownSeconds') || 60;
   }
 
-  // ── Register — creates PENDING account, sends OTP ─────
+  // ── Register ───────────────────────────────────────────
 
   async register(dto: RegisterDto) {
-    const existing = await this.developerRepo.findOne({
+    const existing = await this.userRepo.findOne({
       where: { email: dto.email },
     });
 
-    if (existing && existing.status !== DeveloperStatus.PENDING) {
+    if (existing && existing.status !== UserStatus.PENDING) {
       throw new ConflictException(
-        'A developer account with this email already exists.',
+        'An account with this email already exists.',
       );
     }
 
-    let developer: Developer;
+    let user: User;
 
-    if (existing && existing.status === DeveloperStatus.PENDING) {
+    if (existing && existing.status === UserStatus.PENDING) {
       existing.password_hash = await bcrypt.hash(dto.password, 12);
       existing.first_name = dto.first_name;
       existing.last_name = dto.last_name;
-      existing.business_name = dto.business_name;
-      if (dto.business_type) existing.business_type = dto.business_type;
       if (dto.phone) existing.phone = dto.phone;
-      developer = await this.developerRepo.save(existing);
+      user = await this.userRepo.save(existing);
     } else {
-      const newDev: Partial<Developer> = {
+      user = this.userRepo.create({
         email: dto.email,
         password_hash: await bcrypt.hash(dto.password, 12),
-        business_name: dto.business_name,
-        status: DeveloperStatus.PENDING,
+        status: UserStatus.PENDING,
         first_name: dto.first_name,
         last_name: dto.last_name,
-      };
-      if (dto.business_type) newDev.business_type = dto.business_type;
-      if (dto.phone) newDev.phone = dto.phone;
-
-      developer = this.developerRepo.create(newDev as Developer);
-      await this.developerRepo.save(developer);
+        ...(dto.phone ? { phone: dto.phone } : {}),
+      });
+      user = await this.userRepo.save(user);
+      await this.createBusinessForUser(user);
     }
 
-    await this.invalidateOldOtps(developer.id, OtpType.EMAIL_VERIFICATION);
-    await this.createAndSendOtp(developer, OtpType.EMAIL_VERIFICATION);
+    await this.invalidateOldOtps(user.id, OtpType.EMAIL_VERIFICATION);
+    await this.createAndSendOtp(user, OtpType.EMAIL_VERIFICATION);
 
     return {
       message:
         'Registration successful. Please check your email for the verification code.',
-      email: developer.email,
+      email: user.email,
     };
   }
 
-  // ── Verify OTP — activates account, sets cookies ──────
+  private async createBusinessForUser(user: User): Promise<Business> {
+    const business = await this.businessRepo.save(
+      this.businessRepo.create({
+        owner_user_id: user.id,
+        name: `${user.first_name}'s Business`,
+        settlement_currency: SettlementCurrency.USDT,
+        default_payout_method: PayoutMethod.CRYPTO,
+        notification_preferences: {
+          email_notifications: true,
+          low_balance_alerts: false,
+          automated_receipts: true,
+          invoice_followups: true,
+        },
+      }),
+    );
+
+    await this.businessUserRepo.save(
+      this.businessUserRepo.create({
+        user_id: user.id,
+        business_id: business.id,
+        role: BusinessRole.OWNER,
+        status: BusinessUserStatus.ACTIVE,
+        joined_at: new Date(),
+      }),
+    );
+
+    await this.userRepo.update(user.id, { last_active_business_id: business.id });
+    user.last_active_business_id = business.id;
+
+    return business;
+  }
+
+  // ── Verify OTP ─────────────────────────────────────────
 
   async verifyOtp(dto: VerifyOtpDto, res: Response) {
-    const developer = await this.developerRepo.findOne({
+    const user = await this.userRepo.findOne({
       where: { email: dto.email },
     });
 
-    if (!developer) {
+    if (!user) {
       throw new BadRequestException('No account found with this email.');
     }
 
-    if (
-      developer.status === DeveloperStatus.ACTIVE &&
-      developer.email_verified_at
-    ) {
+    if (user.status === UserStatus.ACTIVE && user.email_verified_at) {
       throw new BadRequestException('Email is already verified.');
     }
 
     const otpRecord = await this.otpRepo.findOne({
       where: {
-        developer_id: developer.id,
+        user_id: user.id,
         type: OtpType.EMAIL_VERIFICATION,
         is_used: false,
         expires_at: MoreThan(new Date()),
@@ -161,62 +203,57 @@ export class AuthService {
       );
     }
 
-    // Success — activate account
     otpRecord.is_used = true;
     await this.otpRepo.save(otpRecord);
 
-    developer.status = DeveloperStatus.ACTIVE;
-    developer.email_verified_at = new Date();
-    await this.developerRepo.save(developer);
+    user.status = UserStatus.ACTIVE;
+    user.email_verified_at = new Date();
+    await this.userRepo.save(user);
 
-    const { key, prefix, hash } = generateApiKey('sandbox');
+    const businessId = user.last_active_business_id;
+    if (!businessId) throw new BadRequestException('No business found for user.');
+
+    const { key, prefix, hash } = generateApiKey('test');
     await this.apiKeyRepo.save(
       this.apiKeyRepo.create({
-        developer_id: developer.id,
+        user_id: user.id,
+        business_id: businessId,
         key_hash: hash,
         key_prefix: prefix,
-        label: 'Default Sandbox Key',
-        environment: 'sandbox',
+        label: 'Default Test Key',
+        mode: 'test',
       }),
     );
 
-    this.setTokenCookies(res, developer);
+    this.setTokenCookies(res, user, 'test', businessId);
 
     return {
       message: 'Email verified successfully.',
-      developer: this.sanitizeDeveloper(developer),
+      user: this.sanitizeUser(user),
       api_key: key,
     };
   }
 
-  // ── Resend OTP ────────────────────────────────────────
+  // ── Resend OTP ─────────────────────────────────────────
 
   async resendOtp(dto: ResendOtpDto) {
-    const developer = await this.developerRepo.findOne({
-      where: { email: dto.email },
-    });
+    const user = await this.userRepo.findOne({ where: { email: dto.email } });
 
-    if (!developer) {
-      return {
-        message: 'If an account exists, a verification code has been sent.',
-      };
+    if (!user) {
+      return { message: 'If an account exists, a verification code has been sent.' };
     }
 
-    if (
-      developer.status === DeveloperStatus.ACTIVE &&
-      developer.email_verified_at
-    ) {
+    if (user.status === UserStatus.ACTIVE && user.email_verified_at) {
       throw new BadRequestException('Email is already verified.');
     }
 
     const recentOtp = await this.otpRepo.findOne({
-      where: { developer_id: developer.id, type: OtpType.EMAIL_VERIFICATION },
+      where: { user_id: user.id, type: OtpType.EMAIL_VERIFICATION },
       order: { created_at: 'DESC' },
     });
 
     if (recentOtp) {
-      const elapsed =
-        (Date.now() - new Date(recentOtp.created_at).getTime()) / 1000;
+      const elapsed = (Date.now() - new Date(recentOtp.created_at).getTime()) / 1000;
       if (elapsed < this.otpResendCooldown) {
         const wait = Math.ceil(this.otpResendCooldown - elapsed);
         throw new BadRequestException(
@@ -225,46 +262,30 @@ export class AuthService {
       }
     }
 
-    await this.invalidateOldOtps(developer.id, OtpType.EMAIL_VERIFICATION);
-    await this.createAndSendOtp(developer, OtpType.EMAIL_VERIFICATION);
+    await this.invalidateOldOtps(user.id, OtpType.EMAIL_VERIFICATION);
+    await this.createAndSendOtp(user, OtpType.EMAIL_VERIFICATION);
 
-    return {
-      message: 'If an account exists, a verification code has been sent.',
-    };
+    return { message: 'If an account exists, a verification code has been sent.' };
   }
 
-  // ── Forgot Password — sends password reset OTP ────────
+  // ── Forgot Password ────────────────────────────────────
 
   async forgotPassword(dto: ForgotPasswordDto) {
-    const developer = await this.developerRepo.findOne({
-      where: { email: dto.email },
-    });
+    const user = await this.userRepo.findOne({ where: { email: dto.email } });
 
-    // Always return same message — don't reveal whether account exists
-    if (!developer) {
+    if (!user || user.status !== UserStatus.ACTIVE) {
       return {
-        message:
-          'If an account with this email exists, a password reset code has been sent.',
+        message: 'If an account with this email exists, a password reset code has been sent.',
       };
     }
 
-    // Only allow password reset for active, verified accounts
-    if (developer.status !== DeveloperStatus.ACTIVE) {
-      return {
-        message:
-          'If an account with this email exists, a password reset code has been sent.',
-      };
-    }
-
-    // Check cooldown
     const recentOtp = await this.otpRepo.findOne({
-      where: { developer_id: developer.id, type: OtpType.PASSWORD_RESET },
+      where: { user_id: user.id, type: OtpType.PASSWORD_RESET },
       order: { created_at: 'DESC' },
     });
 
     if (recentOtp) {
-      const elapsed =
-        (Date.now() - new Date(recentOtp.created_at).getTime()) / 1000;
+      const elapsed = (Date.now() - new Date(recentOtp.created_at).getTime()) / 1000;
       if (elapsed < this.otpResendCooldown) {
         const wait = Math.ceil(this.otpResendCooldown - elapsed);
         throw new BadRequestException(
@@ -273,31 +294,24 @@ export class AuthService {
       }
     }
 
-    // Invalidate old password reset OTPs and send new one
-    await this.invalidateOldOtps(developer.id, OtpType.PASSWORD_RESET);
-    await this.createAndSendOtp(developer, OtpType.PASSWORD_RESET);
+    await this.invalidateOldOtps(user.id, OtpType.PASSWORD_RESET);
+    await this.createAndSendOtp(user, OtpType.PASSWORD_RESET);
 
     return {
-      message:
-        'If an account with this email exists, a password reset code has been sent.',
+      message: 'If an account with this email exists, a password reset code has been sent.',
     };
   }
 
-  // ── Reset Password — verify OTP + set new password ────
+  // ── Reset Password ─────────────────────────────────────
 
   async resetPassword(dto: ResetPasswordDto) {
-    const developer = await this.developerRepo.findOne({
-      where: { email: dto.email },
-    });
+    const user = await this.userRepo.findOne({ where: { email: dto.email } });
 
-    if (!developer) {
-      throw new BadRequestException('Invalid request.');
-    }
+    if (!user) throw new BadRequestException('Invalid request.');
 
-    // Find latest unused, unexpired password reset OTP
     const otpRecord = await this.otpRepo.findOne({
       where: {
-        developer_id: developer.id,
+        user_id: user.id,
         type: OtpType.PASSWORD_RESET,
         is_used: false,
         expires_at: MoreThan(new Date()),
@@ -317,11 +331,9 @@ export class AuthService {
       );
     }
 
-    // Increment attempts
     otpRecord.attempts += 1;
     await this.otpRepo.save(otpRecord);
 
-    // Verify code
     const codeHash = hashOtp(dto.code);
     if (codeHash !== otpRecord.code_hash) {
       const remaining = this.otpMaxAttempts - otpRecord.attempts;
@@ -330,95 +342,135 @@ export class AuthService {
       );
     }
 
-    // Success — update password
     otpRecord.is_used = true;
     await this.otpRepo.save(otpRecord);
 
-    developer.password_hash = await bcrypt.hash(dto.new_password, 12);
-    await this.developerRepo.save(developer);
+    user.password_hash = await bcrypt.hash(dto.new_password, 12);
+    await this.userRepo.save(user);
 
-    // Invalidate any remaining password reset OTPs
-    await this.invalidateOldOtps(developer.id, OtpType.PASSWORD_RESET);
+    await this.invalidateOldOtps(user.id, OtpType.PASSWORD_RESET);
 
     return {
-      message:
-        'Password reset successfully. You can now log in with your new password.',
+      message: 'Password reset successfully. You can now log in with your new password.',
     };
   }
 
-  // ── Login — blocks unverified accounts ────────────────
+  // ── Login ──────────────────────────────────────────────
 
   async login(dto: LoginDto, res: Response) {
-    const developer = await this.developerRepo.findOne({
-      where: { email: dto.email },
-    });
+    const user = await this.userRepo.findOne({ where: { email: dto.email } });
 
-    if (!developer) {
-      throw new UnauthorizedException('Invalid email or password.');
-    }
+    if (!user || !user.password_hash) throw new UnauthorizedException('Invalid email or password.');
 
-    const passwordValid = await bcrypt.compare(
-      dto.password,
-      developer.password_hash,
-    );
-    if (!passwordValid) {
-      throw new UnauthorizedException('Invalid email or password.');
-    }
+    const passwordValid = await bcrypt.compare(dto.password, user.password_hash);
+    if (!passwordValid) throw new UnauthorizedException('Invalid email or password.');
 
-    if (developer.status === DeveloperStatus.PENDING) {
-      await this.invalidateOldOtps(developer.id, OtpType.EMAIL_VERIFICATION);
-      await this.createAndSendOtp(developer, OtpType.EMAIL_VERIFICATION);
+    if (user.status === UserStatus.PENDING) {
+      await this.invalidateOldOtps(user.id, OtpType.EMAIL_VERIFICATION);
+      await this.createAndSendOtp(user, OtpType.EMAIL_VERIFICATION);
 
       throw new UnauthorizedException({
         message:
           'Please verify your email first. A new verification code has been sent.',
         email_verification_required: true,
-        email: developer.email,
+        email: user.email,
       });
     }
 
-    if (developer.status === DeveloperStatus.SUSPENDED) {
+    if (user.status === UserStatus.SUSPENDED) {
       throw new UnauthorizedException('Account is suspended. Contact support.');
     }
 
-    this.setTokenCookies(res, developer);
+    // Resolve active business
+    let businessId = user.last_active_business_id;
+
+    if (!businessId) {
+      // Fallback: find first owned business or any membership
+      const membership = await this.businessUserRepo.findOne({
+        where: { user_id: user.id, status: BusinessUserStatus.ACTIVE },
+        order: { joined_at: 'ASC' },
+      });
+      if (membership) {
+        businessId = membership.business_id;
+        await this.userRepo.update(user.id, { last_active_business_id: businessId });
+      } else {
+        const business = await this.createBusinessForUser(user);
+        businessId = business.id;
+      }
+    }
+
+    const business = businessId
+      ? await this.businessRepo.findOne({
+          where: { id: businessId },
+          select: ['id', 'name', 'logo_url'],
+        })
+      : null;
+
+    this.setTokenCookies(res, user, 'test', businessId);
+
     return {
-      developer: this.sanitizeDeveloper(developer),
+      user: this.sanitizeUser(user),
+      business,
     };
   }
 
-  // ── Refresh, Logout, Profile ──────────────────────────
+  // ── Select Business ────────────────────────────────────
+
+  async selectBusiness(user: User, dto: SelectBusinessDto, res: Response) {
+    const membership = await this.businessUserRepo.findOne({
+      where: {
+        user_id: user.id,
+        business_id: dto.business_id,
+        status: BusinessUserStatus.ACTIVE,
+      },
+    });
+
+    if (!membership) {
+      throw new ForbiddenException('Business not found or access denied.');
+    }
+
+    const business = await this.businessRepo.findOne({
+      where: { id: dto.business_id },
+      select: ['id', 'name', 'logo_url'],
+    });
+
+    if (!business) throw new ForbiddenException('Business not found.');
+
+    await this.userRepo.update(user.id, { last_active_business_id: dto.business_id });
+
+    const mode: 'live' | 'test' = (user as any).mode ?? 'test';
+    this.setTokenCookies(res, user, mode, dto.business_id);
+    return { business };
+  }
+
+  // ── Refresh, Logout, Profile ───────────────────────────
 
   async refresh(
-    developer: Developer & { mode?: 'live' | 'test' },
+    user: User & { mode?: 'live' | 'test'; active_business_id?: string },
     res: Response,
   ) {
-    this.setTokenCookies(res, developer, developer.mode ?? 'test');
-    return {
-      developer: this.sanitizeDeveloper(developer),
-    };
+    this.setTokenCookies(res, user, user.mode ?? 'test', user.active_business_id ?? null);
+    return { user: this.sanitizeUser(user) };
   }
 
-  async switchMode(developer: Developer, mode: 'live' | 'test', res: Response) {
-    const tokens = this.setTokenCookies(res, developer, mode);
+  async switchMode(
+    user: User & { active_business_id?: string },
+    mode: 'live' | 'test',
+    res: Response,
+  ) {
+    const tokens = this.setTokenCookies(res, user, mode, user.active_business_id ?? null);
     return {
       mode,
       access_token: tokens.access_token,
-      developer: this.sanitizeDeveloper(developer),
+      user: this.sanitizeUser(user),
     };
   }
 
   async logout(res: Response) {
-    const cookieOptions: {
-      httpOnly: boolean;
-      secure: boolean;
-      sameSite: boolean | 'none' | 'lax' | 'strict' | undefined;
-      domain: string | undefined;
-      path: string;
-    } = {
+    const cookieOptions = {
       httpOnly: true,
       secure: this.isProduction,
-      sameSite: this.isProduction ? 'none' : 'lax',
+      sameSite: (this.isProduction ? 'none' : 'lax') as 'none' | 'lax',
       domain: this.isProduction ? '.dexxify.com' : undefined,
       path: '/',
     };
@@ -427,79 +479,79 @@ export class AuthService {
     return { message: 'Logged out successfully.' };
   }
 
-  async getProfile(developer: any) {
-    const dev = await this.developerRepo.findOne({
-      where: { id: developer.id },
-    });
-    if (!dev) throw new UnauthorizedException('Developer not found.');
-    return this.sanitizeDeveloper({ ...dev, mode: developer.mode });
+  async getProfile(user: any) {
+    const found = await this.userRepo.findOne({ where: { id: user.id } });
+    if (!found) throw new UnauthorizedException('User not found.');
+    return this.sanitizeUser({ ...found, mode: user.mode });
   }
 
-  // ── Internal helpers ──────────────────────────────────
+  // ── Internal helpers ───────────────────────────────────
 
-  private async createAndSendOtp(developer: Developer, type: OtpType) {
+  private async createAndSendOtp(user: User, type: OtpType) {
     const { code, hash } = generateOtp();
 
     await this.otpRepo.save(
       this.otpRepo.create({
-        developer_id: developer.id,
+        user_id: user.id,
         code_hash: hash,
         type,
         expires_at: new Date(Date.now() + this.otpExpiryMinutes * 60 * 1000),
       }),
     );
 
-    const name = `${developer.first_name} ${developer.last_name}`;
+    const name = `${user.first_name} ${user.last_name}`;
 
     if (type === OtpType.PASSWORD_RESET) {
-      await this.mailService.sendPasswordResetEmail(
-        developer.email,
-        code,
-        name,
-      );
+      await this.mailService.sendPasswordResetEmail(user.email, code, name);
     } else {
-      await this.mailService.sendOtpEmail(developer.email, code, name);
+      await this.mailService.sendOtpEmail(user.email, code, name);
     }
   }
 
-  private async invalidateOldOtps(developerId: string, type: OtpType) {
+  private async invalidateOldOtps(userId: string, type: OtpType) {
     await this.otpRepo.update(
-      { developer_id: developerId, type, is_used: false },
+      { user_id: userId, type, is_used: false },
       { is_used: true },
     );
   }
 
   private setTokenCookies(
     res: Response,
-    developer: Developer,
+    user: User,
     mode: 'live' | 'test' = 'test',
+    businessId: string | null = null,
   ) {
-    const payload = { sub: developer.id, email: developer.email, mode };
+    const payload: Record<string, unknown> = {
+      sub: user.id,
+      email: user.email,
+      mode,
+    };
+    if (businessId) payload.business_id = businessId;
 
-    const accessToken = this.jwtService.sign({ ...payload, type: 'access' }, {
-      secret: this.jwtSecret,
-      expiresIn: this.jwtExpiresIn,
-    } as any);
-    const refreshToken = this.jwtService.sign({ ...payload, type: 'refresh' }, {
-      secret: this.refreshSecret,
-      expiresIn: this.refreshExpiresIn,
-    } as any);
+    const accessToken = this.jwtService.sign(
+      { ...payload, type: 'access' },
+      { secret: this.jwtSecret, expiresIn: this.jwtExpiresIn } as any,
+    );
+    const refreshToken = this.jwtService.sign(
+      { ...payload, type: 'refresh' },
+      { secret: this.refreshSecret, expiresIn: this.refreshExpiresIn } as any,
+    );
+
+    const cookieBase = {
+      httpOnly: true,
+      secure: this.isProduction,
+      sameSite: (this.isProduction ? 'none' : 'lax') as 'none' | 'lax',
+      domain: this.isProduction ? '.dexxify.com' : undefined,
+      path: '/',
+    };
 
     res.cookie('access_token', accessToken, {
-      httpOnly: true,
-      secure: this.isProduction,
-      sameSite: this.isProduction ? 'none' : 'lax',
+      ...cookieBase,
       maxAge: this.parseExpiryToMs(this.jwtExpiresIn),
-      domain: this.isProduction ? '.dexxify.com' : undefined,
-      path: '/',
     });
     res.cookie('refresh_token', refreshToken, {
-      httpOnly: true,
-      secure: this.isProduction,
-      sameSite: this.isProduction ? 'none' : 'lax',
+      ...cookieBase,
       maxAge: this.parseExpiryToMs(this.refreshExpiresIn),
-      domain: this.isProduction ? '.dexxify.com' : undefined,
-      path: '/',
     });
 
     return { access_token: accessToken, refresh_token: refreshToken };
@@ -510,21 +562,16 @@ export class AuthService {
     if (!match) return 30 * 60 * 1000;
     const v = parseInt(match[1], 10);
     switch (match[2]) {
-      case 's':
-        return v * 1000;
-      case 'm':
-        return v * 60 * 1000;
-      case 'h':
-        return v * 60 * 60 * 1000;
-      case 'd':
-        return v * 24 * 60 * 60 * 1000;
-      default:
-        return 30 * 60 * 1000;
+      case 's': return v * 1000;
+      case 'm': return v * 60 * 1000;
+      case 'h': return v * 60 * 60 * 1000;
+      case 'd': return v * 24 * 60 * 60 * 1000;
+      default:  return 30 * 60 * 1000;
     }
   }
 
-  private sanitizeDeveloper(developer: any) {
-    const { password_hash, ...safe } = developer;
+  private sanitizeUser(user: any) {
+    const { password_hash, ...safe } = user;
     return safe;
   }
 }

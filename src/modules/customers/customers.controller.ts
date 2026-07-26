@@ -20,7 +20,7 @@ import {
 } from '@nestjs/swagger';
 import { CustomersService } from './customers.service';
 import { CreateCustomerDto, CustomerQueryDto, UpdateCustomerDto } from './dto';
-import { DualAuth, GetDeveloper } from '../../common/decorators';
+import { DualAuth, GetBusinessId, GetMode } from '../../common/decorators';
 
 @ApiTags('Customers')
 @ApiBearerAuth('api-key')
@@ -33,29 +33,32 @@ export class CustomersController {
   @ApiBody({ type: CreateCustomerDto })
   @Post()
   create(
-    @GetDeveloper('id') developerId: string,
+    @GetBusinessId() businessId: string,
+    @GetMode() mode: 'live' | 'test',
     @Body() dto: CreateCustomerDto,
   ) {
-    return this.customersService.create(developerId, dto);
+    return this.customersService.create(businessId, mode, dto);
   }
 
   @ApiOperation({ summary: 'List all customers' })
   @Get()
   findAll(
-    @GetDeveloper('id') developerId: string,
+    @GetBusinessId() businessId: string,
+    @GetMode() mode: 'live' | 'test',
     @Query() query: CustomerQueryDto,
   ) {
-    return this.customersService.findAll(developerId, query);
+    return this.customersService.findAll(businessId, mode, query);
   }
 
   @ApiOperation({ summary: 'Get a customer by ID' })
   @ApiParam({ name: 'customer_id', description: 'Customer UUID' })
   @Get(':customer_id')
   findOne(
-    @GetDeveloper('id') developerId: string,
+    @GetBusinessId() businessId: string,
+    @GetMode() mode: 'live' | 'test',
     @Param('customer_id', ParseUUIDPipe) customerId: string,
   ) {
-    return this.customersService.findOne(developerId, customerId);
+    return this.customersService.findOne(businessId, mode, customerId);
   }
 
   @ApiOperation({ summary: 'Update a customer' })
@@ -63,11 +66,12 @@ export class CustomersController {
   @ApiBody({ type: UpdateCustomerDto })
   @Put(':customer_id')
   update(
-    @GetDeveloper('id') developerId: string,
+    @GetBusinessId() businessId: string,
+    @GetMode() mode: 'live' | 'test',
     @Param('customer_id', ParseUUIDPipe) customerId: string,
     @Body() dto: UpdateCustomerDto,
   ) {
-    return this.customersService.update(developerId, customerId, dto);
+    return this.customersService.update(businessId, mode, customerId, dto);
   }
 
   @ApiOperation({ summary: 'Delete a customer' })
@@ -75,10 +79,11 @@ export class CustomersController {
   @HttpCode(HttpStatus.OK)
   @Delete(':customer_id')
   remove(
-    @GetDeveloper('id') developerId: string,
+    @GetBusinessId() businessId: string,
+    @GetMode() mode: 'live' | 'test',
     @Param('customer_id', ParseUUIDPipe) customerId: string,
   ) {
-    return this.customersService.remove(developerId, customerId);
+    return this.customersService.remove(businessId, mode, customerId);
   }
 
   @ApiOperation({
@@ -90,9 +95,10 @@ export class CustomersController {
   @ApiParam({ name: 'customer_id', description: 'Customer UUID' })
   @Get(':customer_id/deposit-account')
   getDepositAccount(
-    @GetDeveloper('id') developerId: string,
+    @GetBusinessId() businessId: string,
+    @GetMode() mode: 'live' | 'test',
     @Param('customer_id', ParseUUIDPipe) customerId: string,
   ) {
-    return this.customersService.getDepositAccount(developerId, customerId);
+    return this.customersService.getDepositAccount(businessId, mode, customerId);
   }
 }

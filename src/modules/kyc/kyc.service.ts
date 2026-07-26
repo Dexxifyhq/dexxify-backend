@@ -45,9 +45,9 @@ export class KycService {
       : this.config.get<string>('kora.testEncryptionKey') || '';
   }
 
-  async verifyBvn(developerId: string, dto: VerifyBvnDto) {
+  async verifyBvn(businessId: string, dto: VerifyBvnDto) {
     const url = 'https://api.korapay.com/merchant/api/v1/identities/ng/bvn';
-    return this.executeVerification(developerId, {
+    return this.executeVerification(businessId, {
       type: KycType.BVN,
       id_number: dto.bvn,
       first_name: dto.first_name,
@@ -57,10 +57,10 @@ export class KycService {
     });
   }
 
-  async verifyNin(developerId: string, dto: VerifyNinDto) {
+  async verifyNin(businessId: string, dto: VerifyNinDto) {
     const url = 'https://api.korapay.com/merchant/api/v1/identities/ng/nin';
 
-    return this.executeVerification(developerId, {
+    return this.executeVerification(businessId, {
       type: KycType.NIN,
       id_number: dto.nin,
       first_name: dto.first_name,
@@ -69,10 +69,10 @@ export class KycService {
     });
   }
 
-  async verifyDocument(developerId: string, dto: VerifyDocumentDto) {
+  async verifyDocument(businessId: string, dto: VerifyDocumentDto) {
     const url = 'https://api.korapay.com/merchant/api/v1/identities/ng/cac';
 
-    return this.executeVerification(developerId, {
+    return this.executeVerification(businessId, {
       type: KycType.DOCUMENT,
       document_url: dto.document_url,
       first_name: dto.first_name,
@@ -81,8 +81,8 @@ export class KycService {
     });
   }
 
-  // async livenessCheck(developerId: string, dto: LivenessCheckDto) {
-  //   return this.executeVerification(developerId, {
+  // async livenessCheck(businessId: string, dto: LivenessCheckDto) {
+  //   return this.executeVerification(businessId, {
   //     type: KycType.LIVENESS,
   //     selfie_url: dto.selfie_url,
   //     document_url: dto.document_url,
@@ -90,9 +90,9 @@ export class KycService {
   //   });
   // }
 
-  async getStatus(developerId: string) {
+  async getStatus(businessId: string) {
     const verifications = await this.kycRepo.find({
-      where: { developer_id: developerId },
+      where: { business_id: businessId },
       order: { created_at: 'DESC' },
     });
 
@@ -128,7 +128,7 @@ export class KycService {
   // ── Core verification executor ───────────────────────────
 
   private async executeVerification(
-    developerId: string,
+    businessId: string,
     params: {
       type: KycType;
       id_number?: string;
@@ -143,7 +143,7 @@ export class KycService {
     const koraResult = await this.callKoraKyc(params);
 
     const verification = this.kycRepo.create({
-      developer_id: developerId,
+      business_id: businessId,
       type: params.type,
       id_number: params.id_number,
       document_url: params.document_url,

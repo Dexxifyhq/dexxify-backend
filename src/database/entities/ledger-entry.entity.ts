@@ -6,15 +6,14 @@ import {
   ManyToOne,
   JoinColumn,
   Index,
-  Unique,
 } from 'typeorm';
-import { Developer } from './developer.entity';
+import { Business } from './business.entity';
 
 export enum TxType {
   DEPOSIT = 'deposit',
   WITHDRAWAL = 'withdrawal',
   TRANSFER = 'transfer',
-  ONRAMP = 'onramp', // This will soon be removed
+  ONRAMP = 'onramp',
   OFFRAMP = 'offramp',
   PAYOUT = 'payout',
   FEE = 'fee',
@@ -45,7 +44,10 @@ export class LedgerEntry {
 
   @Index()
   @Column({ type: 'uuid' })
-  developer_id: string;
+  business_id: string;
+
+  @Column({ type: 'text', default: 'test' })
+  mode: 'live' | 'test';
 
   @Index()
   @Column({ type: 'enum', enum: TxType })
@@ -99,12 +101,6 @@ export class LedgerEntry {
   })
   status: LedgerEntryStatus;
 
-  // @Column({ type: 'decimal', precision: 28, scale: 8, nullable: true })
-  // amount_usd: number; // amount in USD
-
-  // @Column({ type: 'decimal', precision: 28, scale: 8, nullable: true })
-  // amount_crypto: number; // amount in crypto
-
   @Column({ type: 'text', nullable: true })
   description: string;
 
@@ -115,8 +111,7 @@ export class LedgerEntry {
   @CreateDateColumn({ type: 'timestamptz' })
   created_at: Date;
 
-  // Relations
-  @ManyToOne(() => Developer, (dev) => dev.ledger_entries)
-  @JoinColumn({ name: 'developer_id' })
-  developer: Developer;
+  @ManyToOne(() => Business, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'business_id' })
+  business: Business;
 }

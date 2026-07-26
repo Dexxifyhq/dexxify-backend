@@ -5,11 +5,11 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   ManyToOne,
+  OneToMany,
   JoinColumn,
   Index,
-  OneToMany,
 } from 'typeorm';
-import { Developer } from './developer.entity';
+import { Business } from './business.entity';
 import { PaymentSession } from './payment-session.entity';
 
 export enum PaymentPageStatus {
@@ -25,7 +25,10 @@ export class PaymentPage {
 
   @Index()
   @Column({ type: 'uuid' })
-  developer_id: string;
+  business_id: string;
+
+  @Column({ type: 'text', default: 'test' })
+  mode: 'live' | 'test';
 
   @Column({ type: 'text' })
   title: string;
@@ -51,19 +54,15 @@ export class PaymentPage {
   })
   status: PaymentPageStatus;
 
-  // @Column({ type: 'boolean', default: false })
-  // auto_settlement: boolean;
-
   @CreateDateColumn({ type: 'timestamptz' })
   created_at: Date;
 
   @UpdateDateColumn({ type: 'timestamptz' })
   updated_at: Date;
 
-  // Relations
-  @ManyToOne(() => Developer, (dev) => dev.payment_pages)
-  @JoinColumn({ name: 'developer_id' })
-  developer: Developer;
+  @ManyToOne(() => Business, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'business_id' })
+  business: Business;
 
   @OneToMany(() => PaymentSession, (ps) => ps.payment_page)
   payment_sessions: PaymentSession[];

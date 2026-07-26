@@ -9,7 +9,7 @@ import {
   JoinColumn,
   Index,
 } from 'typeorm';
-import { Developer } from './developer.entity';
+import { Business } from './business.entity';
 
 export enum WebhookEventStatus {
   PENDING = 'pending',
@@ -24,12 +24,15 @@ export class WebhookEndpoint {
 
   @Index()
   @Column({ type: 'uuid' })
-  developer_id: string;
+  business_id: string;
 
-  @Column({ type: 'varchar', length: 500 })
+  @Column({ type: 'text', default: 'test' })
+  mode: 'live' | 'test';
+
+  @Column({ type: 'text' })
   url: string;
 
-  @Column({ type: 'varchar', length: 255 })
+  @Column({ type: 'text' })
   secret: string;
 
   @Column({ type: 'text', array: true, default: '{}' })
@@ -38,7 +41,7 @@ export class WebhookEndpoint {
   @Column({ type: 'boolean', default: true })
   is_active: boolean;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
+  @Column({ type: 'text', nullable: true })
   description: string;
 
   @CreateDateColumn({ type: 'timestamptz' })
@@ -47,12 +50,9 @@ export class WebhookEndpoint {
   @UpdateDateColumn({ type: 'timestamptz' })
   updated_at: Date;
 
-  // Relations
-  @ManyToOne(() => Developer, (dev) => dev.webhook_endpoints, {
-    onDelete: 'CASCADE',
-  })
-  @JoinColumn({ name: 'developer_id' })
-  developer: Developer;
+  @ManyToOne(() => Business, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'business_id' })
+  business: Business;
 
   @OneToMany(() => WebhookEvent, (we) => we.webhook_endpoint)
   webhook_events: WebhookEvent[];
@@ -67,10 +67,11 @@ export class WebhookEvent {
   @Column({ type: 'uuid' })
   webhook_endpoint_id: string;
 
+  @Index()
   @Column({ type: 'uuid' })
-  developer_id: string;
+  business_id: string;
 
-  @Column({ type: 'varchar', length: 100 })
+  @Column({ type: 'text' })
   event_type: string;
 
   @Column({ type: 'jsonb' })
@@ -105,7 +106,10 @@ export class WebhookEvent {
   @CreateDateColumn({ type: 'timestamptz' })
   created_at: Date;
 
-  // Relations
+  @ManyToOne(() => Business, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'business_id' })
+  business: Business;
+
   @ManyToOne(() => WebhookEndpoint, (we) => we.webhook_events, {
     onDelete: 'CASCADE',
   })

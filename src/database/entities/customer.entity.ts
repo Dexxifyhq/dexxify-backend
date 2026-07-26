@@ -6,11 +6,10 @@ import {
   UpdateDateColumn,
   ManyToOne,
   JoinColumn,
-  OneToMany,
   Index,
   Unique,
 } from 'typeorm';
-import { Developer } from './developer.entity';
+import { Business } from './business.entity';
 
 export enum CustomerStatus {
   ACTIVE = 'active',
@@ -18,14 +17,17 @@ export enum CustomerStatus {
 }
 
 @Entity('customers')
-@Unique(['email'])
+@Unique(['business_id', 'email'])
 export class Customer {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
   @Index()
   @Column({ type: 'uuid' })
-  developer_id: string;
+  business_id: string;
+
+  @Column({ type: 'text', default: 'test' })
+  mode: 'live' | 'test';
 
   @Index()
   @Column({ type: 'text', nullable: true })
@@ -60,8 +62,7 @@ export class Customer {
   @UpdateDateColumn({ type: 'timestamptz' })
   updated_at: Date;
 
-  // Relations
-  @ManyToOne(() => Developer, (dev) => dev.customers, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'developer_id' })
-  developer: Developer;
+  @ManyToOne(() => Business, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'business_id' })
+  business: Business;
 }

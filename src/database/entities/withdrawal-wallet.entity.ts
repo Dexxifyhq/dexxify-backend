@@ -8,7 +8,7 @@ import {
   Index,
   PrimaryColumn,
 } from 'typeorm';
-import { Developer } from './developer.entity';
+import { Business } from './business.entity';
 
 export enum WithdrawalWalletNetwork {
   SOL = 'SOL',
@@ -26,25 +26,22 @@ export enum WithdrawalWalletToken {
 @Entity('withdrawal_wallets')
 export class WithdrawalWallet {
   @PrimaryColumn('text')
-  id: string; // Breet wallet _id
+  id: string;
 
   @Index()
   @Column({ type: 'uuid' })
-  developer_id: string;
+  business_id: string;
+
+  @Column({ type: 'text', default: 'test' })
+  mode: 'live' | 'test';
 
   @Column({ type: 'text' })
   address: string;
 
-  @Column({
-    type: 'enum',
-    enum: WithdrawalWalletNetwork,
-  })
+  @Column({ type: 'enum', enum: WithdrawalWalletNetwork })
   network: WithdrawalWalletNetwork;
 
-  @Column({
-    type: 'enum',
-    enum: WithdrawalWalletToken,
-  })
+  @Column({ type: 'enum', enum: WithdrawalWalletToken })
   token: WithdrawalWalletToken;
 
   @Column({ type: 'text' })
@@ -62,10 +59,7 @@ export class WithdrawalWallet {
   @UpdateDateColumn({ type: 'timestamptz' })
   updated_at: Date;
 
-  // Relations
-  @ManyToOne(() => Developer, (dev) => dev.withdrawal_wallets, {
-    onDelete: 'CASCADE',
-  })
-  @JoinColumn({ name: 'developer_id' })
-  developer: Developer;
+  @ManyToOne(() => Business, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'business_id' })
+  business: Business;
 }

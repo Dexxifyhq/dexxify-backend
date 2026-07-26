@@ -24,7 +24,7 @@ export class PayoutsService {
     private readonly cc: CoincircuitService,
   ) {}
 
-  async create(developerId: string, dto: CreatePayoutDto) {
+  async create(businessId: string, mode: 'live' | 'test', dto: CreatePayoutDto) {
     let accountName = dto.account_name;
     if (!accountName) {
       const resolved = await this.resolveAccount({
@@ -55,7 +55,8 @@ export class PayoutsService {
     const ccPayout = payoutResult.data;
 
     const payout = this.payoutRepo.create({
-      developer_id: developerId,
+      business_id: businessId,
+      mode,
       amount: dto.amount,
       fee: this.PAYOUT_FEE,
       bank_code: dto.bank_code,
@@ -71,13 +72,13 @@ export class PayoutsService {
     return this.payoutRepo.save(payout);
   }
 
-  async createBatch(developerId: string, dto: BatchPayoutDto) {
+  async createBatch(businessId: string, mode: 'live' | 'test', dto: BatchPayoutDto) {
     const batchId = crypto.randomUUID();
     const results: any[] = [];
 
     for (const payoutDto of dto.payouts) {
       try {
-        const result = await this.create(developerId, payoutDto);
+        const result = await this.create(businessId, mode, payoutDto);
         await this.payoutRepo.update(result.id, { batch_id: batchId });
         results.push({ ...result, batch_id: batchId, success: true });
       } catch (err: any) {
@@ -93,18 +94,18 @@ export class PayoutsService {
     return { batch_id: batchId, total: dto.payouts.length, results };
   }
 
-  async findOne(developerId: string, payoutId: string) {
+  async findOne(businessId: string, mode: 'live' | 'test', payoutId: string) {
     const payout = await this.payoutRepo.findOne({
-      where: { id: payoutId, developer_id: developerId },
+      where: { id: payoutId, business_id: businessId, mode },
     });
     if (!payout) throw new NotFoundException('Payout not found.');
     return payout;
   }
 
-  async findAll(developerId: string, query: any) {
+  async findAll(businessId: string, mode: 'live' | 'test', query: any) {
     const { offset, limit, page } = parsePagination(query);
     const [data, total] = await this.payoutRepo.findAndCount({
-      where: { developer_id: developerId },
+      where: { business_id: businessId, mode },
       order: { created_at: 'DESC' },
       skip: offset,
       take: limit,

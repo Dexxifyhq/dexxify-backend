@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Body, Param, Delete } from '@nestjs/common';
 import { MiscService } from './misc.service';
 import { GetRateQueryDto, AddBankDto, VerifyBankAccountDto } from './dto';
-import { GetDeveloper, Public, DualAuth } from '../../common/decorators';
+import { GetBusinessId, Public, DualAuth } from '../../common/decorators';
 import { ApiBody, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('Misc - Banks & Assets')
@@ -19,26 +19,26 @@ export class MiscController {
   @ApiOperation({ summary: 'Add bank account' })
   @Post('banks')
   async addBank(
-    @GetDeveloper('id') developerId: string,
+    @GetBusinessId() businessId: string,
     @Body() dto: AddBankDto,
   ) {
-    return this.miscService.addBank(developerId, dto);
+    return this.miscService.addBank(businessId, dto);
   }
 
   @ApiOperation({ summary: 'Get saved banks' })
   @Get('banks/saved')
-  async getSavedBanks(@GetDeveloper('id') developerId: string) {
-    return this.miscService.getSavedBanks(developerId);
+  async getSavedBanks(@GetBusinessId() businessId: string) {
+    return this.miscService.getSavedBanks(businessId);
   }
 
   @ApiOperation({ summary: 'Get saved bank by account number' })
   @ApiParam({ name: 'accountNumber', example: '3154021148' })
   @Get('banks/saved/:accountNumber')
   async getSavedBankById(
-    @GetDeveloper('id') developerId: string,
+    @GetBusinessId() businessId: string,
     @Param('accountNumber') accountNumber: string,
   ) {
-    return this.miscService.getSavedBanksById(developerId, accountNumber);
+    return this.miscService.getSavedBanksById(businessId, accountNumber);
   }
 
   @ApiOperation({ summary: 'Delete bank account' })

@@ -6,7 +6,6 @@ import {
   Param,
   Query,
   Delete,
-  Put,
 } from '@nestjs/common';
 import { WalletsService } from './wallets.service';
 import {
@@ -17,13 +16,12 @@ import {
   InitiateFiatWithdrawalDto,
   IssueDepositIdentityDto,
 } from './dto';
-import { GetDeveloper, DualAuth } from '../../common/decorators';
+import { GetBusinessId, GetMode, DualAuth } from '../../common/decorators';
 import {
   ApiBearerAuth,
   ApiOperation,
   ApiParam,
   ApiBody,
-  ApiQuery,
   ApiTags,
   ApiPropertyOptional,
   ApiProperty,
@@ -76,7 +74,7 @@ export class UpdateWalletAutoSettlementDto {
   auto_settlement: boolean;
 }
 
-@ApiTags('Wallets')
+@ApiTags('Deposit Account')
 @ApiBearerAuth('api-key')
 @DualAuth()
 @Controller('wallets')
@@ -94,10 +92,11 @@ export class WalletsController {
   })
   @ApiBody({ type: CreateWalletDto })
   async create(
-    @GetDeveloper('id') developerId: string,
+    @GetBusinessId() businessId: string,
+    @GetMode() mode: 'live' | 'test',
     @Body() dto: CreateWalletDto,
   ) {
-    return this.walletsService.create(developerId, dto);
+    return this.walletsService.create(businessId, mode, dto);
   }
 
   @Get()
@@ -107,10 +106,11 @@ export class WalletsController {
       'Retrieve all wallets for the authenticated developer with optional filtering',
   })
   async findAll(
-    @GetDeveloper('id') developerId: string,
+    @GetBusinessId() businessId: string,
+    @GetMode() mode: 'live' | 'test',
     @Query() query: WalletQueryDto,
   ) {
-    return this.walletsService.findAll(developerId, query);
+    return this.walletsService.findAll(businessId, mode, query);
   }
 
   @Get(':wallet_id')
@@ -124,10 +124,11 @@ export class WalletsController {
     example: '67063f653b4a1f6c7a60ec57',
   })
   async findOne(
-    @GetDeveloper('id') developerId: string,
+    @GetBusinessId() businessId: string,
+    @GetMode() mode: 'live' | 'test',
     @Param('wallet_id') walletId: string,
   ) {
-    return this.walletsService.findOne(developerId, walletId);
+    return this.walletsService.findOne(businessId, mode, walletId);
   }
 
   @Get(':wallet_id/details')
@@ -162,97 +163,13 @@ export class WalletsController {
   @ApiParam({ name: 'wallet_id', description: 'Deposit account ID' })
   @ApiBody({ type: IssueDepositIdentityDto })
   async issueIdentity(
-    @GetDeveloper('id') developerId: string,
+    @GetBusinessId() businessId: string,
+    @GetMode() mode: 'live' | 'test',
     @Param('wallet_id') walletId: string,
     @Body() dto: IssueDepositIdentityDto,
   ) {
-    return this.walletsService.issueIdentity(developerId, walletId, dto);
+    return this.walletsService.issueIdentity(businessId, mode, walletId, dto);
   }
-
-  // @Get(':wallet_id/address')
-  // @ApiOperation({
-  //   summary: 'Get deposit address',
-  //   description: 'Get the deposit address for a specific wallet',
-  // })
-  // @ApiParam({
-  //   name: 'wallet_id',
-  //   description: 'Wallet unique identifier',
-  //   example: '67063f653b4a1f6c7a60ec57',
-  // })
-  // async getDepositAddress(
-  //   @GetDeveloper('id') developerId: string,
-  //   @Param('wallet_id') walletId: string,
-  // ) {
-  //   return this.walletsService.getDepositAddress(developerId, walletId);
-  // }
-
-  // @Get('/transactions/all')
-  // @ApiOperation({
-  //   summary: 'Get all transactions',
-  //   description: 'Retrieve all transactions across all developer wallets',
-  // })
-  // @ApiQuery({ type: CustomQueryDto })
-  // async getAllTransactions(
-  //   @GetDeveloper('id') developerId: string,
-  //   @Query() query: CustomQueryDto,
-  // ) {
-  //   return this.walletsService.getAllTransactions(developerId, query);
-  // }
-
-  // @Get(':wallet_id/transactions')
-  // @ApiOperation({
-  //   summary: 'Get wallet transactions',
-  //   description: 'Retrieve transactions for a specific wallet with pagination',
-  // })
-  // @ApiParam({
-  //   name: 'wallet_id',
-  //   description: 'Wallet unique identifier',
-  //   example: '67063f653b4a1f6c7a60ec57',
-  // })
-  // @ApiQuery({ type: CustomQueryDto })
-  // async getTransactions(
-  //   @GetDeveloper('id') developerId: string,
-  //   @Param('transaction_id') transactionId: string,
-  //   @Query() query: CustomQueryDto,
-  // ) {
-  //   return this.walletsService.getTransactionsById(
-  //     developerId,
-  //     transactionId,
-  //     query,
-  //   );
-  // }
-
-  // @Get('/:wallet_id/transactions/all')
-  // async getAllTransactionsByWallet(
-  //   @GetDeveloper('id') developerId: string,
-  //   @Query() query: any,
-  // ) { ... }
-
-  // @Get('/breet/:wallet_id/transactions')
-  // async getWalletTransactionsById(
-  //   @GetDeveloper('id') developerId: string,
-  //   @Param('wallet_id') walletId: string,
-  //   @Query() query: any,
-  // ) {
-  //   return this.walletsService.getTransactionsByWalletId(
-  //     developerId,
-  //     walletId,
-  //     query,
-  //   );
-  // }
-
-  // @Post('transfer')
-  // @ApiOperation({
-  //   summary: 'Transfer between wallets',
-  //   description: 'Transfer funds between two wallets owned by the developer',
-  // })
-  // @ApiBody({ type: TransferDto })
-  // async transfer(
-  //   @GetDeveloper('id') developerId: string,
-  //   @Body() dto: TransferDto,
-  // ) {
-  //   return this.walletsService.transfer(developerId, dto);
-  // }
 
   // Withdrawal Address Endpoints
   @Post('withdrawal-addresses')
@@ -263,9 +180,10 @@ export class WalletsController {
   @ApiBody({ type: AddWithdrawalAddressDto })
   async addWithdrawalAddress(
     @Body() dto: AddWithdrawalAddressDto,
-    @GetDeveloper('id') developerId: string,
+    @GetBusinessId() businessId: string,
+    @GetMode() mode: 'live' | 'test',
   ) {
-    return this.walletsService.addWithdrawalAddress(dto, developerId);
+    return this.walletsService.addWithdrawalAddress(dto, businessId, mode);
   }
 
   @Get('withdrawal-addresses/saved')
@@ -273,8 +191,11 @@ export class WalletsController {
     summary: 'Get saved withdrawal addresses',
     description: 'Fetch all saved withdrawal (payout) wallet addresses',
   })
-  async getSavedWithdrawalAddresses(@GetDeveloper('id') developerId: string) {
-    return this.walletsService.getSavedWithdrawalAddresses(developerId);
+  async getSavedWithdrawalAddresses(
+    @GetBusinessId() businessId: string,
+    @GetMode() mode: 'live' | 'test',
+  ) {
+    return this.walletsService.getSavedWithdrawalAddresses(businessId, mode);
   }
 
   @Get('withdrawal-addresses')
@@ -310,9 +231,14 @@ export class WalletsController {
   @ApiBody({ type: InitiateStableCoinWithdrawalDto })
   async initiateStableCoinWithdrawal(
     @Body() dto: InitiateStableCoinWithdrawalDto,
-    @GetDeveloper('id') developerId: string,
+    @GetBusinessId() businessId: string,
+    @GetMode() mode: 'live' | 'test',
   ) {
-    return this.walletsService.initiateStableCoinWithdrawal(dto, developerId);
+    return this.walletsService.initiateStableCoinWithdrawal(
+      dto,
+      businessId,
+      mode,
+    );
   }
 
   @Post('withdrawals/local-currencies')
@@ -323,9 +249,10 @@ export class WalletsController {
   @ApiBody({ type: InitiateFiatWithdrawalDto })
   async initiateFiattWithdrawal(
     @Body() dto: InitiateFiatWithdrawalDto,
-    @GetDeveloper('id') developerId: string,
+    @GetBusinessId() businessId: string,
+    @GetMode() mode: 'live' | 'test',
   ) {
-    return this.walletsService.initiateFiatWithdrawal(dto, developerId);
+    return this.walletsService.initiateFiatWithdrawal(dto, businessId, mode);
   }
 
   @Get('withdrawals')
@@ -336,17 +263,4 @@ export class WalletsController {
   async listPayouts(@Query('page') page: string, @Query('size') size: string) {
     return this.walletsService.listPayouts({ page, size });
   }
-
-  // @Get('withdrawals/:withdrawalId')
-  // @ApiOperation({
-  //   summary: 'Get withdrawal by ID',
-  //   description: 'Fetch a specific withdrawal by ID',
-  // })
-  // @ApiParam({
-  //   name: 'withdrawalId',
-  //   description: 'Withdrawal unique identifier',
-  // })
-  // async getWithdrawalsById() {
-  //   return this.walletsService.getWithdrawalsById();
-  // }
 }

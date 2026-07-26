@@ -8,13 +8,12 @@ import {
   JoinColumn,
   Index,
 } from 'typeorm';
-import { Developer } from './developer.entity';
+import { Business } from './business.entity';
 
 export enum KycType {
   BVN = 'bvn',
   NIN = 'nin',
   DOCUMENT = 'document',
-  // LIVENESS = 'liveness',
 }
 
 export enum KycStatus {
@@ -31,7 +30,7 @@ export class KycVerification {
 
   @Index()
   @Column({ type: 'uuid' })
-  developer_id: string;
+  business_id: string;
 
   @Column({ type: 'enum', enum: KycType })
   type: KycType;
@@ -70,8 +69,7 @@ export class KycVerification {
   @UpdateDateColumn({ type: 'timestamptz' })
   updated_at: Date;
 
-  // Relations
-  @ManyToOne(() => Developer, (dev) => dev.kyc_verifications)
-  @JoinColumn({ name: 'developer_id' })
-  developer: Developer;
+  @ManyToOne(() => Business, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'business_id' })
+  business: Business;
 }

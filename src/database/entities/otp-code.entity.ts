@@ -7,7 +7,7 @@ import {
   JoinColumn,
   Index,
 } from 'typeorm';
-import { Developer } from './developer.entity';
+import { User } from './user.entity';
 
 export enum OtpType {
   EMAIL_VERIFICATION = 'email_verification',
@@ -21,7 +21,7 @@ export class OtpCode {
 
   @Index()
   @Column({ type: 'uuid' })
-  developer_id: string;
+  user_id: string;
 
   @Column({ type: 'text' })
   code_hash: string;
@@ -41,8 +41,7 @@ export class OtpCode {
   @CreateDateColumn({ type: 'timestamptz' })
   created_at: Date;
 
-  // Relations
-  @ManyToOne(() => Developer, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'developer_id' })
-  developer: Developer;
+  @ManyToOne(() => User, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'user_id' })
+  user: User;
 }

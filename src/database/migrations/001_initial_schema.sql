@@ -24,12 +24,12 @@ CREATE TYPE webhook_event_status AS ENUM ('pending', 'delivered', 'failed');
 
 CREATE TABLE developers (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    email VARCHAR(255) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
-    business_name VARCHAR(255) NOT NULL,
-    business_type VARCHAR(100),
-    contact_name VARCHAR(255),
-    phone VARCHAR(50),
+    email TEXT UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
+    business_name TEXT NOT NULL,
+    business_type TEXT,
+    contact_name TEXT,
+    phone TEXT,
     status developer_status DEFAULT 'pending',
     plan subscription_plan DEFAULT 'starter',
     api_call_count INTEGER DEFAULT 0,
@@ -48,10 +48,10 @@ CREATE INDEX idx_developers_status ON developers(status);
 CREATE TABLE api_keys (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     developer_id UUID NOT NULL REFERENCES developers(id) ON DELETE CASCADE,
-    key_hash VARCHAR(255) NOT NULL,
-    key_prefix VARCHAR(12) NOT NULL,  -- e.g. "dex_live_abc" for display
-    label VARCHAR(100) DEFAULT 'Default',
-    environment VARCHAR(10) DEFAULT 'sandbox' CHECK (environment IN ('sandbox', 'live')),
+    key_hash TEXT NOT NULL,
+    key_prefix TEXT NOT NULL,  -- e.g. "dex_live_abc" for display
+    label TEXT DEFAULT 'Default',
+    environment TEXT DEFAULT 'sandbox' CHECK (environment IN ('sandbox', 'live')),
     is_active BOOLEAN DEFAULT true,
     last_used_at TIMESTAMPTZ,
     ip_whitelist TEXT[],  -- optional IP restrictions
@@ -70,7 +70,7 @@ CREATE TYPE otp_type AS ENUM ('email_verification', 'password_reset');
 CREATE TABLE otp_codes (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     developer_id UUID NOT NULL REFERENCES developers(id) ON DELETE CASCADE,
-    code_hash VARCHAR(255) NOT NULL,
+    code_hash TEXT NOT NULL,
     type otp_type NOT NULL,
     expires_at TIMESTAMPTZ NOT NULL,
     is_used BOOLEAN DEFAULT false,
@@ -86,13 +86,13 @@ CREATE INDEX idx_otp_lookup ON otp_codes(developer_id, type, is_used, expires_at
 CREATE TABLE wallets (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     developer_id UUID NOT NULL REFERENCES developers(id) ON DELETE CASCADE,
-    external_user_id VARCHAR(255) NOT NULL,  -- developer's own user ID
+    external_user_id TEXT NOT NULL,  -- developer's own user ID
     asset wallet_asset NOT NULL,
     balance DECIMAL(28, 8) DEFAULT 0,
     locked_balance DECIMAL(28, 8) DEFAULT 0,  -- funds in pending txns
-    deposit_address VARCHAR(255),
+    deposit_address TEXT,
     status wallet_status DEFAULT 'active',
-    -- breet_wallet_id VARCHAR(255),  -- reference to Breet
+    -- breet_wallet_id TEXT(255),  -- reference to Breet
     metadata JSONB DEFAULT '{}',
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW(),
@@ -102,63 +102,6 @@ CREATE TABLE wallets (
 
 CREATE INDEX idx_wallets_developer ON wallets(developer_id);
 CREATE INDEX idx_wallets_ext_user ON wallets(external_user_id);
--- CREATE INDEX idx_wallets_breet ON wallets(breet_wallet_id);
-
--- ── OFFRAMP TRANSACTIONS (Crypto → NGN) ────────────────────
-
-CREATE TABLE offramp_transactions (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    developer_id UUID NOT NULL REFERENCES developers(id),
-    wallet_id UUID NOT NULL REFERENCES wallets(id),
-    crypto_asset wallet_asset NOT NULL,
-    crypto_amount DECIMAL(28, 8) NOT NULL,
-    exchange_rate DECIMAL(18, 4) NOT NULL,
-    ngn_amount DECIMAL(18, 2) NOT NULL,
-    fee_crypto DECIMAL(28, 8) DEFAULT 0,
-    fee_ngn DECIMAL(18, 2) DEFAULT 0,
-    destination_bank_code VARCHAR(10),
-    destination_account_number VARCHAR(20),
-    destination_account_name VARCHAR(255),
-    status tx_status DEFAULT 'pending',
-    breet_reference VARCHAR(255),
-    paystack_reference VARCHAR(255),
-    failure_reason TEXT,
-    metadata JSONB DEFAULT '{}',
-    completed_at TIMESTAMPTZ,
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-CREATE INDEX idx_offramp_developer ON offramp_transactions(developer_id);
-CREATE INDEX idx_offramp_wallet ON offramp_transactions(wallet_id);
-CREATE INDEX idx_offramp_status ON offramp_transactions(status);
-
--- ── ONRAMP TRANSACTIONS (NGN → Crypto) ─────────────────────
-
-CREATE TABLE onramp_transactions (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    developer_id UUID NOT NULL REFERENCES developers(id),
-    wallet_id UUID NOT NULL REFERENCES wallets(id),
-    crypto_asset wallet_asset NOT NULL,
-    ngn_amount DECIMAL(18, 2) NOT NULL,
-    exchange_rate DECIMAL(18, 4) NOT NULL,
-    crypto_amount DECIMAL(28, 8) NOT NULL,
-    fee_ngn DECIMAL(18, 2) DEFAULT 0,
-    fee_crypto DECIMAL(28, 8) DEFAULT 0,
-    payment_reference VARCHAR(255),
-    status tx_status DEFAULT 'pending',
-    breet_reference VARCHAR(255),
-    paystack_reference VARCHAR(255),
-    failure_reason TEXT,
-    metadata JSONB DEFAULT '{}',
-    completed_at TIMESTAMPTZ,
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-CREATE INDEX idx_onramp_developer ON onramp_transactions(developer_id);
-CREATE INDEX idx_onramp_wallet ON onramp_transactions(wallet_id);
-CREATE INDEX idx_onramp_status ON onramp_transactions(status);
 
 -- ── PAYOUTS (NGN bank payouts) ──────────────────────────────
 
@@ -167,14 +110,14 @@ CREATE TABLE payouts (
     developer_id UUID NOT NULL REFERENCES developers(id),
     amount DECIMAL(18, 2) NOT NULL,
     fee DECIMAL(18, 2) DEFAULT 0,
-    bank_code VARCHAR(10) NOT NULL,
-    account_number VARCHAR(20) NOT NULL,
-    account_name VARCHAR(255),
-    narration VARCHAR(255),
+    bank_code TEXT NOT NULL,
+    account_number TEXT NOT NULL,
+    account_name TEXT,
+    narration TEXT,
     status payout_status DEFAULT 'pending',
     batch_id UUID,  -- for batch payouts
-    paystack_reference VARCHAR(255),
-    paystack_transfer_code VARCHAR(255),
+    paystack_reference TEXT,
+    paystack_transfer_code TEXT,
     failure_reason TEXT,
     metadata JSONB DEFAULT '{}',
     completed_at TIMESTAMPTZ,
@@ -191,16 +134,16 @@ CREATE INDEX idx_payouts_batch ON payouts(batch_id);
 CREATE TABLE kyc_verifications (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     developer_id UUID NOT NULL REFERENCES developers(id),
-    external_user_id VARCHAR(255) NOT NULL,
+    external_user_id TEXT NOT NULL,
     type kyc_type NOT NULL,
     status kyc_status DEFAULT 'pending',
-    id_number VARCHAR(50),  -- BVN or NIN number (encrypted at app level)
+    id_number TEXT,  -- BVN or NIN number (encrypted at app level)
     document_url TEXT,
     selfie_url TEXT,
-    first_name VARCHAR(100),
-    last_name VARCHAR(100),
+    first_name TEXT,
+    last_name TEXT,
     date_of_birth DATE,
-    provider_reference VARCHAR(255),  -- SmileID job ID
+    provider_reference TEXT,  -- SmileID job ID
     provider_response JSONB DEFAULT '{}',
     confidence_score DECIMAL(5, 2),
     failure_reason TEXT,
@@ -219,11 +162,11 @@ CREATE INDEX idx_kyc_status ON kyc_verifications(status);
 CREATE TABLE webhook_endpoints (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     developer_id UUID NOT NULL REFERENCES developers(id) ON DELETE CASCADE,
-    url VARCHAR(500) NOT NULL,
-    secret VARCHAR(255) NOT NULL,  -- HMAC signing secret
+    url TEXT NOT NULL,
+    secret TEXT NOT NULL,  -- HMAC signing secret
     events TEXT[] NOT NULL DEFAULT '{}',  -- subscribed event types
     is_active BOOLEAN DEFAULT true,
-    description VARCHAR(255),
+    description TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -236,7 +179,7 @@ CREATE TABLE webhook_events (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     webhook_endpoint_id UUID NOT NULL REFERENCES webhook_endpoints(id) ON DELETE CASCADE,
     developer_id UUID NOT NULL REFERENCES developers(id),
-    event_type VARCHAR(100) NOT NULL,
+    event_type TEXT NOT NULL,
     payload JSONB NOT NULL,
     status webhook_event_status DEFAULT 'pending',
     attempts INTEGER DEFAULT 0,
@@ -258,11 +201,11 @@ CREATE TABLE ledger_entries (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     developer_id UUID NOT NULL REFERENCES developers(id),
     tx_type tx_type NOT NULL,
-    reference_type VARCHAR(50) NOT NULL,  -- 'offramp', 'payout', 'wallet_transfer', etc.
+    reference_type TEXT NOT NULL,  -- 'offramp', 'payout', 'wallet_transfer', etc.
     reference_id UUID NOT NULL,  -- ID of the related entity
     debit DECIMAL(28, 8) DEFAULT 0,
     credit DECIMAL(28, 8) DEFAULT 0,
-    currency VARCHAR(10) NOT NULL,  -- 'NGN', 'USDT', 'BTC', etc.
+    currency TEXT NOT NULL,  -- 'NGN', 'USDT', 'BTC', etc.
     balance_after DECIMAL(28, 8),
     description TEXT,
     metadata JSONB DEFAULT '{}',
@@ -292,12 +235,6 @@ CREATE TRIGGER set_updated_at BEFORE UPDATE ON developers
 CREATE TRIGGER set_updated_at BEFORE UPDATE ON wallets
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER set_updated_at BEFORE UPDATE ON offramp_transactions
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
-CREATE TRIGGER set_updated_at BEFORE UPDATE ON onramp_transactions
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
 CREATE TRIGGER set_updated_at BEFORE UPDATE ON payouts
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
@@ -314,8 +251,6 @@ ALTER TABLE developers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE otp_codes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE api_keys ENABLE ROW LEVEL SECURITY;
 ALTER TABLE wallets ENABLE ROW LEVEL SECURITY;
-ALTER TABLE offramp_transactions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE onramp_transactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE payouts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE kyc_verifications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE webhook_endpoints ENABLE ROW LEVEL SECURITY;
@@ -327,8 +262,6 @@ CREATE POLICY "Service role full access" ON developers FOR ALL USING (true);
 CREATE POLICY "Service role full access" ON otp_codes FOR ALL USING (true);
 CREATE POLICY "Service role full access" ON api_keys FOR ALL USING (true);
 CREATE POLICY "Service role full access" ON wallets FOR ALL USING (true);
-CREATE POLICY "Service role full access" ON offramp_transactions FOR ALL USING (true);
-CREATE POLICY "Service role full access" ON onramp_transactions FOR ALL USING (true);
 CREATE POLICY "Service role full access" ON payouts FOR ALL USING (true);
 CREATE POLICY "Service role full access" ON kyc_verifications FOR ALL USING (true);
 CREATE POLICY "Service role full access" ON webhook_endpoints FOR ALL USING (true);

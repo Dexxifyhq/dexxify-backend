@@ -13,7 +13,7 @@ import {
 import { WebhooksService } from './webhooks.service';
 import { CoincircuitWebhooksService } from './coincircuit-webhooks.service';
 import { CreateWebhookDto } from './dto';
-import { GetDeveloper, Public, DualAuth } from '../../common/decorators';
+import { GetBusinessId, GetMode, Public, DualAuth } from '../../common/decorators';
 import {
   ApiOperation,
   ApiTags,
@@ -35,26 +35,31 @@ export class WebhooksController {
   @ApiBody({ type: CreateWebhookDto })
   @Post()
   async create(
-    @GetDeveloper('id') developerId: string,
+    @GetBusinessId() businessId: string,
+    @GetMode() mode: 'live' | 'test',
     @Body() dto: CreateWebhookDto,
   ) {
-    return this.webhooksService.create(developerId, dto);
+    return this.webhooksService.create(businessId, mode, dto);
   }
 
   @ApiOperation({ summary: 'List webhook endpoints' })
   @Get()
-  async findAll(@GetDeveloper('id') developerId: string) {
-    return this.webhooksService.findAll(developerId);
+  async findAll(
+    @GetBusinessId() businessId: string,
+    @GetMode() mode: 'live' | 'test',
+  ) {
+    return this.webhooksService.findAll(businessId, mode);
   }
 
   @ApiOperation({ summary: 'Delete webhook endpoint' })
   @ApiParam({ name: 'id', description: 'Webhook endpoint ID' })
   @Delete(':id')
   async remove(
-    @GetDeveloper('id') developerId: string,
+    @GetBusinessId() businessId: string,
+    @GetMode() mode: 'live' | 'test',
     @Param('id', ParseUUIDPipe) id: string,
   ) {
-    return this.webhooksService.remove(developerId, id);
+    return this.webhooksService.remove(businessId, mode, id);
   }
 }
 

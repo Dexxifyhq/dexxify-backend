@@ -10,9 +10,9 @@ export class CreateApiKeyDto {
   @IsOptional()
   label?: string;
 
-  @ApiProperty({ description: 'Environment', enum: ['sandbox', 'live'] })
-  @IsEnum(['sandbox', 'live'])
-  environment: 'sandbox' | 'live';
+  @ApiProperty({ description: 'Mode', enum: ['test', 'live'] })
+  @IsEnum(['test', 'live'])
+  mode: 'test' | 'live';
 }
 
 export class UpdateApiKeyDto {

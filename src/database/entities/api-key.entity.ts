@@ -7,29 +7,35 @@ import {
   JoinColumn,
   Index,
 } from 'typeorm';
-import { Developer } from './developer.entity';
+import { Business } from './business.entity';
+import { User } from './user.entity';
 
 @Entity('api_keys')
 export class ApiKey {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Index()
   @Column({ type: 'uuid' })
-  developer_id: string;
+  user_id: string;
 
   @Index()
-  @Column({ type: 'varchar', length: 255 })
+  @Column({ type: 'uuid' })
+  business_id: string;
+
+  @Index()
+  @Column({ type: 'text' })
   key_hash: string;
 
   @Index()
-  @Column({ type: 'varchar', length: 12 })
+  @Column({ type: 'text' })
   key_prefix: string;
 
-  @Column({ type: 'varchar', length: 100, default: 'Default' })
+  @Column({ type: 'text', default: 'Default' })
   label: string;
 
-  @Column({ type: 'varchar', length: 10, default: 'sandbox' })
-  environment: string;
+  @Column({ type: 'text', default: 'test' })
+  mode: string;
 
   @Column({ type: 'boolean', default: true })
   is_active: boolean;
@@ -46,8 +52,11 @@ export class ApiKey {
   @CreateDateColumn({ type: 'timestamptz' })
   created_at: Date;
 
-  // Relations
-  @ManyToOne(() => Developer, (dev) => dev.api_keys, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'developer_id' })
-  developer: Developer;
+  @ManyToOne(() => User, (u) => u.api_keys, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'user_id' })
+  user: User;
+
+  @ManyToOne(() => Business, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'business_id' })
+  business: Business;
 }

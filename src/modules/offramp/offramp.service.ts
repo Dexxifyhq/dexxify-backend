@@ -57,7 +57,7 @@ export class OfframpService {
     };
   }
 
-  async create(developerId: string, dto: CreateOfframpDto) {
+  async create(businessId: string, dto: CreateOfframpDto) {
     // 1. Get CC swap quotation (crypto → NGN)
     let quotation: any;
     let swap: any;
@@ -87,7 +87,7 @@ export class OfframpService {
     // 4. Save SwapRecord — webhook uses type=OFFRAMP to trigger auto-payout
     await this.swapRecordRepo.save(
       this.swapRecordRepo.create({
-        developer_id: developerId,
+        business_id: businessId,
         cc_swap_id: swap.id,
         from_currency: String(dto.crypto_asset).toUpperCase(),
         to_currency: 'NGN',
@@ -104,7 +104,7 @@ export class OfframpService {
 
     // 5. Save CryptoTransaction — outbound crypto record
     const tx = this.txRepo.create({
-      developer_id: developerId,
+      business_id: businessId,
       direction: CryptoTxDirection.OUTBOUND,
       crypto_asset: dto.crypto_asset as any,
       crypto_amount: dto.crypto_amount,
@@ -123,11 +123,11 @@ export class OfframpService {
     return saved;
   }
 
-  async findOne(developerId: string, txId: string) {
+  async findOne(businessId: string, txId: string) {
     const tx = await this.txRepo.findOne({
       where: {
         id: txId,
-        developer_id: developerId,
+        business_id: businessId,
         direction: CryptoTxDirection.OUTBOUND,
       },
     });

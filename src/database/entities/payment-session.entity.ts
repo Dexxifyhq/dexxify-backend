@@ -8,7 +8,7 @@ import {
   JoinColumn,
   Index,
 } from 'typeorm';
-import { Developer } from './developer.entity';
+import { Business } from './business.entity';
 import { Customer } from './customer.entity';
 import { WalletAsset, WalletNetwork } from './wallet.entity';
 import { PaymentPage } from './payment-page.entity';
@@ -20,9 +20,6 @@ export enum PaymentSessionStatus {
   FAILED = 'failed',
   EXPIRED = 'expired',
   PARTIAL = 'partial',
-  // INITIATED = 'initiated',
-  // PROCESSING = 'processing',
-  // CANCELLED = 'cancelled',
 }
 
 @Entity('payment_sessions')
@@ -33,7 +30,10 @@ export class PaymentSession {
 
   @Index()
   @Column({ type: 'uuid' })
-  developer_id: string;
+  business_id: string;
+
+  @Column({ type: 'text', default: 'test' })
+  mode: 'live' | 'test';
 
   @Index()
   @Column({ type: 'uuid', nullable: true })
@@ -96,10 +96,9 @@ export class PaymentSession {
   @UpdateDateColumn({ type: 'timestamptz' })
   updated_at: Date;
 
-  // Relations
-  @ManyToOne(() => Developer, (dev) => dev.payment_sessions)
-  @JoinColumn({ name: 'developer_id' })
-  developer: Developer;
+  @ManyToOne(() => Business, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'business_id' })
+  business: Business;
 
   @ManyToOne(() => Customer, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'customer_id' })
