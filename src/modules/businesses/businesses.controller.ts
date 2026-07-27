@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Patch, Body, HttpCode, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Body,
+  HttpCode,
+  HttpStatus,
+} from '@nestjs/common';
 import { BusinessesService } from './businesses.service';
 import {
   CreateBusinessDto,
@@ -24,11 +32,14 @@ export class BusinessesController {
   @ApiBody({ type: CreateBusinessDto })
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  async create(
-    @GetUser('id') userId: string,
-    @Body() dto: CreateBusinessDto,
-  ) {
+  async create(@GetUser('id') userId: string, @Body() dto: CreateBusinessDto) {
     return this.businessesService.create(userId, dto);
+  }
+
+  @ApiOperation({ summary: 'List all businesses the current user belongs to' })
+  @Get()
+  async listMyBusinesses(@GetUser('id') userId: string) {
+    return this.businessesService.listForUser(userId);
   }
 
   @ApiOperation({ summary: 'Get active business profile' })

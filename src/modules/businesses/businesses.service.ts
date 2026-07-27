@@ -63,6 +63,22 @@ export class BusinessesService {
     return business;
   }
 
+  async listForUser(
+    userId: string,
+  ): Promise<{ id: string; name: string; logo_url: string | null }[]> {
+    const memberships = await this.businessUserRepo.find({
+      where: { user_id: userId, status: BusinessUserStatus.ACTIVE },
+      relations: ['business'],
+      order: { joined_at: 'ASC' },
+    });
+
+    return memberships.map((m) => ({
+      id: m.business.id,
+      name: m.business.name,
+      logo_url: m.business.logo_url,
+    }));
+  }
+
   async getById(businessId: string): Promise<Business> {
     const business = await this.businessRepo.findOne({ where: { id: businessId } });
     if (!business) throw new NotFoundException('Business not found.');

@@ -1,18 +1,13 @@
 import { Controller, Get, Post, Body, Param } from '@nestjs/common';
 import { KycService } from './kyc.service';
+import { VerifyBvnDto, VerifyNinDto, VerifyVninDto, VerifyCacDto } from './dto';
+import { DualAuth, GetBusinessId, GetUser } from '../../common/decorators';
 import {
-  VerifyBvnDto,
-  VerifyNinDto,
-  VerifyDocumentDto,
-  LivenessCheckDto,
-} from './dto';
-import { GetBusinessId, DualAuth } from '../../common/decorators';
-import {
-  ApiOperation,
-  ApiTags,
   ApiBearerAuth,
-  ApiParam,
   ApiBody,
+  ApiOperation,
+  ApiParam,
+  ApiTags,
 } from '@nestjs/swagger';
 
 @ApiTags('KYC Verification')
@@ -22,68 +17,86 @@ import {
 export class KycController {
   constructor(private readonly kycService: KycService) {}
 
+  // ── Individual KYC (user-scoped) ─────────────────────────
+
   @ApiOperation({
     summary: 'Verify BVN',
     description:
-      'Verify Bank Verification Number (BVN) for identity validation',
+      'Submit a BVN for identity verification. One per user across all businesses.',
   })
   @ApiBody({ type: VerifyBvnDto })
   @Post('bvn')
-  async verifyBvn(
-    @GetBusinessId() businessId: string,
-    @Body() dto: VerifyBvnDto,
-  ) {
-    return this.kycService.verifyBvn(businessId, dto);
+  async verifyBvn(@GetUser('id') userId: string, @Body() dto: VerifyBvnDto) {
+    return this.kycService.verifyBvn(userId, dto);
   }
 
   @ApiOperation({
     summary: 'Verify NIN',
     description:
-      'Verify National Identification Number (NIN) for identity validation',
+      'Submit a NIN for identity verification. One per user across all businesses.',
   })
   @ApiBody({ type: VerifyNinDto })
   @Post('nin')
-  async verifyNin(
-    @GetBusinessId() businessId: string,
-    @Body() dto: VerifyNinDto,
-  ) {
-    return this.kycService.verifyNin(businessId, dto);
+  async verifyNin(@GetUser('id') userId: string, @Body() dto: VerifyNinDto) {
+    return this.kycService.verifyNin(userId, dto);
   }
 
   @ApiOperation({
-    summary: 'Verify document',
+    summary: 'Verify virtual NIN (vNIN)',
     description:
-      'Verify government-issued identity documents (passport, drivers license, CAC etc.)',
+      'Submit a vNIN for identity verification. One per user across all businesses.',
   })
-  @ApiBody({ type: VerifyDocumentDto })
-  @Post('document')
-  async verifyDocument(
-    @GetBusinessId() businessId: string,
-    @Body() dto: VerifyDocumentDto,
-  ) {
-    return this.kycService.verifyDocument(businessId, dto);
+  @ApiBody({ type: VerifyVninDto })
+  @Post('vnin')
+  async verifyVnin(@GetUser('id') userId: string, @Body() dto: VerifyVninDto) {
+    return this.kycService.verifyVnin(userId, dto);
   }
 
-  // @ApiOperation({
-  //   summary: 'Liveness check',
-  //   description:
-  //     'Perform biometric liveness check to verify user is physically present',
-  // })
-  // @ApiBody({ type: LivenessCheckDto })
-  // @Post('liveness')
-  // async livenessCheck(
-  //   @GetBusinessId() businessId: string,
-  //   @Body() dto: LivenessCheckDto,
-  // ) {
-  // return this.kycService.livenessCheck(businessId, dto);
-  // }
+  // ── Business KYC (business-scoped) ───────────────────────
 
   @ApiOperation({
-    summary: 'Get KYC status',
-    description: 'Retrieve KYC verification status for a specific user',
+    summary: 'Verify CAC',
+    description:
+      'Submit a CAC RC number for business verification. One per business.',
   })
-  @Get('status')
-  async getStatus(@GetBusinessId() businessId: string) {
-    return this.kycService.getStatus(businessId);
+  @ApiBody({ type: VerifyCacDto })
+  @Post('cac')
+  async verifyCac(
+    @GetBusinessId() businessId: string,
+    @Body() dto: VerifyCacDto,
+  ) {
+    return this.kycService.verifyCac(businessId, dto);
+  }
+
+  // ── Status queries ────────────────────────────────────────
+
+  @ApiOperation({
+    summary: 'Get individual KYC status',
+    description:
+      'Returns all identity verifications (BVN/NIN/vNIN) for the current user.',
+  })
+  @Get('individual/status')
+  async getIndividualStatus(@GetUser('id') userId: string) {
+    return this.kycService.getIndividualStatus(userId);
+  }
+
+  @ApiOperation({
+    summary: 'Get business KYC status',
+    description: 'Returns CAC verification status for the active business.',
+  })
+  @Get('business/status')
+  async getBusinessStatus(@GetBusinessId() businessId: string) {
+    return this.kycService.getBusinessStatus(businessId);
+  }
+
+  @ApiOperation({
+    summary: 'Get verification by reference',
+    description:
+      'Proxy to Kora, fetches a verification record by its provider reference.',
+  })
+  @ApiParam({ name: 'reference', description: 'Kora provider reference ID' })
+  @Get('verifications/:reference')
+  async getVerification(@Param('reference') reference: string) {
+    return this.kycService.getVerificationByReference(reference);
   }
 }

@@ -3,114 +3,130 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
-  IsUrl,
+  IsDateString,
+  ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
-export class VerifyBvnDto {
-  @ApiProperty({ description: 'External user ID', example: 'user_123' })
+export class KycValidationDto {
+  @ApiPropertyOptional({
+    description: 'First name to match against record',
+    example: 'John',
+  })
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  external_user_id: string;
+  first_name?: string;
 
+  @ApiPropertyOptional({
+    description: 'Last name to match against record',
+    example: 'Doe',
+  })
+  @IsOptional()
+  @IsString()
+  last_name?: string;
+
+  @ApiPropertyOptional({
+    description: 'Date of birth (YYYY-MM-DD)',
+    example: '1990-01-15',
+  })
+  @IsOptional()
+  @IsDateString()
+  date_of_birth?: string;
+
+  @ApiPropertyOptional({
+    description: 'Base64-encoded selfie image for facial match',
+    example: 'data:image/jpeg;base64,...',
+  })
+  @IsOptional()
+  @IsString()
+  selfie?: string;
+}
+
+export class VerifyBvnDto {
   @ApiProperty({
-    description: 'Bank Verification Number',
+    description: '11-digit Bank Verification Number',
     example: '12345678901',
   })
   @IsString()
   @IsNotEmpty()
   bvn: string;
 
-  @ApiProperty({ description: 'First name', example: 'John' })
-  @IsString()
-  @IsNotEmpty()
-  first_name: string;
-
-  @ApiProperty({ description: 'Last name', example: 'Doe' })
-  @IsString()
-  @IsNotEmpty()
-  last_name: string;
-
-  @ApiPropertyOptional({ description: 'Date of birth', example: '1990-01-01' })
+  @ApiPropertyOptional({
+    type: KycValidationDto,
+    description: 'Optional fields to validate against the BVN record',
+  })
   @IsOptional()
-  @IsString()
-  date_of_birth?: string;
+  @ValidateNested()
+  @Type(() => KycValidationDto)
+  validation?: KycValidationDto;
 }
 
 export class VerifyNinDto {
-  @ApiProperty({ description: 'External user ID', example: 'user_123' })
-  @IsString()
-  @IsNotEmpty()
-  external_user_id: string;
-
   @ApiProperty({
-    description: 'National Identification Number',
+    description: '11-digit National Identification Number',
     example: '12345678901',
   })
   @IsString()
   @IsNotEmpty()
   nin: string;
 
-  @ApiProperty({ description: 'First name', example: 'John' })
-  @IsString()
-  @IsNotEmpty()
-  first_name: string;
-
-  @ApiProperty({ description: 'Last name', example: 'Doe' })
-  @IsString()
-  @IsNotEmpty()
-  last_name: string;
-}
-
-export class VerifyDocumentDto {
-  @ApiProperty({ description: 'External user ID', example: 'user_123' })
-  @IsString()
-  @IsNotEmpty()
-  external_user_id: string;
-
-  @ApiProperty({
-    description: 'Document type',
-    enum: ['national_id', 'passport', 'drivers_licence'],
-  })
-  @IsEnum(['national_id', 'passport', 'drivers_licence'])
-  document_type: string;
-
-  @ApiProperty({
-    description: 'Document URL',
-    example: 'https://example.com/document.jpg',
-  })
-  @IsUrl()
-  document_url: string;
-
-  @ApiProperty({ description: 'First name', example: 'John' })
-  @IsString()
-  @IsNotEmpty()
-  first_name: string;
-
-  @ApiProperty({ description: 'Last name', example: 'Doe' })
-  @IsString()
-  @IsNotEmpty()
-  last_name: string;
-}
-
-export class LivenessCheckDto {
-  @ApiProperty({ description: 'External user ID', example: 'user_123' })
-  @IsString()
-  @IsNotEmpty()
-  external_user_id: string;
-
-  @ApiProperty({
-    description: 'Selfie URL',
-    example: 'https://example.com/selfie.jpg',
-  })
-  @IsUrl()
-  selfie_url: string;
-
   @ApiPropertyOptional({
-    description: 'Document URL for selfie-to-ID match',
-    example: 'https://example.com/document.jpg',
+    type: KycValidationDto,
+    description: 'Optional fields to validate against the NIN record',
   })
   @IsOptional()
-  @IsUrl()
-  document_url?: string;
+  @ValidateNested()
+  @Type(() => KycValidationDto)
+  validation?: KycValidationDto;
+}
+
+export class VerifyVninDto {
+  @ApiProperty({
+    description: 'Virtual NIN (16-character alphanumeric)',
+    example: 'AB1234567890CDEF',
+  })
+  @IsString()
+  @IsNotEmpty()
+  vnin: string;
+
+  @ApiPropertyOptional({
+    type: KycValidationDto,
+    description: 'Optional fields to validate against the vNIN record',
+  })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => KycValidationDto)
+  validation?: KycValidationDto;
+}
+
+export enum RegistrationType {
+  RC = 'RC',
+  BN = 'BN',
+  IT = 'IT',
+  LP = 'LP',
+  LLP = 'LLP',
+}
+
+export class VerifyCacDto {
+  @ApiProperty({ description: 'CAC Registration Number', example: 'RC123456' })
+  @IsString()
+  @IsNotEmpty()
+  rc_number: string;
+
+  @ApiProperty({
+    description: 'Type of business registration',
+    enum: RegistrationType,
+    example: RegistrationType.RC,
+  })
+  @IsEnum(RegistrationType)
+  registration_type: RegistrationType;
+
+  @ApiPropertyOptional({
+    description: 'Registered business name for additional matching',
+    example: 'Acme Corp Ltd',
+  })
+  @IsOptional()
+  @IsString()
+  registration_name?: string;
 }

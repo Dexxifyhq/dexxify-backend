@@ -9,11 +9,13 @@ import {
   Index,
 } from 'typeorm';
 import { Business } from './business.entity';
+import { User } from './user.entity';
 
 export enum KycType {
   BVN = 'bvn',
   NIN = 'nin',
-  DOCUMENT = 'document',
+  VNIN = 'vnin',
+  CAC = 'cac',
 }
 
 export enum KycStatus {
@@ -28,37 +30,41 @@ export class KycVerification {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  // Set for individual KYC (BVN/NIN/vNIN) — one record per user per type
   @Index()
-  @Column({ type: 'uuid' })
-  business_id: string;
+  @Column({ type: 'uuid', nullable: true })
+  user_id: string | null;
+
+  // Set for business KYC (CAC) — one record per business
+  @Index()
+  @Column({ type: 'uuid', nullable: true })
+  business_id: string | null;
 
   @Column({ type: 'enum', enum: KycType })
   type: KycType;
 
   @Index()
-  @Column({ type: 'text' })
-  status: string;
+  @Column({
+    type: 'enum',
+    enum: KycStatus,
+    default: KycStatus.PENDING,
+  })
+  status: KycStatus;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ type: 'text' })
   id_number: string;
 
-  @Column({ type: 'text', nullable: true })
-  document_url: string;
+  // Validation fields sent to Kora for matching (shape varies by KYC type)
+  @Column({ type: 'jsonb', nullable: true })
+  validation_input: Record<string, any> | null;
 
-  @Column({ type: 'text', nullable: true })
-  selfie_url: string;
+  // Match results returned by Kora per validation field
+  @Column({ type: 'jsonb', nullable: true })
+  validation_result: Record<string, { value: string; match: boolean }> | null;
 
+  @Index()
   @Column({ type: 'text', nullable: true })
-  first_name: string;
-
-  @Column({ type: 'text', nullable: true })
-  last_name: string;
-
-  @Column({ type: 'date', nullable: true })
-  date_of_birth: Date;
-
-  @Column({ type: 'text', nullable: true })
-  provider_reference: string;
+  provider_reference: string | null;
 
   @Column({ type: 'jsonb', default: {} })
   provider_response: Record<string, any>;
@@ -69,7 +75,11 @@ export class KycVerification {
   @UpdateDateColumn({ type: 'timestamptz' })
   updated_at: Date;
 
-  @ManyToOne(() => Business, { onDelete: 'CASCADE' })
+  @ManyToOne(() => User, { nullable: true, onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'user_id' })
+  user: User | null;
+
+  @ManyToOne(() => Business, { nullable: true, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'business_id' })
-  business: Business;
+  business: Business | null;
 }

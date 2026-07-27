@@ -56,10 +56,10 @@ export class CreatePaymentPageDto {
   @IsPositive()
   amount?: number;
 
-  @ApiPropertyOptional({ example: true })
-  @IsOptional()
-  @IsBoolean()
-  auto_settlement?: boolean;
+  // @ApiPropertyOptional({ example: true })
+  // @IsOptional()
+  // @IsBoolean()
+  // auto_settlement?: boolean;
 }
 
 export class UpdatePaymentPageDto {
@@ -85,10 +85,10 @@ export class UpdatePaymentPageDto {
   @IsEnum(PaymentPageStatus)
   status?: PaymentPageStatus;
 
-  @ApiPropertyOptional({ example: false })
-  @IsOptional()
-  @IsBoolean()
-  auto_settlement?: boolean;
+  // @ApiPropertyOptional({ example: false })
+  // @IsOptional()
+  // @IsBoolean()
+  // auto_settlement?: boolean;
 }
 
 export class PaymentPageQueryDto {

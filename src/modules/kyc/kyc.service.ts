@@ -1,218 +1,306 @@
 import {
   Injectable,
   NotFoundException,
-  Logger,
+  ConflictException,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import {
-  KycVerification,
-  KycType,
-  KycStatus,
-  LedgerEntry,
-  TxType,
-} from '../../database/entities';
+import { KycVerification, KycType, KycStatus } from '../../database/entities';
 import {
   VerifyBvnDto,
   VerifyNinDto,
-  VerifyDocumentDto,
-  LivenessCheckDto,
+  VerifyVninDto,
+  VerifyCacDto,
+  KycValidationDto,
 } from './dto';
+
+const KORA_BASE = 'https://api.korapay.com/merchant/api/v1';
 
 @Injectable()
 export class KycService {
   private readonly logger = new Logger(KycService.name);
-
-  private readonly koraSecretKey: string;
-  private readonly koraEncryptionKey: string;
+  private readonly secretKey: string;
 
   constructor(
     @InjectRepository(KycVerification)
     private readonly kycRepo: Repository<KycVerification>,
-    @InjectRepository(LedgerEntry)
-    private readonly ledgerRepo: Repository<LedgerEntry>,
     private readonly config: ConfigService,
   ) {
-    const isProduction =
-      this.config.get<string>('app.nodeEnv') === 'production';
-    this.koraSecretKey = isProduction
+    const isProd = this.config.get<string>('app.nodeEnv') === 'production';
+    this.secretKey = isProd
       ? this.config.get<string>('kora.secretKey') || ''
       : this.config.get<string>('kora.testSecretKey') || '';
-    this.koraEncryptionKey = isProduction
-      ? this.config.get<string>('kora.encryptionKey') || ''
-      : this.config.get<string>('kora.testEncryptionKey') || '';
   }
 
-  async verifyBvn(businessId: string, dto: VerifyBvnDto) {
-    const url = 'https://api.korapay.com/merchant/api/v1/identities/ng/bvn';
-    return this.executeVerification(businessId, {
+  // ── Individual KYC (user-scoped) ─────────────────────────
+
+  async verifyBvn(userId: string, dto: VerifyBvnDto) {
+    await this.assertNoExistingVerification(userId, KycType.BVN);
+
+    const koraPayload = {
+      id: dto.bvn,
+      verification_consent: true,
+      ...(dto.validation && { validation: dto.validation }),
+    };
+
+    const result = await this.callKora(
+      `${KORA_BASE}/identities/ng/bvn`,
+      koraPayload,
+    );
+
+    return this.saveIndividualVerification(userId, {
       type: KycType.BVN,
       id_number: dto.bvn,
-      first_name: dto.first_name,
-      last_name: dto.last_name,
-      date_of_birth: dto.date_of_birth,
-      kora_url: url,
+      validation_input: dto.validation ?? null,
+      result,
     });
   }
 
-  async verifyNin(businessId: string, dto: VerifyNinDto) {
-    const url = 'https://api.korapay.com/merchant/api/v1/identities/ng/nin';
+  async verifyNin(userId: string, dto: VerifyNinDto) {
+    await this.assertNoExistingVerification(userId, KycType.NIN);
 
-    return this.executeVerification(businessId, {
+    const koraPayload = {
+      id: dto.nin,
+      verification_consent: true,
+      ...(dto.validation && { validation: dto.validation }),
+    };
+
+    const result = await this.callKora(
+      `${KORA_BASE}/identities/ng/nin`,
+      koraPayload,
+    );
+
+    return this.saveIndividualVerification(userId, {
       type: KycType.NIN,
       id_number: dto.nin,
-      first_name: dto.first_name,
-      last_name: dto.last_name,
-      kora_url: url,
+      validation_input: dto.validation ?? null,
+      result,
     });
   }
 
-  async verifyDocument(businessId: string, dto: VerifyDocumentDto) {
-    const url = 'https://api.korapay.com/merchant/api/v1/identities/ng/cac';
+  async verifyVnin(userId: string, dto: VerifyVninDto) {
+    await this.assertNoExistingVerification(userId, KycType.VNIN);
 
-    return this.executeVerification(businessId, {
-      type: KycType.DOCUMENT,
-      document_url: dto.document_url,
-      first_name: dto.first_name,
-      last_name: dto.last_name,
-      kora_url: url,
+    const koraPayload = {
+      id: dto.vnin,
+      verification_consent: true,
+      ...(dto.validation && { validation: dto.validation }),
+    };
+
+    const result = await this.callKora(
+      `${KORA_BASE}/identities/ng/vnin`,
+      koraPayload,
+    );
+
+    return this.saveIndividualVerification(userId, {
+      type: KycType.VNIN,
+      id_number: dto.vnin,
+      validation_input: dto.validation ?? null,
+      result,
     });
   }
 
-  // async livenessCheck(businessId: string, dto: LivenessCheckDto) {
-  //   return this.executeVerification(businessId, {
-  //     type: KycType.LIVENESS,
-  //     selfie_url: dto.selfie_url,
-  //     document_url: dto.document_url,
-  //     fee: this.LIVENESS_FEE,
-  //   });
-  // }
+  // ── Business KYC (business-scoped) ───────────────────────
 
-  async getStatus(businessId: string) {
-    const verifications = await this.kycRepo.find({
-      where: { business_id: businessId },
-      order: { created_at: 'DESC' },
+  async verifyCac(businessId: string, dto: VerifyCacDto) {
+    const existing = await this.kycRepo.findOne({
+      where: { business_id: businessId, type: KycType.CAC },
     });
-
-    if (!verifications.length) {
-      throw new NotFoundException('No KYC records found for this user.');
+    if (existing) {
+      throw new ConflictException(
+        'A CAC verification already exists for this business.',
+      );
     }
 
-    const allVerified = verifications.every(
-      (v) => v.status === KycStatus.VERIFIED,
+    const koraPayload = {
+      id: dto.rc_number,
+      registration_type: dto.registration_type,
+      verification_consent: true,
+      ...(dto.registration_name && {
+        registration_name: dto.registration_name,
+      }),
+    };
+
+    const result = await this.callKora(
+      `${KORA_BASE}/identities/ng/cac`,
+      koraPayload,
     );
-    const anyFailed = verifications.some((v) => v.status === KycStatus.FAILED);
-    const anyPending = verifications.some(
-      (v) => v.status === KycStatus.PENDING,
+
+    const verification = await this.kycRepo.save(
+      this.kycRepo.create({
+        business_id: businessId,
+        user_id: null,
+        type: KycType.CAC,
+        status: result.data ? KycStatus.VERIFIED : KycStatus.FAILED,
+        id_number: dto.rc_number,
+        validation_input: {
+          registration_type: dto.registration_type,
+          ...(dto.registration_name && {
+            registration_name: dto.registration_name,
+          }),
+        },
+        validation_result: null,
+        provider_reference: result.data?.reference ?? null,
+        provider_response: result.data ?? {},
+      }),
     );
 
     return {
-      overall_status: allVerified
-        ? 'verified'
-        : anyFailed
-          ? 'failed'
-          : anyPending
-            ? 'pending'
-            : 'incomplete',
-      verifications: verifications.map((v) => ({
-        id: v.id,
-        type: v.type,
-        status: v.status,
-        created_at: v.created_at,
-      })),
+      id: verification.id,
+      status: verification.status,
+      message: result.message,
+      data: result.data,
     };
   }
 
-  // ── Core verification executor ───────────────────────────
+  // ── Status queries ────────────────────────────────────────
 
-  private async executeVerification(
-    businessId: string,
-    params: {
-      type: KycType;
-      id_number?: string;
-      document_url?: string;
-      selfie_url?: string;
-      first_name?: string;
-      last_name?: string;
-      date_of_birth?: string;
-      kora_url: string;
-    },
-  ) {
-    const koraResult = await this.callKoraKyc(params);
-
-    const verification = this.kycRepo.create({
-      business_id: businessId,
-      type: params.type,
-      id_number: params.id_number,
-      document_url: params.document_url,
-      status: koraResult.status,
-      selfie_url: params.selfie_url,
-      first_name: params.first_name,
-      last_name: params.last_name,
-      date_of_birth: params.date_of_birth
-        ? new Date(params.date_of_birth)
-        : undefined,
-      provider_reference: koraResult.data?.reference,
-      provider_response: koraResult.data,
+  async getIndividualStatus(userId: string) {
+    const verifications = await this.kycRepo.find({
+      where: { user_id: userId },
+      order: { created_at: 'DESC' },
+      select: [
+        'id',
+        'type',
+        'status',
+        'provider_reference',
+        'created_at',
+        'updated_at',
+      ],
     });
 
-    const saved = await this.kycRepo.save(verification);
-
     return {
-      status: koraResult.status,
-      message: koraResult.message,
-      data: koraResult.data,
+      overall_status: this.computeOverallStatus(verifications),
+      verifications,
     };
   }
 
-  // ── Kora KYC stub ────────────────────────────────────────
+  async getBusinessStatus(businessId: string) {
+    const verification = await this.kycRepo.findOne({
+      where: { business_id: businessId, type: KycType.CAC },
+      select: [
+        'id',
+        'type',
+        'status',
+        'validation_input',
+        'provider_reference',
+        'created_at',
+        'updated_at',
+      ],
+    });
 
-  private async callKoraKyc(params: any) {
-    const { bvn, first_name, last_name, date_of_birth, kora_url } = params;
+    return {
+      verified: verification?.status === KycStatus.VERIFIED,
+      verification: verification ?? null,
+    };
+  }
 
-    try {
-      // console.log(this.koraSecretKey);
-      if (!this.koraSecretKey) {
-        throw new Error('Kora configuration missing');
-      }
-
-      // Kora NIN verification API endpoint
-      const response = await fetch(kora_url, {
-        method: 'POST',
+  async getVerificationByReference(reference: string) {
+    const response = await fetch(
+      `${KORA_BASE}/identities/verifications/${reference}`,
+      {
         headers: {
-          Authorization: `Bearer ${this.koraSecretKey}`,
+          Authorization: `Bearer ${this.secretKey}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          id: bvn,
-          verification_consent: true,
-          validation: { first_name, last_name, date_of_birth },
-        }),
-      });
+      },
+    );
 
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new BadRequestException(result.message);
-      }
-
-      const { image, ...newResult } = result.data;
-
-      return {
-        status: result.status,
-        message: result.message,
-        data: newResult,
-      };
-    } catch (error) {
-      if (error.message.includes('issue with your input')) {
-        throw new BadRequestException(error.message);
-      }
-      if (error.message.includes('not found')) {
-        throw new NotFoundException(error.message);
-      }
-      throw new BadRequestException(error.message || 'Verification failed');
+    const result = await response.json();
+    if (!response.ok) {
+      throw new NotFoundException(result.message || 'Verification not found.');
     }
+
+    return result;
+  }
+
+  // ── Helpers ───────────────────────────────────────────────
+
+  private async assertNoExistingVerification(userId: string, type: KycType) {
+    const existing = await this.kycRepo.findOne({
+      where: { user_id: userId, type },
+    });
+    if (existing) {
+      throw new ConflictException(
+        `A ${type.toUpperCase()} verification already exists for this user.`,
+      );
+    }
+  }
+
+  private async saveIndividualVerification(
+    userId: string,
+    params: {
+      type: KycType;
+      id_number: string;
+      validation_input: KycValidationDto | null;
+      result: { message: string; data: any };
+    },
+  ) {
+    const { data } = params.result;
+    const { image, signature, ...safeData } = data ?? {};
+
+    const verification = await this.kycRepo.save(
+      this.kycRepo.create({
+        user_id: userId,
+        business_id: null,
+        type: params.type,
+        status: data ? KycStatus.VERIFIED : KycStatus.FAILED,
+        id_number: params.id_number,
+        validation_input: params.validation_input,
+        validation_result: safeData?.validation ?? null,
+        provider_reference: safeData?.reference ?? null,
+        provider_response: safeData ?? {},
+      }),
+    );
+
+    return {
+      id: verification.id,
+      status: verification.status,
+      message: params.result.message,
+      data: safeData,
+    };
+  }
+
+  private async callKora(url: string, body: Record<string, any>) {
+    if (!this.secretKey) {
+      throw new BadRequestException('Kora API key not configured.');
+    }
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${this.secretKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      const msg: string = result?.message || 'Verification request failed.';
+      if (msg.toLowerCase().includes('not found')) {
+        throw new NotFoundException(msg);
+      }
+      throw new BadRequestException(msg);
+    }
+
+    return { message: result.message, data: result.data };
+  }
+
+  private computeOverallStatus(
+    verifications: Pick<KycVerification, 'status'>[],
+  ): 'verified' | 'failed' | 'pending' | 'incomplete' {
+    if (!verifications.length) return 'incomplete';
+    if (verifications.every((v) => v.status === KycStatus.VERIFIED))
+      return 'verified';
+    if (verifications.some((v) => v.status === KycStatus.FAILED))
+      return 'failed';
+    if (verifications.some((v) => v.status === KycStatus.PENDING))
+      return 'pending';
+    return 'incomplete';
   }
 }
