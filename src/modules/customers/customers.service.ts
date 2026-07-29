@@ -33,7 +33,7 @@ export class CustomersService {
     }
 
     // Call CC first — if it fails, nothing is written to the DB
-    const ccResult = await this.cc.syncCustomer({
+    const ccResult = await this.cc.syncCustomer(mode, {
       email: dto.email,
       firstName: dto.first_name,
       lastName: dto.last_name,
@@ -110,7 +110,7 @@ export class CustomersService {
     // Sync update to CC if we have a CC customer ID
     if (saved.cc_customer_id) {
       try {
-        await this.cc.updateCCCustomer(saved.cc_customer_id, {
+        await this.cc.updateCCCustomer(mode, saved.cc_customer_id, {
           email: dto.email,
           firstName: dto.first_name,
           lastName: dto.last_name,
@@ -143,6 +143,7 @@ export class CustomersService {
 
     try {
       const result = await this.cc.getCustomerDepositAccount(
+        mode,
         customer.cc_customer_id,
       );
       return result.data;
@@ -153,6 +154,7 @@ export class CustomersService {
     }
 
     const created = await this.cc.createDepositAccount(
+      mode,
       customer.cc_customer_id,
     );
     return created.data;

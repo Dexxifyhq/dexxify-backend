@@ -62,7 +62,7 @@ export class PaymentSessionsService {
     try {
       const ccPayload: Parameters<
         CoincircuitService['createPaymentSession']
-      >[0] = {
+      >[1] = {
         title: dto.title || 'Payment Session',
         description: dto.description || '',
         amount: String(dto.amount),
@@ -82,7 +82,7 @@ export class PaymentSessionsService {
         };
       }
 
-      const ccResult = await this.cc.createPaymentSession(ccPayload);
+      const ccResult = await this.cc.createPaymentSession(mode, ccPayload);
       const ccData = ccResult?.data;
 
       const session = this.sessionRepo.create({
@@ -157,6 +157,7 @@ export class PaymentSessionsService {
     if (session.provider_session_reference) {
       try {
         const ccResult = await this.cc.getPaymentSession(
+          session.mode,
           session.provider_session_reference,
         );
         return { ...session, cc: ccResult?.data };
@@ -195,6 +196,7 @@ export class PaymentSessionsService {
     const chain = toCCChain(dto.network);
 
     const ccResult = await this.cc.generateDepositAddress(
+      session.mode,
       session.provider_session_reference,
       asset,
       chain,
@@ -219,19 +221,17 @@ export class PaymentSessionsService {
   async getEstimate(dto: EstimatePaymentDto) {
     const asset = toCCAsset(dto.crypto_asset);
     const chain = toCCChain(dto.network);
-    const result = await this.cc.estimatePayment({
-      asset,
-      chain,
-      amount: dto.amount,
-      currency: dto.currency,
-      reference: dto.reference,
-    });
 
-    if (dto.reference) {
-      const session = await this.sessionRepo.findOne({
-        where: { provider_session_reference: dto.reference },
-      });
-      if (!session) return;
+    const session = dto.reference
+      ? await this.sessionRepo.findOne({ where: { provider_session_reference: dto.reference } })
+      : null;
+
+    const result = await this.cc.estimatePayment(
+      session?.mode ?? 'test',
+      { asset, chain, amount: dto.amount, currency: dto.currency, reference: dto.reference },
+    );
+
+    if (session) {
       await this.sessionRepo.update(session.id, {
         metadata: { ...session.metadata, estimate: { ...result.data } },
       });

@@ -195,7 +195,9 @@ export class DashboardService {
       }),
 
       // Deposit accounts
-      this.depositAccountRepo.count({ where: { business_id: businessId, mode } }),
+      this.depositAccountRepo.count({
+        where: { business_id: businessId, mode },
+      }),
 
       // Pending / processing payouts
       this.payoutRepo
@@ -329,7 +331,11 @@ export class DashboardService {
     };
   }
 
-  async getRecentActivity(businessId: string, mode: 'live' | 'test', limit = 10) {
+  async getRecentActivity(
+    businessId: string,
+    mode: 'live' | 'test',
+    limit = 10,
+  ) {
     const take = Math.min(50, Math.max(1, limit));
 
     const entries = await this.ledgerRepo.find({

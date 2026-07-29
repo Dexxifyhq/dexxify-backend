@@ -7,19 +7,25 @@ import {
   IsString,
   IsUrl,
 } from 'class-validator';
-import { ApiPropertyOptional } from '@nestjs/swagger';
-import { BusinessType, PayoutMethod, SettlementCurrency } from '../../../database/entities';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import {
+  BusinessType,
+  PayoutMethod,
+  SettlementCurrency,
+} from '../../../database/entities';
 
 export class CreateBusinessDto {
-  @ApiPropertyOptional({ description: 'Business name', example: 'Acme Corp' })
+  @ApiProperty({ description: 'Business name', example: 'Acme Corp' })
   @IsString()
-  @IsOptional()
-  name?: string;
+  name: string;
 
-  @ApiPropertyOptional({ enum: BusinessType, example: BusinessType.ECOMMERCE })
+  @ApiProperty({ description: 'Business email', example: 'acme@gmail.com' })
+  @IsEmail()
+  email: string;
+
+  @ApiProperty({ enum: BusinessType, example: BusinessType.ECOMMERCE })
   @IsEnum(BusinessType)
-  @IsOptional()
-  type?: BusinessType;
+  type: BusinessType;
 }
 
 export class UpdateBusinessProfileDto {
@@ -80,7 +86,10 @@ export class UpdateSettlementsDto {
   @IsOptional()
   default_payout_method?: PayoutMethod;
 
-  @ApiPropertyOptional({ description: 'Enable instant payouts', example: false })
+  @ApiPropertyOptional({
+    description: 'Enable instant payouts',
+    example: false,
+  })
   @IsBoolean()
   @IsOptional()
   instant_payouts_enabled?: boolean;

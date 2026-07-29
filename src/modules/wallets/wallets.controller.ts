@@ -260,7 +260,11 @@ export class WalletsController {
     summary: 'Get withdrawals',
     description: 'Fetch all payouts / withdrawals',
   })
-  async listPayouts(@Query('page') page: string, @Query('size') size: string) {
-    return this.walletsService.listPayouts({ page, size });
+  async listPayouts(
+    @GetMode() mode: 'live' | 'test',
+    @Query('page') page: string,
+    @Query('size') size: string,
+  ) {
+    return this.walletsService.listPayouts(mode, { page, size });
   }
 }

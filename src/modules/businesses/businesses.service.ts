@@ -38,6 +38,7 @@ export class BusinessesService {
       this.businessRepo.create({
         owner_user_id: userId,
         name,
+        email: dto.email,
         type: dto.type ?? null,
         settlement_currency: SettlementCurrency.USDT,
         default_payout_method: PayoutMethod.CRYPTO,
@@ -80,28 +81,39 @@ export class BusinessesService {
   }
 
   async getById(businessId: string): Promise<Business> {
-    const business = await this.businessRepo.findOne({ where: { id: businessId } });
+    const business = await this.businessRepo.findOne({
+      where: { id: businessId },
+    });
     if (!business) throw new NotFoundException('Business not found.');
     return business;
   }
 
-  async updateProfile(businessId: string, dto: UpdateBusinessProfileDto): Promise<Business> {
+  async updateProfile(
+    businessId: string,
+    dto: UpdateBusinessProfileDto,
+  ): Promise<Business> {
     await this.getById(businessId);
 
     const updates: Partial<Business> = {};
     if (dto.name !== undefined) updates.name = dto.name;
     if (dto.type !== undefined) updates.type = dto.type;
-    if (dto.support_email !== undefined) updates.support_email = dto.support_email;
+    if (dto.support_email !== undefined)
+      updates.support_email = dto.support_email;
     if (dto.logo_url !== undefined) updates.logo_url = dto.logo_url;
     if (dto.show_branding_on_checkout !== undefined)
       updates.show_branding_on_checkout = dto.show_branding_on_checkout;
     if (dto.website_url !== undefined) updates.website_url = dto.website_url;
 
     await this.businessRepo.update(businessId, updates);
-    return this.businessRepo.findOne({ where: { id: businessId } }) as Promise<Business>;
+    return this.businessRepo.findOne({
+      where: { id: businessId },
+    }) as Promise<Business>;
   }
 
-  async updateSettlements(businessId: string, dto: UpdateSettlementsDto): Promise<Business> {
+  async updateSettlements(
+    businessId: string,
+    dto: UpdateSettlementsDto,
+  ): Promise<Business> {
     await this.getById(businessId);
 
     const updates: Partial<Business> = {};
@@ -113,17 +125,29 @@ export class BusinessesService {
       updates.instant_payouts_enabled = dto.instant_payouts_enabled;
 
     await this.businessRepo.update(businessId, updates);
-    return this.businessRepo.findOne({ where: { id: businessId } }) as Promise<Business>;
+    return this.businessRepo.findOne({
+      where: { id: businessId },
+    }) as Promise<Business>;
   }
 
-  async updateNotifications(businessId: string, dto: UpdateNotificationsDto): Promise<Business> {
+  async updateNotifications(
+    businessId: string,
+    dto: UpdateNotificationsDto,
+  ): Promise<Business> {
     const business = await this.getById(businessId);
 
     if (dto.preferences !== undefined) {
-      const merged = { ...business.notification_preferences, ...dto.preferences };
-      await this.businessRepo.update(businessId, { notification_preferences: merged });
+      const merged = {
+        ...business.notification_preferences,
+        ...dto.preferences,
+      };
+      await this.businessRepo.update(businessId, {
+        notification_preferences: merged,
+      });
     }
 
-    return this.businessRepo.findOne({ where: { id: businessId } }) as Promise<Business>;
+    return this.businessRepo.findOne({
+      where: { id: businessId },
+    }) as Promise<Business>;
   }
 }

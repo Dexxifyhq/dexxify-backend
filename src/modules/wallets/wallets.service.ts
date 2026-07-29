@@ -70,13 +70,21 @@ export class WalletsService {
     private readonly platformCtx: PlatformContextService,
   ) {}
 
-  async create(businessId: string, mode: 'live' | 'test', dto: CreateWalletDto) {
+  async create(
+    businessId: string,
+    mode: 'live' | 'test',
+    dto: CreateWalletDto,
+  ) {
     let ccCustomerId: string | null = null;
     let localCustomer: Customer | null = null;
 
     if (dto.customer_id) {
       localCustomer = await this.customerRepo.findOne({
-        where: { business_id: businessId, cc_customer_id: dto.customer_id, mode },
+        where: {
+          business_id: businessId,
+          cc_customer_id: dto.customer_id,
+          mode,
+        },
       });
       if (!localCustomer) {
         throw new BadRequestException(
@@ -86,31 +94,42 @@ export class WalletsService {
       ccCustomerId = dto.customer_id;
     } else {
       // No customer ID — use business owner's profile
-      const business = await this.businessRepo.findOne({ where: { id: businessId } });
+      const business = await this.businessRepo.findOne({
+        where: { id: businessId },
+      });
       if (!business) throw new BadRequestException('Business not found.');
 
-      const owner = await this.userRepo.findOne({ where: { id: business.owner_user_id } });
+      const owner = await this.userRepo.findOne({
+        where: { id: business.owner_user_id },
+      });
       if (!owner) throw new BadRequestException('Business owner not found.');
 
       const existingCustomer = await this.customerRepo.findOne({
-        where: { business_id: businessId, email: owner.email, mode },
+        where: { business_id: businessId, email: business.email, mode },
       });
 
       if (existingCustomer) {
         localCustomer = existingCustomer;
         ccCustomerId = existingCustomer.cc_customer_id;
-
+        // console.log('existingCustomer', existingCustomer);
         if (localCustomer.id) {
-          const existingWallet = await this.walletRepo.findOne({
-            where: { business_id: businessId, customer_id: localCustomer.id, mode },
-          });
+          const existingWallet = await this.walletRepo
+            .createQueryBuilder('wallet')
+            .innerJoin('wallet.customer', 'customer')
+            .where('wallet.business_id = :businessId', { businessId })
+            .andWhere('customer.cc_customer_id = :ccCustomerId', {
+              ccCustomerId: localCustomer.cc_customer_id,
+            })
+            .andWhere('wallet.mode = :mode', { mode })
+            .getOne();
           if (existingWallet) {
+            // console.log('existingWallet', existingWallet);
             return this.getDepositAddress(businessId, existingWallet);
           }
         }
       } else {
         localCustomer = await this.customer.create(businessId, mode, {
-          email: owner.email,
+          email: business.email,
           first_name: owner.first_name,
           last_name: owner.last_name,
           phone: owner.phone ?? undefined,
@@ -126,7 +145,7 @@ export class WalletsService {
     }
 
     try {
-      const account = await this.cc.createDepositAccount(ccCustomerId);
+      const account = await this.cc.createDepositAccount(mode, ccCustomerId);
       const ccAccount = account.data;
       this.logger.log(`Created deposit account: ${ccAccount.id}`);
 
@@ -156,7 +175,11 @@ export class WalletsService {
     return wallet;
   }
 
-  async findAll(businessId: string, mode: 'live' | 'test', query: WalletQueryDto) {
+  async findAll(
+    businessId: string,
+    mode: 'live' | 'test',
+    query: WalletQueryDto,
+  ) {
     const { offset, limit, page } = parsePagination(query);
 
     const qb = this.walletRepo
@@ -178,7 +201,7 @@ export class WalletsService {
   async getDepositAddress(_businessId: string, wallet: DepositAccount) {
     if (wallet.deposit_addresses?.length === 0) {
       try {
-        const account = await this.cc.getDepositAccount(wallet.id);
+        const account = await this.cc.getDepositAccount(wallet.mode, wallet.id);
         const addresses = account.data?.staticDepositAddresses || [];
         const ngnAccounts = account.data?.ngnVirtualAccounts || [];
         if (addresses.length !== 0) {
@@ -212,12 +235,14 @@ export class WalletsService {
   ) {
     await this.findOne(businessId, mode, walletId);
 
-    const result = await this.cc.issueDepositIdentity(walletId, {
+    const result = await this.cc.issueDepositIdentity(mode, walletId, {
       type: dto.type,
       chain: dto.chain ?? undefined,
       bvn: dto.bvn ?? undefined,
       currency:
-        dto.type === DepositIdentityType.NGN_VIRTUAL_ACCOUNT ? 'NGN' : undefined,
+        dto.type === DepositIdentityType.NGN_VIRTUAL_ACCOUNT
+          ? 'NGN'
+          : undefined,
     });
 
     const account = result.data;
@@ -232,7 +257,7 @@ export class WalletsService {
 
   async getWalletDetails(walletId: string): Promise<any> {
     try {
-      const account = await this.cc.getDepositAccount(walletId);
+      const account = await this.cc.getDepositAccount('live', walletId);
       return account.data;
     } catch (err) {
       this.logger.error(`Wallet retrieval failed: ${err.message}`);
@@ -244,7 +269,7 @@ export class WalletsService {
 
   async getAllWalletDetails() {
     try {
-      const accounts = await this.cc.listDepositAccounts();
+      const accounts = await this.cc.listDepositAccounts('live');
       return accounts.data;
     } catch (err) {
       this.logger.error(`Wallet retrieval failed: ${err.message}`);
@@ -268,7 +293,7 @@ export class WalletsService {
     const ccChain =
       WITHDRAWAL_CHAIN_MAP[data.network] || data.network.toLowerCase();
 
-    const result = await this.cc.createRecipient({
+    const result = await this.cc.createRecipient(mode, {
       type: 'crypto_address',
       label: data.label,
       isDefault: data.isDefault,
@@ -309,7 +334,7 @@ export class WalletsService {
     });
 
     if (saved) {
-      await this.cc.deleteRecipient(saved.id);
+      await this.cc.deleteRecipient(saved.mode, saved.id);
       await this.withdrawalWalletRepo.delete({ id: addressId });
     }
 
@@ -335,7 +360,7 @@ export class WalletsService {
     const netAmount = dto.amount - feeAmount;
     const isStablecoin = ['USDT', 'USDC'].includes(dto.token.toUpperCase());
 
-    const result = await this.cc.initiatePayout({
+    const result = await this.cc.initiatePayout(mode, {
       recipientId: saved.id,
       amount: netAmount.toString(),
       currency: dto.token,
@@ -433,7 +458,7 @@ export class WalletsService {
       throw new BadRequestException('Insufficient balance');
     }
 
-    const result = await this.cc.initiatePayout({
+    const result = await this.cc.initiatePayout(mode, {
       recipientId: dto.bank_id,
       amount: netAmount.toString(),
       currency: 'NGN',
@@ -488,7 +513,13 @@ export class WalletsService {
     return { ...result, fee: feeAmount, net_amount: netAmount };
   }
 
-  async listPayouts(options: { page: string; size: string }) {
-    return this.cc.listPayouts({ page: options.page, limit: options.size });
+  async listPayouts(
+    mode: 'live' | 'test',
+    options: { page: string; size: string },
+  ) {
+    return this.cc.listPayouts(mode, {
+      page: options.page,
+      limit: options.size,
+    });
   }
 }

@@ -19,7 +19,7 @@ import {
   CreateSwapQuotationDto,
   SwapQueryDto,
 } from './dto';
-import { DualAuth, GetBusinessId } from '../../common/decorators';
+import { DualAuth, GetBusinessId, GetMode } from '../../common/decorators';
 
 @ApiTags('Swaps')
 @ApiBearerAuth('api-key')
@@ -33,8 +33,8 @@ export class SwapsController {
     description: 'Get a live rate estimate without locking the rate.',
   })
   @Get('estimate')
-  estimate(@Query() dto: EstimateSwapDto) {
-    return this.swapsService.estimate(dto);
+  estimate(@GetMode() mode: 'live' | 'test', @Query() dto: EstimateSwapDto) {
+    return this.swapsService.estimate(mode, dto);
   }
 
   @ApiOperation({
@@ -43,15 +43,15 @@ export class SwapsController {
   })
   @ApiBody({ type: CreateSwapQuotationDto })
   @Post('quotation')
-  createQuotation(@Body() dto: CreateSwapQuotationDto) {
-    return this.swapsService.createQuotation(dto);
+  createQuotation(@GetMode() mode: 'live' | 'test', @Body() dto: CreateSwapQuotationDto) {
+    return this.swapsService.createQuotation(mode, dto);
   }
 
   @ApiOperation({ summary: 'Get swap quotation by ID' })
   @ApiParam({ name: 'quotationId', description: 'Quotation ID' })
   @Get('quotation/:quotationId')
-  getQuotation(@Param('quotationId') quotationId: string) {
-    return this.swapsService.getQuotation(quotationId);
+  getQuotation(@GetMode() mode: 'live' | 'test', @Param('quotationId') quotationId: string) {
+    return this.swapsService.getQuotation(mode, quotationId);
   }
 
   @ApiOperation({
@@ -62,21 +62,22 @@ export class SwapsController {
   @Post('quotation/:quotationId/execute')
   executeQuotation(
     @GetBusinessId() businessId: string,
+    @GetMode() mode: 'live' | 'test',
     @Param('quotationId') quotationId: string,
   ) {
-    return this.swapsService.executeQuotation(businessId, quotationId);
+    return this.swapsService.executeQuotation(businessId, mode, quotationId);
   }
 
   @ApiOperation({ summary: 'List swap history' })
   @Get()
-  list(@Query() query: SwapQueryDto) {
-    return this.swapsService.list(query);
+  list(@GetMode() mode: 'live' | 'test', @Query() query: SwapQueryDto) {
+    return this.swapsService.list(mode, query);
   }
 
   @ApiOperation({ summary: 'Get swap details by ID' })
   @ApiParam({ name: 'id', description: 'Swap ID' })
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.swapsService.findOne(id);
+  findOne(@GetMode() mode: 'live' | 'test', @Param('id') id: string) {
+    return this.swapsService.findOne(mode, id);
   }
 }

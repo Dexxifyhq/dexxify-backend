@@ -55,6 +55,10 @@ export class Business {
   @Column({ type: 'text' })
   name: string;
 
+  @Index({ unique: true })
+  @Column({ type: 'text', unique: true })
+  email: string;
+
   @Column({ type: 'enum', enum: BusinessType, nullable: true })
   type: BusinessType | null;
 
@@ -70,7 +74,11 @@ export class Business {
   @Column({ type: 'text', nullable: true })
   website_url: string | null;
 
-  @Column({ type: 'enum', enum: SettlementCurrency, default: SettlementCurrency.USDT })
+  @Column({
+    type: 'enum',
+    enum: SettlementCurrency,
+    default: SettlementCurrency.USDT,
+  })
   settlement_currency: SettlementCurrency;
 
   @Column({ type: 'enum', enum: PayoutMethod, default: PayoutMethod.CRYPTO })

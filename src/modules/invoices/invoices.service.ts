@@ -132,6 +132,7 @@ export class InvoicesService {
     if (invoice.provider_invoice_reference) {
       try {
         const ccResult = await this.cc.getInvoice(
+          mode,
           invoice.provider_invoice_reference,
         );
         return { ...invoice, cc: ccResult?.data };
@@ -175,7 +176,7 @@ export class InvoicesService {
     )
       throw new BadRequestException(`Invoice is ${invoice.status}.`);
 
-    const ccResult = await this.cc.createPaymentSession({
+    const ccResult = await this.cc.createPaymentSession(invoice.mode, {
       title: `Invoice ${invoice.invoice_number}`,
       description: invoice.notes || `Invoice ${invoice.invoice_number}`,
       amount: String(invoice.total),

@@ -27,7 +27,7 @@ export class PayoutsService {
   async create(businessId: string, mode: 'live' | 'test', dto: CreatePayoutDto) {
     let accountName = dto.account_name;
     if (!accountName) {
-      const resolved = await this.resolveAccount({
+      const resolved = await this.resolveAccount(mode, {
         account_number: dto.account_number,
         bank_code: dto.bank_code,
       });
@@ -35,7 +35,7 @@ export class PayoutsService {
     }
 
     // Ensure recipient exists in CoincircuitMCP
-    const recipientResult = await this.cc.createRecipient({
+    const recipientResult = await this.cc.createRecipient(mode, {
       type: 'ngn_bank_account',
       details: {
         accountNumber: dto.account_number,
@@ -45,7 +45,7 @@ export class PayoutsService {
     const recipientId = recipientResult.data.id;
 
     // Initiate payout via CoincircuitMCP
-    const payoutResult = await this.cc.initiatePayout({
+    const payoutResult = await this.cc.initiatePayout(mode, {
       recipientId,
       amount: String(dto.amount),
       currency: 'NGN',
@@ -113,8 +113,8 @@ export class PayoutsService {
     return { data, meta: buildPaginationMeta(total, page, limit) };
   }
 
-  async resolveAccount(dto: ResolveAccountDto) {
-    return this.cc.validateRecipient({
+  async resolveAccount(mode: 'live' | 'test', dto: ResolveAccountDto) {
+    return this.cc.validateRecipient(mode, {
       type: 'ngn_bank_account',
       details: {
         accountNumber: dto.account_number,

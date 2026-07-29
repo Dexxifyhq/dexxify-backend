@@ -7,7 +7,6 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { WalletAsset, WalletNetwork } from '../../database/entities';
 
-// Maps our WalletAsset enum → CoincircuitMCP asset symbols
 const CC_ASSET_MAP: Partial<Record<WalletAsset, string>> = {
   [WalletAsset.BTC]: 'BTC',
   [WalletAsset.ETH]: 'ETH',
@@ -18,7 +17,6 @@ const CC_ASSET_MAP: Partial<Record<WalletAsset, string>> = {
   [WalletAsset.TRX]: 'TRX',
 };
 
-// Maps our WalletNetwork enum → CoincircuitMCP chain identifiers
 const CC_CHAIN_MAP: Partial<Record<WalletNetwork, string>> = {
   [WalletNetwork.BITCOIN]: 'bitcoin',
   [WalletNetwork.ETHEREUM]: 'ethereum',
@@ -52,38 +50,39 @@ export function toCCChain(network: WalletNetwork): string {
 @Injectable()
 export class CoincircuitService {
   private readonly logger = new Logger(CoincircuitService.name);
-  private readonly baseUrl: string;
-  private readonly apiKey: string;
+  private readonly liveUrl: string;
+  private readonly sandboxUrl: string;
+  private readonly liveKey: string;
+  private readonly testKey: string;
 
   constructor(private readonly config: ConfigService) {
-    const isProduction =
-      this.config.get<string>('app.nodeEnv') === 'production';
-    this.baseUrl = isProduction
-      ? this.config.get<string>('coincircuit.apiUrl') ||
-        'https://api.coincircuit.io'
-      : this.config.get<string>('coincircuit.sandboxApiUrl') ||
-        'https://sandbox-api.coincircuit.io';
-    this.apiKey = isProduction
-      ? this.config.get<string>('coincircuit.apiKey') || ''
-      : this.config.get<string>('coincircuit.testApiKey') || '';
+    this.liveUrl =
+      this.config.get<string>('coincircuit.apiUrl') ||
+      'https://api.coincircuit.io';
+    this.sandboxUrl =
+      this.config.get<string>('coincircuit.sandboxApiUrl') ||
+      'https://sandbox-api.coincircuit.io';
+    this.liveKey = this.config.get<string>('coincircuit.apiKey') || '';
+    this.testKey = this.config.get<string>('coincircuit.testApiKey') || '';
   }
 
   // ── Core HTTP ─────────────────────────────────────────
 
-  private get headers() {
-    return {
-      'x-api-key': this.apiKey,
-      'Content-Type': 'application/json',
-    };
+  private credentials(mode: 'live' | 'test') {
+    return mode === 'live'
+      ? { baseUrl: this.liveUrl, apiKey: this.liveKey }
+      : { baseUrl: this.sandboxUrl, apiKey: this.testKey };
   }
 
   private async request<T = any>(
     method: string,
     path: string,
+    mode: 'live' | 'test',
     body?: Record<string, any>,
     params?: Record<string, string>,
   ): Promise<T> {
-    let url = `${this.baseUrl}${path}`;
+    const { baseUrl, apiKey } = this.credentials(mode);
+    let url = `${baseUrl}${path}`;
     if (params) {
       const qs = new URLSearchParams(params).toString();
       url = `${url}?${qs}`;
@@ -91,7 +90,10 @@ export class CoincircuitService {
 
     const res = await fetch(url, {
       method,
-      headers: this.headers,
+      headers: {
+        'x-api-key': apiKey,
+        'Content-Type': 'application/json',
+      },
       body: body ? JSON.stringify(body) : undefined,
     });
 
@@ -108,17 +110,21 @@ export class CoincircuitService {
 
   // ── Customers ─────────────────────────────────────────
 
-  async syncCustomer(dto: {
-    email?: string;
-    firstName?: string;
-    lastName?: string;
-    phone?: string;
-    metadata?: Record<string, any>;
-  }) {
-    return this.request<{ data: any }>('POST', '/api/v1/customers', dto);
+  async syncCustomer(
+    mode: 'live' | 'test',
+    dto: {
+      email?: string;
+      firstName?: string;
+      lastName?: string;
+      phone?: string;
+      metadata?: Record<string, any>;
+    },
+  ) {
+    return this.request<{ data: any }>('POST', '/api/v1/customers', mode, dto);
   }
 
   async updateCCCustomer(
+    mode: 'live' | 'test',
     id: string,
     dto: {
       email?: string;
@@ -127,56 +133,73 @@ export class CoincircuitService {
       phone?: string;
     },
   ) {
-    return this.request<{ data: any }>('PATCH', `/api/v1/customers/${id}`, dto);
+    return this.request<{ data: any }>(
+      'PATCH',
+      `/api/v1/customers/${id}`,
+      mode,
+      dto,
+    );
   }
 
-  async getCCCustomer(id: string) {
-    return this.request<{ data: any }>('GET', `/api/v1/customers/${id}`);
+  async getCCCustomer(mode: 'live' | 'test', id: string) {
+    return this.request<{ data: any }>(
+      'GET',
+      `/api/v1/customers/${id}`,
+      mode,
+    );
   }
 
   // ── Invoices ──────────────────────────────────────────
 
-  async createInvoice(dto: {
-    reference?: string;
-    items: Array<{
-      name: string;
-      quantity: string;
-      unitPrice: string;
-      description?: string;
-      unit?: string;
-    }>;
-    currency: 'NGN' | 'USD';
-    description: string;
-    expiresAt: string;
-    customer: {
-      email: string;
-      firstName: string;
-      lastName?: string;
-      phone?: string;
-      telegramId?: string;
-    };
-    metadata?: Record<string, any>;
-    successUrl?: string;
-    cancelUrl?: string;
-    asset?: string;
-    chain?: string;
-    periodStart?: string;
-    periodEnd?: string;
-  }) {
-    return this.request<{ data: any }>('POST', '/api/v1/invoices', dto);
+  async createInvoice(
+    mode: 'live' | 'test',
+    dto: {
+      reference?: string;
+      items: Array<{
+        name: string;
+        quantity: string;
+        unitPrice: string;
+        description?: string;
+        unit?: string;
+      }>;
+      currency: 'NGN' | 'USD';
+      description: string;
+      expiresAt: string;
+      customer: {
+        email: string;
+        firstName: string;
+        lastName?: string;
+        phone?: string;
+        telegramId?: string;
+      };
+      metadata?: Record<string, any>;
+      successUrl?: string;
+      cancelUrl?: string;
+      asset?: string;
+      chain?: string;
+      periodStart?: string;
+      periodEnd?: string;
+    },
+  ) {
+    return this.request<{ data: any }>('POST', '/api/v1/invoices', mode, dto);
   }
 
-  async getInvoice(reference: string) {
+  async getInvoice(mode: 'live' | 'test', reference: string) {
     return this.request<{ data: any }>(
       'GET',
       `/api/v1/invoices/reference/${reference}`,
+      mode,
     );
   }
 
-  async listCCInvoices(params?: Record<string, string>) {
+  async listCCInvoices(
+    mode: 'live' | 'test',
+    params?: Record<string, string>,
+  ) {
     return this.request<{ data: any[] }>(
       'GET',
       '/api/v1/invoices',
+      mode,
       undefined,
       params,
     );
@@ -184,23 +207,27 @@ export class CoincircuitService {
 
   // ── Payment Sessions ──────────────────────────────────
 
-  async createPaymentSession(dto: {
-    title: string;
-    description: string;
-    amount: string;
-    currency: 'NGN' | 'USD';
-    asset?: string;
-    chain?: string;
-    customer?: { email: string; firstName?: string; lastName?: string };
-    metadata?: Record<string, any>;
-    webhookUrl?: string;
-    successUrl?: string;
-    cancelUrl?: string;
-  }) {
-    return this.request<{ data: any }>('POST', '/api/v1/payments', dto);
+  async createPaymentSession(
+    mode: 'live' | 'test',
+    dto: {
+      title: string;
+      description: string;
+      amount: string;
+      currency: 'NGN' | 'USD';
+      asset?: string;
+      chain?: string;
+      customer?: { email: string; firstName?: string; lastName?: string };
+      metadata?: Record<string, any>;
+      webhookUrl?: string;
+      successUrl?: string;
+      cancelUrl?: string;
+    },
+  ) {
+    return this.request<{ data: any }>('POST', '/api/v1/payments', mode, dto);
   }
 
   async generateDepositAddress(
+    mode: 'live' | 'test',
     reference: string,
     asset: string,
     chain: string,
@@ -209,27 +236,33 @@ export class CoincircuitService {
     return this.request<{ data: any }>(
       'POST',
       `/api/v1/payments/${reference}/address`,
+      mode,
       { asset, chain, ...(customer ? { customer } : {}) },
     );
   }
 
-  async getPaymentSession(reference: string) {
+  async getPaymentSession(mode: 'live' | 'test', reference: string) {
     return this.request<{ data: any }>(
       'GET',
       `/api/v1/payments/reference/${reference}`,
+      mode,
     );
   }
 
-  async estimatePayment(params: {
-    asset: string;
-    chain: string;
-    amount: string;
-    currency: string;
-    reference?: string;
-  }) {
+  async estimatePayment(
+    mode: 'live' | 'test',
+    params: {
+      asset: string;
+      chain: string;
+      amount: string;
+      currency: string;
+      reference?: string;
+    },
+  ) {
     return this.request<{ data: any }>(
       'GET',
       '/api/v1/payments/estimate',
+      mode,
       undefined,
       params as Record<string, string>,
     );
@@ -237,86 +270,119 @@ export class CoincircuitService {
 
   // ── Payout Recipients ─────────────────────────────────
 
-  async createRecipient(dto: {
-    type: 'ngn_bank_account' | 'crypto_address';
-    label?: string;
-    isDefault?: boolean;
-    details:
-      | { accountNumber: string; bankCode: string; accountType?: string }
-      | { chain: string; address: string };
-  }) {
-    return this.request<{ data: any }>('POST', '/api/v1/recipients', dto);
+  async createRecipient(
+    mode: 'live' | 'test',
+    dto: {
+      type: 'ngn_bank_account' | 'crypto_address';
+      label?: string;
+      isDefault?: boolean;
+      details:
+        | { accountNumber: string; bankCode: string; accountType?: string }
+        | { chain: string; address: string };
+    },
+  ) {
+    return this.request<{ data: any }>(
+      'POST',
+      '/api/v1/recipients',
+      mode,
+      dto,
+    );
   }
 
-  async validateRecipient(dto: {
-    type: 'ngn_bank_account' | 'crypto_address';
-    details:
-      | { accountNumber: string; bankCode: string }
-      | { chain: string; address: string };
-  }) {
+  async validateRecipient(
+    mode: 'live' | 'test',
+    dto: {
+      type: 'ngn_bank_account' | 'crypto_address';
+      details:
+        | { accountNumber: string; bankCode: string }
+        | { chain: string; address: string };
+    },
+  ) {
     return this.request<{ data: any }>(
       'POST',
       '/api/v1/recipients/validate',
+      mode,
       dto,
     );
   }
 
   async updateRecipient(
+    mode: 'live' | 'test',
     id: string,
     dto: { label?: string; isDefault?: boolean },
   ) {
     return this.request<{ data: any }>(
       'PATCH',
       `/api/v1/recipients/${id}`,
+      mode,
       dto,
     );
   }
 
-  async deleteRecipient(id: string) {
+  async deleteRecipient(mode: 'live' | 'test', id: string) {
     return this.request<{ success: boolean }>(
       'DELETE',
       `/api/v1/recipients/${id}`,
+      mode,
     );
   }
 
-  async listBanks() {
-    return this.request<{ data: any[] }>('GET', '/api/v1/recipients/banks');
+  async listBanks(mode: 'live' | 'test') {
+    return this.request<{ data: any[] }>(
+      'GET',
+      '/api/v1/recipients/banks',
+      mode,
+    );
   }
 
-  async listPayoutChains() {
+  async listPayoutChains(mode: 'live' | 'test') {
     return this.request<{ data: Record<string, any[]> }>(
       'GET',
       '/api/v1/recipients/chains',
+      mode,
     );
   }
 
   // ── Payouts ───────────────────────────────────────────
 
-  async initiatePayout(dto: {
-    recipientId: string;
-    amount: string;
-    currency?: string;
-    narration?: string;
-  }) {
-    return this.request<{ data: any }>('POST', '/api/v1/payouts', dto);
+  async initiatePayout(
+    mode: 'live' | 'test',
+    dto: {
+      recipientId: string;
+      amount: string;
+      currency?: string;
+      narration?: string;
+    },
+  ) {
+    return this.request<{ data: any }>('POST', '/api/v1/payouts', mode, dto);
   }
 
-  async getPayout(id: string) {
-    return this.request<{ data: any }>('GET', `/api/v1/payouts/${id}`);
+  async getPayout(mode: 'live' | 'test', id: string) {
+    return this.request<{ data: any }>('GET', `/api/v1/payouts/${id}`, mode);
   }
 
   // ── Rates & Assets ────────────────────────────────────
 
-  async getSupportedAssets() {
-    return this.request<{ data: any }>('GET', '/api/v1/blockchain/assets');
+  async getSupportedAssets(mode: 'live' | 'test') {
+    return this.request<{ data: any }>(
+      'GET',
+      '/api/v1/blockchain/assets',
+      mode,
+    );
   }
 
-  async getConversionRate(from: string, to: string, amount?: string) {
+  async getConversionRate(
+    mode: 'live' | 'test',
+    from: string,
+    to: string,
+    amount?: string,
+  ) {
     const params: Record<string, string> = { from, to };
     if (amount) params.amount = amount;
     return this.request<{ data: any }>(
       'GET',
       '/api/v1/rates/convert',
+      mode,
       undefined,
       params,
     );
@@ -324,36 +390,46 @@ export class CoincircuitService {
 
   // ── Deposit Accounts ──────────────────────────────────
 
-  async createDepositAccount(customerId: string) {
-    return this.request<{ data: any }>('POST', '/api/v1/deposits/accounts', {
-      customerId,
-    });
+  async createDepositAccount(mode: 'live' | 'test', customerId: string) {
+    return this.request<{ data: any }>(
+      'POST',
+      '/api/v1/deposits/accounts',
+      mode,
+      { customerId },
+    );
   }
 
-  async getCustomerDepositAccount(ccCustomerId: string) {
+  async getCustomerDepositAccount(mode: 'live' | 'test', ccCustomerId: string) {
     return this.request<{ data: any }>(
       'GET',
       `/api/v1/deposits/accounts/customer/${ccCustomerId}`,
+      mode,
     );
   }
 
-  async getDepositAccount(accountId: string) {
+  async getDepositAccount(mode: 'live' | 'test', accountId: string) {
     return this.request<{ data: any }>(
       'GET',
       `/api/v1/deposits/accounts/${accountId}`,
+      mode,
     );
   }
 
-  async listDepositAccounts(params?: Record<string, string>) {
+  async listDepositAccounts(
+    mode: 'live' | 'test',
+    params?: Record<string, string>,
+  ) {
     return this.request<{ data: any[] }>(
       'GET',
       '/api/v1/deposits/accounts',
+      mode,
       undefined,
       params,
     );
   }
 
   async issueDepositIdentity(
+    mode: 'live' | 'test',
     accountId: string,
     dto: {
       type: 'static_deposit_address' | 'ngn_virtual_account';
@@ -365,14 +441,16 @@ export class CoincircuitService {
     return this.request<{ data: any }>(
       'POST',
       `/api/v1/deposits/accounts/${accountId}/identities`,
+      mode,
       dto,
     );
   }
 
-  async listPayouts(params?: Record<string, string>) {
+  async listPayouts(mode: 'live' | 'test', params?: Record<string, string>) {
     return this.request<{ data: any[] }>(
       'GET',
       '/api/v1/payouts',
+      mode,
       undefined,
       params,
     );
@@ -380,57 +458,73 @@ export class CoincircuitService {
 
   // ── Swaps ─────────────────────────────────────────────
 
-  async estimateSwap(params: {
-    fromCurrency: string;
-    toCurrency: string;
-    amount: string;
-  }) {
+  async estimateSwap(
+    mode: 'live' | 'test',
+    params: {
+      fromCurrency: string;
+      toCurrency: string;
+      amount: string;
+    },
+  ) {
     return this.request<{ data: any }>(
       'GET',
       '/api/v1/swap/estimate',
+      mode,
       undefined,
       params as Record<string, string>,
     );
   }
 
-  async createSwapQuotation(dto: {
-    fromCurrency: string;
-    toCurrency: string;
-    amount: string;
-  }) {
-    return this.request<{ data: any }>('POST', '/api/v1/swap/quotation', dto);
+  async createSwapQuotation(
+    mode: 'live' | 'test',
+    dto: {
+      fromCurrency: string;
+      toCurrency: string;
+      amount: string;
+    },
+  ) {
+    return this.request<{ data: any }>(
+      'POST',
+      '/api/v1/swap/quotation',
+      mode,
+      dto,
+    );
   }
 
-  async getSwapQuotation(quotationId: string) {
+  async getSwapQuotation(mode: 'live' | 'test', quotationId: string) {
     return this.request<{ data: any }>(
       'GET',
       `/api/v1/swap/quotation/${quotationId}`,
+      mode,
     );
   }
 
-  async executeSwap(quotationId: string) {
+  async executeSwap(mode: 'live' | 'test', quotationId: string) {
     return this.request<{ data: any }>(
       'POST',
       `/api/v1/swap/execute/${quotationId}`,
+      mode,
     );
   }
 
-  async listSwaps(params?: Record<string, string>) {
+  async listSwaps(mode: 'live' | 'test', params?: Record<string, string>) {
     return this.request<{ data: any[] }>(
       'GET',
       '/api/v1/swaps',
+      mode,
       undefined,
       params,
     );
   }
 
-  async getSwap(id: string) {
-    return this.request<{ data: any }>('GET', `/api/v1/swaps/${id}`);
+  async getSwap(mode: 'live' | 'test', id: string) {
+    return this.request<{ data: any }>('GET', `/api/v1/swaps/${id}`, mode);
   }
 
   // ── Refunds ───────────────────────────────────────────
 
   async refundSession(
+    mode: 'live' | 'test',
     sessionReference: string,
     dto: {
       refundAddress: string;
@@ -441,11 +535,13 @@ export class CoincircuitService {
     return this.request<{ data: any }>(
       'POST',
       `/api/v1/refunds/session/${sessionReference}`,
+      mode,
       dto,
     );
   }
 
   async refundInvoice(
+    mode: 'live' | 'test',
     invoiceReference: string,
     dto: {
       refundAddress: string;
@@ -456,11 +552,13 @@ export class CoincircuitService {
     return this.request<{ data: any }>(
       'POST',
       `/api/v1/refunds/invoice/${invoiceReference}`,
+      mode,
       dto,
     );
   }
 
   async estimateRefund(
+    mode: 'live' | 'test',
     reference: string,
     entity: 'session' | 'invoice',
     feePaidBy?: 'merchant' | 'customer',
@@ -470,21 +568,23 @@ export class CoincircuitService {
     return this.request<{ data: any }>(
       'GET',
       `/api/v1/refunds/estimate/${reference}`,
+      mode,
       undefined,
       params,
     );
   }
 
-  async listRefunds(params?: Record<string, string>) {
+  async listRefunds(mode: 'live' | 'test', params?: Record<string, string>) {
     return this.request<{ data: any[] }>(
       'GET',
       '/api/v1/refunds',
+      mode,
       undefined,
       params,
     );
   }
 
-  async getRefund(id: string) {
-    return this.request<{ data: any }>('GET', `/api/v1/refunds/${id}`);
+  async getRefund(mode: 'live' | 'test', id: string) {
+    return this.request<{ data: any }>('GET', `/api/v1/refunds/${id}`, mode);
   }
 }

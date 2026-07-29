@@ -9,11 +9,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import {
-  ApiKey,
-  User,
-  UserStatus,
-} from '../../database/entities';
+import { ApiKey, User, UserStatus } from '../../database/entities';
 import { IS_PUBLIC_KEY, AUTH_TYPE_KEY } from '../decorators';
 import { hashApiKey } from '../utils';
 

@@ -80,7 +80,7 @@ export class AdminService {
       );
     }
 
-    const result = await this.cc.initiatePayout({
+    const result = await this.cc.initiatePayout('live', {
       recipientId: dto.recipient_id,
       amount: dto.amount.toString(),
       currency: dto.currency,

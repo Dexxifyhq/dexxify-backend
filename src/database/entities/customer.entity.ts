@@ -17,7 +17,7 @@ export enum CustomerStatus {
 }
 
 @Entity('customers')
-@Unique(['business_id', 'email'])
+@Unique(['business_id', 'email', 'mode'])
 export class Customer {
   @PrimaryGeneratedColumn('uuid')
   id: string;

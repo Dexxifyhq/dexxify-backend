@@ -32,13 +32,13 @@ export class OfframpService {
     private readonly cc: CoincircuitService,
   ) {}
 
-  async getRate(pair: string) {
+  async getRate(mode: 'live' | 'test', pair: string) {
     const [base, quote] = pair.toUpperCase().split('_');
     if (!base || !quote) {
       throw new BadRequestException('Invalid pair format. Use e.g. USDT_NGN');
     }
 
-    const estimate = await this.cc.estimateSwap({
+    const estimate = await this.cc.estimateSwap(mode, {
       fromCurrency: base,
       toCurrency: quote,
       amount: '1',
@@ -57,12 +57,12 @@ export class OfframpService {
     };
   }
 
-  async create(businessId: string, dto: CreateOfframpDto) {
+  async create(businessId: string, mode: 'live' | 'test', dto: CreateOfframpDto) {
     // 1. Get CC swap quotation (crypto → NGN)
     let quotation: any;
     let swap: any;
     try {
-      const quotationResult = await this.cc.createSwapQuotation({
+      const quotationResult = await this.cc.createSwapQuotation(mode, {
         fromCurrency: String(dto.crypto_asset).toUpperCase(),
         toCurrency: 'NGN',
         amount: dto.crypto_amount.toString(),
@@ -70,7 +70,7 @@ export class OfframpService {
       quotation = quotationResult.data;
 
       // 2. Execute swap immediately against the quotation
-      const swapResult = await this.cc.executeSwap(quotation.id);
+      const swapResult = await this.cc.executeSwap(mode, quotation.id);
       swap = swapResult.data;
     } catch (err) {
       this.logger.error(`Offramp swap failed: ${err.message}`);
@@ -88,6 +88,7 @@ export class OfframpService {
     await this.swapRecordRepo.save(
       this.swapRecordRepo.create({
         business_id: businessId,
+        mode,
         cc_swap_id: swap.id,
         from_currency: String(dto.crypto_asset).toUpperCase(),
         to_currency: 'NGN',

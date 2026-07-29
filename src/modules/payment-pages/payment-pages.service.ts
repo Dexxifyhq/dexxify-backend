@@ -199,7 +199,7 @@ export class PaymentPagesService {
         );
 
     // Create a CoincircuitMCP payment session — CC handles address provisioning
-    const ccResult = await this.cc.createPaymentSession({
+    const ccResult = await this.cc.createPaymentSession(page.mode, {
       title: page.title,
       description: page.description || page.title,
       amount: String(page.amount),

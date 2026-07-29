@@ -30,6 +30,9 @@ export class SwapRecord {
   @Column({ type: 'uuid' })
   business_id: string;
 
+  @Column({ type: 'text', default: 'test' })
+  mode: 'live' | 'test';
+
   @Index({ unique: true })
   @Column({ type: 'text' })
   cc_swap_id: string;

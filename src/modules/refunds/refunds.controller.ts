@@ -23,7 +23,7 @@ import {
   EstimateRefundQueryDto,
   RefundEntityType,
 } from './dto';
-import { DualAuth, GetBusinessId } from '../../common/decorators';
+import { DualAuth, GetBusinessId, GetMode } from '../../common/decorators';
 
 @ApiTags('Refunds')
 @ApiBearerAuth('api-key')
@@ -50,10 +50,11 @@ export class RefundsController {
   })
   @Get('estimate/:reference')
   estimate(
+    @GetMode() mode: 'live' | 'test',
     @Param('reference') reference: string,
     @Query() query: EstimateRefundQueryDto,
   ) {
-    return this.refundsService.estimateRefund(reference, query);
+    return this.refundsService.estimateRefund(mode, reference, query);
   }
 
   @ApiOperation({
@@ -62,15 +63,15 @@ export class RefundsController {
       'Returns all refunds. Filters by status, session/invoice reference, date range, or search.',
   })
   @Get()
-  findAll(@Query() query: RefundQueryDto) {
-    return this.refundsService.findAll(query);
+  findAll(@GetMode() mode: 'live' | 'test', @Query() query: RefundQueryDto) {
+    return this.refundsService.findAll(mode, query);
   }
 
   @ApiOperation({ summary: 'Get refund by ID' })
   @ApiParam({ name: 'id', description: 'Refund ID' })
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.refundsService.findOne(id);
+  findOne(@GetMode() mode: 'live' | 'test', @Param('id') id: string) {
+    return this.refundsService.findOne(mode, id);
   }
 
   @ApiOperation({
@@ -86,25 +87,10 @@ export class RefundsController {
   @HttpCode(HttpStatus.CREATED)
   @Post('session/:sessionReference')
   refundSession(
+    @GetMode() mode: 'live' | 'test',
     @Param('sessionReference') sessionReference: string,
     @Body() dto: RefundDto,
   ) {
-    return this.refundsService.refundSession(sessionReference, dto);
+    return this.refundsService.refundSession(mode, sessionReference, dto);
   }
-
-  // Let's not use this refundInvoice endpoint for now
-  // @ApiOperation({
-  //   summary: 'Refund an invoice',
-  //   description: 'Initiates a refund for a paid invoice back to the customer wallet.',
-  // })
-  // @ApiParam({ name: 'invoiceReference', description: 'Invoice reference (e.g. INV_xxxxx)' })
-  // @ApiBody({ type: RefundDto })
-  // @HttpCode(HttpStatus.CREATED)
-  // @Post('invoice/:invoiceReference')
-  // refundInvoice(
-  //   @Param('invoiceReference') invoiceReference: string,
-  //   @Body() dto: RefundDto,
-  // ) {
-  //   return this.refundsService.refundInvoice(invoiceReference, dto);
-  // }
 }

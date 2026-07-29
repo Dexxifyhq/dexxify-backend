@@ -19,28 +19,28 @@ export class SwapsService {
     private readonly swapRecordRepo: Repository<SwapRecord>,
   ) {}
 
-  estimate(dto: EstimateSwapDto) {
-    return this.cc.estimateSwap({
+  estimate(mode: 'live' | 'test', dto: EstimateSwapDto) {
+    return this.cc.estimateSwap(mode, {
       fromCurrency: dto.fromCurrency,
       toCurrency: dto.toCurrency,
       amount: dto.amount,
     });
   }
 
-  createQuotation(dto: CreateSwapQuotationDto) {
-    return this.cc.createSwapQuotation({
+  createQuotation(mode: 'live' | 'test', dto: CreateSwapQuotationDto) {
+    return this.cc.createSwapQuotation(mode, {
       fromCurrency: dto.fromCurrency,
       toCurrency: dto.toCurrency,
       amount: dto.amount,
     });
   }
 
-  getQuotation(quotationId: string) {
-    return this.cc.getSwapQuotation(quotationId);
+  getQuotation(mode: 'live' | 'test', quotationId: string) {
+    return this.cc.getSwapQuotation(mode, quotationId);
   }
 
-  async executeQuotation(businessId: string, quotationId: string) {
-    const result = await this.cc.executeSwap(quotationId);
+  async executeQuotation(businessId: string, mode: 'live' | 'test', quotationId: string) {
+    const result = await this.cc.executeSwap(mode, quotationId);
 
     const swap = result?.data;
     if (swap?.id) {
@@ -48,6 +48,7 @@ export class SwapsService {
         await this.swapRecordRepo.save(
           this.swapRecordRepo.create({
             business_id: businessId,
+            mode,
             cc_swap_id: swap.id,
             from_currency: swap.fromCurrency,
             to_currency: swap.toCurrency,
@@ -66,7 +67,7 @@ export class SwapsService {
     return result;
   }
 
-  list(query: SwapQueryDto) {
+  list(mode: 'live' | 'test', query: SwapQueryDto) {
     const params: Record<string, string> = {};
     if (query.page) params.page = String(query.page);
     if (query.size) params.size = String(query.size);
@@ -74,10 +75,10 @@ export class SwapsService {
     if (query.toCurrency) params.toCurrency = query.toCurrency;
     if (query.startDate) params.startDate = query.startDate;
     if (query.endDate) params.endDate = query.endDate;
-    return this.cc.listSwaps(params);
+    return this.cc.listSwaps(mode, params);
   }
 
-  findOne(id: string) {
-    return this.cc.getSwap(id);
+  findOne(mode: 'live' | 'test', id: string) {
+    return this.cc.getSwap(mode, id);
   }
 }

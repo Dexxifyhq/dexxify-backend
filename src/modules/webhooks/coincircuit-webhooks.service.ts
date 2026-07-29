@@ -300,10 +300,12 @@ export class CoincircuitWebhooksService {
 
       // If this session was created to pay an invoice, mark it paid
       if (session.invoice_id) {
-        await em.getRepository(Invoice).update(
-          { id: session.invoice_id },
-          { status: InvoiceStatus.PAID, paid_at: new Date() },
-        );
+        await em
+          .getRepository(Invoice)
+          .update(
+            { id: session.invoice_id },
+            { status: InvoiceStatus.PAID, paid_at: new Date() },
+          );
       }
 
       // Mark the CryptoTransaction completed and fill in settlement amounts
@@ -581,7 +583,8 @@ export class CoincircuitWebhooksService {
         tx_type: TxType.SWAP,
         reference_type: 'swap',
         reference_id: record.id,
-        currency: toCurrency === 'NGN' ? LedgerCurrency.NGN : LedgerCurrency.USD,
+        currency:
+          toCurrency === 'NGN' ? LedgerCurrency.NGN : LedgerCurrency.USD,
         debit_ngn: fromCurrency === 'NGN' ? sourceAmount : 0,
         debit_usd: fromCurrency === 'USDT' ? sourceAmount : 0,
         credit_ngn: toCurrency === 'NGN' ? targetAmount : 0,
@@ -639,7 +642,7 @@ export class CoincircuitWebhooksService {
     // Initiate CC payout of net NGN to developer's bank
     let payoutData: any;
     try {
-      const result = await this.cc.initiatePayout({
+      const result = await this.cc.initiatePayout(record.mode, {
         recipientId: meta.recipientId,
         amount: netNgn.toFixed(2),
         currency: 'NGN',
@@ -717,7 +720,10 @@ export class CoincircuitWebhooksService {
         deposit_type: data.type ?? null,
         crypto_asset: isCrypto ? this.toCryptoAsset(data.crypto?.asset) : null,
         network: isCrypto ? this.toCryptoNetwork(data.crypto?.chain) : null,
-        crypto_amount: isCrypto && data.crypto?.amount != null ? Number(data.crypto.amount) : null,
+        crypto_amount:
+          isCrypto && data.crypto?.amount != null
+            ? Number(data.crypto.amount)
+            : null,
         from_address: isCrypto
           ? (data.crypto?.fromAddress ?? null)
           : (data.fiat?.payerAccountNumber ?? null),
@@ -744,7 +750,9 @@ export class CoincircuitWebhooksService {
 
   private async handleDepositCompleted(data: any): Promise<void> {
     if (!data.depositAccountId) {
-      this.logger.warn(`deposit.completed: missing depositAccountId in payload`);
+      this.logger.warn(
+        `deposit.completed: missing depositAccountId in payload`,
+      );
       return;
     }
 
@@ -797,7 +805,9 @@ export class CoincircuitWebhooksService {
             direction: CryptoTxDirection.INBOUND,
             cc_transaction_id: data.id,
             deposit_type: data.type ?? null,
-            crypto_asset: isCrypto ? this.toCryptoAsset(data.crypto?.asset) : null,
+            crypto_asset: isCrypto
+              ? this.toCryptoAsset(data.crypto?.asset)
+              : null,
             network: isCrypto ? this.toCryptoNetwork(data.crypto?.chain) : null,
             from_address: isCrypto
               ? (data.crypto?.fromAddress ?? null)

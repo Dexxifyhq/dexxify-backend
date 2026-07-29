@@ -87,9 +87,7 @@ export class AuthService {
     });
 
     if (existing && existing.status !== UserStatus.PENDING) {
-      throw new ConflictException(
-        'An account with this email already exists.',
-      );
+      throw new ConflictException('An account with this email already exists.');
     }
 
     let user: User;
@@ -128,6 +126,7 @@ export class AuthService {
       this.businessRepo.create({
         owner_user_id: user.id,
         name: `${user.first_name}'s Business`,
+        email: user.email,
         settlement_currency: SettlementCurrency.USDT,
         default_payout_method: PayoutMethod.CRYPTO,
         notification_preferences: {
@@ -149,7 +148,9 @@ export class AuthService {
       }),
     );
 
-    await this.userRepo.update(user.id, { last_active_business_id: business.id });
+    await this.userRepo.update(user.id, {
+      last_active_business_id: business.id,
+    });
     user.last_active_business_id = business.id;
 
     return business;
@@ -211,7 +212,8 @@ export class AuthService {
     await this.userRepo.save(user);
 
     const businessId = user.last_active_business_id;
-    if (!businessId) throw new BadRequestException('No business found for user.');
+    if (!businessId)
+      throw new BadRequestException('No business found for user.');
 
     const { key, prefix, hash } = generateApiKey('test');
     await this.apiKeyRepo.save(
@@ -240,7 +242,9 @@ export class AuthService {
     const user = await this.userRepo.findOne({ where: { email: dto.email } });
 
     if (!user) {
-      return { message: 'If an account exists, a verification code has been sent.' };
+      return {
+        message: 'If an account exists, a verification code has been sent.',
+      };
     }
 
     if (user.status === UserStatus.ACTIVE && user.email_verified_at) {
@@ -253,7 +257,8 @@ export class AuthService {
     });
 
     if (recentOtp) {
-      const elapsed = (Date.now() - new Date(recentOtp.created_at).getTime()) / 1000;
+      const elapsed =
+        (Date.now() - new Date(recentOtp.created_at).getTime()) / 1000;
       if (elapsed < this.otpResendCooldown) {
         const wait = Math.ceil(this.otpResendCooldown - elapsed);
         throw new BadRequestException(
@@ -265,7 +270,9 @@ export class AuthService {
     await this.invalidateOldOtps(user.id, OtpType.EMAIL_VERIFICATION);
     await this.createAndSendOtp(user, OtpType.EMAIL_VERIFICATION);
 
-    return { message: 'If an account exists, a verification code has been sent.' };
+    return {
+      message: 'If an account exists, a verification code has been sent.',
+    };
   }
 
   // ── Forgot Password ────────────────────────────────────
@@ -275,7 +282,8 @@ export class AuthService {
 
     if (!user || user.status !== UserStatus.ACTIVE) {
       return {
-        message: 'If an account with this email exists, a password reset code has been sent.',
+        message:
+          'If an account with this email exists, a password reset code has been sent.',
       };
     }
 
@@ -285,7 +293,8 @@ export class AuthService {
     });
 
     if (recentOtp) {
-      const elapsed = (Date.now() - new Date(recentOtp.created_at).getTime()) / 1000;
+      const elapsed =
+        (Date.now() - new Date(recentOtp.created_at).getTime()) / 1000;
       if (elapsed < this.otpResendCooldown) {
         const wait = Math.ceil(this.otpResendCooldown - elapsed);
         throw new BadRequestException(
@@ -298,7 +307,8 @@ export class AuthService {
     await this.createAndSendOtp(user, OtpType.PASSWORD_RESET);
 
     return {
-      message: 'If an account with this email exists, a password reset code has been sent.',
+      message:
+        'If an account with this email exists, a password reset code has been sent.',
     };
   }
 
@@ -351,7 +361,8 @@ export class AuthService {
     await this.invalidateOldOtps(user.id, OtpType.PASSWORD_RESET);
 
     return {
-      message: 'Password reset successfully. You can now log in with your new password.',
+      message:
+        'Password reset successfully. You can now log in with your new password.',
     };
   }
 
@@ -360,10 +371,15 @@ export class AuthService {
   async login(dto: LoginDto, res: Response) {
     const user = await this.userRepo.findOne({ where: { email: dto.email } });
 
-    if (!user || !user.password_hash) throw new UnauthorizedException('Invalid email or password.');
+    if (!user || !user.password_hash)
+      throw new UnauthorizedException('Invalid email or password.');
 
-    const passwordValid = await bcrypt.compare(dto.password, user.password_hash);
-    if (!passwordValid) throw new UnauthorizedException('Invalid email or password.');
+    const passwordValid = await bcrypt.compare(
+      dto.password,
+      user.password_hash,
+    );
+    if (!passwordValid)
+      throw new UnauthorizedException('Invalid email or password.');
 
     if (user.status === UserStatus.PENDING) {
       await this.invalidateOldOtps(user.id, OtpType.EMAIL_VERIFICATION);
@@ -392,7 +408,9 @@ export class AuthService {
       });
       if (membership) {
         businessId = membership.business_id;
-        await this.userRepo.update(user.id, { last_active_business_id: businessId });
+        await this.userRepo.update(user.id, {
+          last_active_business_id: businessId,
+        });
       } else {
         const business = await this.createBusinessForUser(user);
         businessId = business.id;
@@ -436,7 +454,9 @@ export class AuthService {
 
     if (!business) throw new ForbiddenException('Business not found.');
 
-    await this.userRepo.update(user.id, { last_active_business_id: dto.business_id });
+    await this.userRepo.update(user.id, {
+      last_active_business_id: dto.business_id,
+    });
 
     const mode: 'live' | 'test' = (user as any).mode ?? 'test';
     this.setTokenCookies(res, user, mode, dto.business_id);
@@ -449,7 +469,12 @@ export class AuthService {
     user: User & { mode?: 'live' | 'test'; active_business_id?: string },
     res: Response,
   ) {
-    this.setTokenCookies(res, user, user.mode ?? 'test', user.active_business_id ?? null);
+    this.setTokenCookies(
+      res,
+      user,
+      user.mode ?? 'test',
+      user.active_business_id ?? null,
+    );
     return { user: this.sanitizeUser(user) };
   }
 
@@ -458,7 +483,12 @@ export class AuthService {
     mode: 'live' | 'test',
     res: Response,
   ) {
-    const tokens = this.setTokenCookies(res, user, mode, user.active_business_id ?? null);
+    const tokens = this.setTokenCookies(
+      res,
+      user,
+      mode,
+      user.active_business_id ?? null,
+    );
     return {
       mode,
       access_token: tokens.access_token,
@@ -528,14 +558,14 @@ export class AuthService {
     };
     if (businessId) payload.business_id = businessId;
 
-    const accessToken = this.jwtService.sign(
-      { ...payload, type: 'access' },
-      { secret: this.jwtSecret, expiresIn: this.jwtExpiresIn } as any,
-    );
-    const refreshToken = this.jwtService.sign(
-      { ...payload, type: 'refresh' },
-      { secret: this.refreshSecret, expiresIn: this.refreshExpiresIn } as any,
-    );
+    const accessToken = this.jwtService.sign({ ...payload, type: 'access' }, {
+      secret: this.jwtSecret,
+      expiresIn: this.jwtExpiresIn,
+    } as any);
+    const refreshToken = this.jwtService.sign({ ...payload, type: 'refresh' }, {
+      secret: this.refreshSecret,
+      expiresIn: this.refreshExpiresIn,
+    } as any);
 
     const cookieBase = {
       httpOnly: true,
@@ -562,11 +592,16 @@ export class AuthService {
     if (!match) return 30 * 60 * 1000;
     const v = parseInt(match[1], 10);
     switch (match[2]) {
-      case 's': return v * 1000;
-      case 'm': return v * 60 * 1000;
-      case 'h': return v * 60 * 60 * 1000;
-      case 'd': return v * 24 * 60 * 60 * 1000;
-      default:  return 30 * 60 * 1000;
+      case 's':
+        return v * 1000;
+      case 'm':
+        return v * 60 * 1000;
+      case 'h':
+        return v * 60 * 60 * 1000;
+      case 'd':
+        return v * 24 * 60 * 60 * 1000;
+      default:
+        return 30 * 60 * 1000;
     }
   }
 

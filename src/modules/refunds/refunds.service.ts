@@ -6,19 +6,15 @@ import { RefundDto, RefundQueryDto, EstimateRefundQueryDto } from './dto';
 export class RefundsService {
   constructor(private readonly cc: CoincircuitService) {}
 
-  refundSession(sessionReference: string, dto: RefundDto) {
-    return this.cc.refundSession(sessionReference, dto);
+  refundSession(mode: 'live' | 'test', sessionReference: string, dto: RefundDto) {
+    return this.cc.refundSession(mode, sessionReference, dto);
   }
 
-  // refundInvoice(invoiceReference: string, dto: RefundDto) {
-  //   return this.cc.refundInvoice(invoiceReference, dto);
-  // }
-
-  estimateRefund(reference: string, query: EstimateRefundQueryDto) {
-    return this.cc.estimateRefund(reference, query.entity, query.feePaidBy);
+  estimateRefund(mode: 'live' | 'test', reference: string, query: EstimateRefundQueryDto) {
+    return this.cc.estimateRefund(mode, reference, query.entity, query.feePaidBy);
   }
 
-  findAll(query: RefundQueryDto) {
+  findAll(mode: 'live' | 'test', query: RefundQueryDto) {
     const params: Record<string, string> = {};
     if (query.page) params.page = String(query.page);
     if (query.size) params.size = String(query.size);
@@ -30,10 +26,10 @@ export class RefundsService {
     if (query.startDate) params.startDate = query.startDate;
     if (query.endDate) params.endDate = query.endDate;
     if (query.search) params.search = query.search;
-    return this.cc.listRefunds(params);
+    return this.cc.listRefunds(mode, params);
   }
 
-  findOne(id: string) {
-    return this.cc.getRefund(id);
+  findOne(mode: 'live' | 'test', id: string) {
+    return this.cc.getRefund(mode, id);
   }
 }

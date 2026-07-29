@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { OfframpService } from './offramp.service';
 import { CreateOfframpDto } from './dto';
-import { DualAuth, GetBusinessId } from '../../common/decorators';
+import { DualAuth, GetBusinessId, GetMode } from '../../common/decorators';
 import {
   ApiOperation,
   ApiTags,
@@ -48,9 +48,10 @@ export class OfframpController {
   @Post('offramp')
   async create(
     @GetBusinessId() businessId: string,
+    @GetMode() mode: 'live' | 'test',
     @Body() dto: CreateOfframpDto,
   ) {
-    return this.offrampService.create(businessId, dto);
+    return this.offrampService.create(businessId, mode, dto);
   }
 
   @ApiOperation({

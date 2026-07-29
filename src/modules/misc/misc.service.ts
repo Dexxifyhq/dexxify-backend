@@ -25,7 +25,7 @@ export class MiscService {
 
   // ── Banks ─────────────────────────────────────────────
 
-  async getBanks() {
+  async getBanks(mode: 'live' | 'test') {
     if (
       this.bankListCache &&
       Date.now() - this.bankListCache.fetchedAt < this.BANK_CACHE_TTL_MS
@@ -33,7 +33,7 @@ export class MiscService {
       return { banks: this.bankListCache.data, cached: true };
     }
 
-    const result = await this.cc.listBanks();
+    const result = await this.cc.listBanks(mode);
     const banks = result.data ?? [];
     this.bankListCache = { data: banks, fetchedAt: Date.now() };
     return { banks, cached: false };
@@ -41,6 +41,7 @@ export class MiscService {
 
   async addBank(
     businessId: string,
+    mode: 'live' | 'test',
     bankData: {
       accountNumber: string;
       bankCode: string;
@@ -55,7 +56,7 @@ export class MiscService {
       throw new ConflictException('Bank account already added');
     }
 
-    const result = await this.cc.createRecipient({
+    const result = await this.cc.createRecipient(mode, {
       type: 'ngn_bank_account',
       label: bankData.label,
       isDefault: bankData.isDefault,
@@ -66,7 +67,6 @@ export class MiscService {
     });
 
     const recipient = result.data;
-    // console.log('recipient', recipient);
     const details = recipient.details ?? {};
 
     const bank = Object.assign(this.bankRepo.create(), {
@@ -74,15 +74,13 @@ export class MiscService {
       provider_recipient_id: recipient.id,
       label: recipient.label ?? '',
       business_id: businessId,
+      mode,
       account_name: details.accountName ?? '',
       account_number: bankData.accountNumber,
       bank_name: details.bankName ?? '',
       bank_code: details.bankCode ?? '',
       currency: details.currency ?? 'NGN',
       primary: recipient.isDefault,
-      // primary: existing.length === 0,
-      // auto_settlement: false,
-      // disabled: false,
       is_trusted: recipient.isTrusted,
       type: details.accountType,
     } as Bank);
@@ -106,16 +104,16 @@ export class MiscService {
     const bank = await this.bankRepo.findOne({ where: { id: bankId } });
     if (!bank) throw new NotFoundException('Bank not found');
 
-    await this.cc.deleteRecipient(bank.provider_recipient_id);
+    await this.cc.deleteRecipient(bank.mode, bank.provider_recipient_id);
     await this.bankRepo.delete({ id: bankId });
     return { message: 'Bank account deleted.' };
   }
 
-  async verifyBankAccount(bankData: {
-    accountNumber: string;
-    bankCode: string;
-  }) {
-    return this.cc.validateRecipient({
+  async verifyBankAccount(
+    mode: 'live' | 'test',
+    bankData: { accountNumber: string; bankCode: string },
+  ) {
+    return this.cc.validateRecipient(mode, {
       type: 'ngn_bank_account',
       details: {
         accountNumber: bankData.accountNumber,
@@ -126,20 +124,21 @@ export class MiscService {
 
   // ── Assets & Rates ────────────────────────────────────
 
-  async getSupportedAssets() {
-    return this.cc.getSupportedAssets();
+  async getSupportedAssets(mode: 'live' | 'test') {
+    return this.cc.getSupportedAssets(mode);
   }
 
-  // async getSupportedWithdrawalAssets() {
-  //   return this.cc.getSupportedAssets();
-  // }
-
-  async getCryptoPrices(options: { from: string; to: string }) {
-    return this.cc.getConversionRate(options.from, options.to);
+  async getCryptoPrices(mode: 'live' | 'test', options: { from: string; to: string }) {
+    return this.cc.getConversionRate(mode, options.from, options.to);
   }
 
-  async getRateCalculator(asset: string, amount: number, currency: string) {
-    return this.cc.estimatePayment({
+  async getRateCalculator(
+    mode: 'live' | 'test',
+    asset: string,
+    amount: number,
+    currency: string,
+  ) {
+    return this.cc.estimatePayment(mode, {
       asset,
       chain: '',
       amount: String(amount),

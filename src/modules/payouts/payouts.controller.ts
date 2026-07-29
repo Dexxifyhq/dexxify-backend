@@ -59,8 +59,8 @@ export class PayoutsController {
   })
   @ApiBody({ type: ResolveAccountDto })
   @Post('resolve')
-  async resolveAccount(@Body() dto: ResolveAccountDto) {
-    return this.payoutsService.resolveAccount(dto);
+  async resolveAccount(@GetMode() mode: 'live' | 'test', @Body() dto: ResolveAccountDto) {
+    return this.payoutsService.resolveAccount(mode, dto);
   }
 
   @ApiOperation({
