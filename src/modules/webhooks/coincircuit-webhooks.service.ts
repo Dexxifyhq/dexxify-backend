@@ -744,6 +744,7 @@ export class CoincircuitWebhooksService {
         fiat_currency: data.currency,
         fee: data.fee != null ? Number(data.fee) : 0,
         status: CryptoTxStatus.PROCESSING,
+        mode: 'live',
         provider_reference: data.depositAccountId,
         description: `${isCrypto ? 'Crypto' : 'Bank'} deposit processing: ${data.amount} ${data.currency}`,
         metadata: {

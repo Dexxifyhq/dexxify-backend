@@ -62,16 +62,16 @@ export class CryptoTransaction {
   @Column({ type: 'text', nullable: true })
   tx_hash: string | null;
 
-  @Column({ type: 'decimal', precision: 18, scale: 2, nullable: true })
+  @Column({ type: 'decimal', precision: 18, scale: 8, nullable: true })
   fiat_amount: number | null;
 
   @Column({ type: 'text', default: 'NGN' })
   fiat_currency: string;
 
-  @Column({ type: 'decimal', precision: 18, scale: 4, nullable: true })
+  @Column({ type: 'decimal', precision: 18, scale: 8, nullable: true })
   exchange_rate: number | null;
 
-  @Column({ type: 'decimal', precision: 18, scale: 2, default: 0 })
+  @Column({ type: 'decimal', precision: 18, scale: 8, default: 0 })
   fee: number;
 
   @Index()

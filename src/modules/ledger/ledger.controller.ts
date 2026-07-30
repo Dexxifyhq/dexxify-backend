@@ -1,7 +1,7 @@
 import { Controller, Get, Param, Query, ParseUUIDPipe } from '@nestjs/common';
 import { LedgerService } from './ledger.service';
 import { LedgerQueryDto } from './dto';
-import { DualAuth,  GetBusinessId } from '../../common/decorators';
+import { DualAuth, GetBusinessId, GetMode } from '../../common/decorators';
 import {
   ApiOperation,
   ApiTags,
@@ -26,9 +26,10 @@ export class LedgerController {
   @Get('transactions')
   async findAll(
     @GetBusinessId() businessId: string,
+    @GetMode() mode: 'live' | 'test',
     @Query() query: LedgerQueryDto,
   ) {
-    return this.ledgerService.findAll(businessId, query);
+    return this.ledgerService.findAll(businessId, mode, query);
   }
 
   @ApiOperation({
@@ -43,9 +44,10 @@ export class LedgerController {
   @Get('transactions/:tx_id')
   async findOne(
     @GetBusinessId() businessId: string,
+    @GetMode() mode: 'live' | 'test',
     @Param('tx_id', ParseUUIDPipe) txId: string,
   ) {
-    return this.ledgerService.findOne(businessId, txId);
+    return this.ledgerService.findOne(businessId, mode, txId);
   }
 
   @ApiOperation({
@@ -53,8 +55,11 @@ export class LedgerController {
     description: 'Get current balance across all wallets and currencies',
   })
   @Get('balance')
-  async getBalance(@GetBusinessId() businessId: string) {
-    return this.ledgerService.getBalance(businessId);
+  async getBalance(
+    @GetBusinessId() businessId: string,
+    @GetMode() mode: 'live' | 'test',
+  ) {
+    return this.ledgerService.getBalance(businessId, mode);
   }
 
   @ApiOperation({
@@ -70,8 +75,9 @@ export class LedgerController {
   @Get('reports/settlement')
   async getSettlementReport(
     @GetBusinessId() businessId: string,
+    @GetMode() mode: 'live' | 'test',
     @Query() query: { date?: string },
   ) {
-    return this.ledgerService.getSettlementReport(businessId, query);
+    return this.ledgerService.getSettlementReport(businessId, mode, query);
   }
 }

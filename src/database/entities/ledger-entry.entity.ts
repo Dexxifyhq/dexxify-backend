@@ -8,6 +8,7 @@ import {
   Index,
 } from 'typeorm';
 import { Business } from './business.entity';
+import { DepositAccount } from './wallet.entity';
 
 export enum TxType {
   DEPOSIT = 'deposit',
@@ -110,6 +111,10 @@ export class LedgerEntry {
   @Index()
   @CreateDateColumn({ type: 'timestamptz' })
   created_at: Date;
+
+  @ManyToOne(() => DepositAccount, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'deposit_account_id' })
+  deposit_account: DepositAccount;
 
   @ManyToOne(() => Business, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'business_id' })
