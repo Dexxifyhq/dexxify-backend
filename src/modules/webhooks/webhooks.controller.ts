@@ -13,7 +13,12 @@ import {
 import { WebhooksService } from './webhooks.service';
 import { CoincircuitWebhooksService } from './coincircuit-webhooks.service';
 import { CreateWebhookDto } from './dto';
-import { GetBusinessId, GetMode, Public, DualAuth } from '../../common/decorators';
+import {
+  GetBusinessId,
+  GetMode,
+  Public,
+  DualAuth,
+} from '../../common/decorators';
 import {
   ApiOperation,
   ApiTags,
@@ -71,7 +76,7 @@ export class IncomingWebhooksController {
   constructor(private readonly ccWebhooksService: CoincircuitWebhooksService) {}
 
   @ApiOperation({
-    summary: 'Handle CoincircuitMCP webhooks',
+    summary: 'Handle Coincircuit webhooks',
     description:
       'Receives deposit, payment, and payout events from CoincircuitMCP. Verified via HMAC-SHA256 signature.',
   })

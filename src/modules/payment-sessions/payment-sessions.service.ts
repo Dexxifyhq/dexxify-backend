@@ -27,6 +27,7 @@ import {
   toCCAsset,
   toCCChain,
 } from '../../providers/coincircuit/coincircuit.service';
+import { CustomersService } from '../customers/customers.service';
 
 @Injectable()
 export class PaymentSessionsService {
@@ -38,6 +39,7 @@ export class PaymentSessionsService {
     @InjectRepository(Customer)
     private readonly customerRepo: Repository<Customer>,
     private readonly cc: CoincircuitService,
+    private readonly customersService: CustomersService,
   ) {}
 
   async create(businessId: string, mode: 'live' | 'test', dto: CreatePaymentSessionDto) {
@@ -48,15 +50,11 @@ export class PaymentSessionsService {
 
     const customer: Customer = existingCustomer
       ? existingCustomer
-      : await this.customerRepo.save(
-          this.customerRepo.create({
-            business_id: businessId,
-            mode,
-            first_name: dto.first_name,
-            last_name: dto.last_name,
-            email: dto.customer_email,
-          } as Customer),
-        );
+      : await this.customersService.create(businessId, mode, {
+          email: dto.customer_email,
+          first_name: dto.first_name,
+          last_name: dto.last_name,
+        });
 
     // Sync to CoincircuitMCP
     try {

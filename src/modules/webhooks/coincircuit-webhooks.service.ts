@@ -84,13 +84,17 @@ export class CoincircuitWebhooksService {
     @InjectRepository(CryptoTransaction)
     private readonly cryptoTxRepo: Repository<CryptoTransaction>,
   ) {
-    this.webhookSecret =
-      this.config.get<string>('coincircuit.webhookSecret') || '';
+    const isProd = this.config.get<string>('app.nodeEnv') === 'production';
+    this.webhookSecret = isProd
+      ? this.config.get<string>('coincircuit.webhookSecret') || ''
+      : this.config.get<string>('coincircuit.testWebhookSecret') || '';
   }
 
   verifyWebhookRequest(req: Request): { isValid: boolean; error?: string } {
     const signature = req.headers['x-coincircuit-signature'] as string;
     const timestamp = req.headers['x-coincircuit-timestamp'] as string;
+    // console.log('signature', signature);
+    // console.log('timestamp', timestamp);
 
     if (!signature || !timestamp || !this.webhookSecret) {
       this.logger.warn('Missing webhook signature, timestamp, or secret');
@@ -99,9 +103,12 @@ export class CoincircuitWebhooksService {
 
     const rawBody: string =
       (req as any).rawBody ?? JSON.stringify((req as any).body ?? {});
+    // console.log('Req.Body', req.body);
+    // console.log('Req.RawBody', rawBody);
 
     // Signed payload = "<timestamp>.<rawBody>"
-    const signedPayload = `${timestamp}.${rawBody}`;
+    // const signedPayload = `${timestamp}.${rawBody}`;
+    const signedPayload = timestamp ? `${timestamp}.${rawBody}` : rawBody;
 
     const expected = crypto
       .createHmac('sha256', this.webhookSecret)
@@ -275,16 +282,16 @@ export class CoincircuitWebhooksService {
   }
 
   private async handlePaymentCompleted(data: any): Promise<void> {
-    // data = PaymentWebhookDataDto: { reference, settlements, asset, ... }
-    const ref = data.reference;
+    const ref = data.session.reference;
     if (!ref) return;
 
-    const settlements = data.settlements;
+    const session = data.session;
+    const settlements = session.settlements;
+    const payment = session.payment;
     const netAmount = settlements?.net?.amount
       ? Number(settlements.net.amount)
       : null;
-    const settlementCurrency: string =
-      settlements?.currency ?? data.currency ?? 'NGN';
+    const settlementCurrency: string = settlements?.currency ?? 'NGN';
 
     await this.dataSource.transaction(async (em) => {
       const session = await em
@@ -320,17 +327,20 @@ export class CoincircuitWebhooksService {
       );
 
       // Credit developer ledger — split by settlement currency
-      const asset = (session.crypto_asset ?? 'USDT').toUpperCase();
+      // const asset = (session.crypto_asset ?? '').toUpperCase();
+      // USD === USDT === USDC, AVOID DOUBLE COUNTING BOTH USD AND USDT/USDC
+      const asset = payment.asset;
       const isNGN = settlementCurrency === 'NGN';
+      const isUSD = settlementCurrency === 'USD';
       const isUSDT = asset === 'USDT';
       const isUSDC = asset === 'USDC';
       const paymentCurrency = isNGN
         ? LedgerCurrency.NGN
-        : isUSDT
+        : // : isUSD
+          //   ? LedgerCurrency.USD
+          isUSDT
           ? LedgerCurrency.USDT
-          : isUSDC
-            ? LedgerCurrency.USDC
-            : LedgerCurrency.USD;
+          : LedgerCurrency.USDC;
 
       await em.getRepository(LedgerEntry).save(
         em.getRepository(LedgerEntry).create({
@@ -339,20 +349,21 @@ export class CoincircuitWebhooksService {
           reference_type: 'payment_session',
           reference_id: session.id,
           currency: paymentCurrency,
+          asset,
+          // credit_usd: isUSD ? creditAmount : 0,
           credit_ngn: isNGN ? creditAmount : 0,
-          credit_usdt: isUSDT ? creditAmount : 0,
-          credit_usdc: isUSDC ? creditAmount : 0,
-          debit_ngn: 0,
-          asset: session.crypto_asset ?? 'USDT',
+          credit_usdt: isUSD && isUSDT ? creditAmount : 0,
+          credit_usdc: isUSD && isUSDC ? creditAmount : 0,
           status: LedgerEntryStatus.COMPLETED,
           description: `Payment received for session ${session.id}`,
+          metadata: session.metadata,
         }),
       );
     });
   }
 
   private async handlePaymentPartial(data: any): Promise<void> {
-    const ref = data.reference ?? data.session?.reference;
+    const ref = data.session.reference;
     if (!ref) return;
 
     await this.sessionRepo.update(
@@ -362,7 +373,7 @@ export class CoincircuitWebhooksService {
   }
 
   private async handlePaymentExpired(data: any): Promise<void> {
-    const ref = data.reference ?? data.session?.reference;
+    const ref = data.session.reference;
     if (!ref) return;
 
     await this.sessionRepo.update(
@@ -453,7 +464,7 @@ export class CoincircuitWebhooksService {
   // ── Payout handlers ──────────────────────────────────
 
   private async handlePayoutSuccess(data: any): Promise<void> {
-    const ref = data.payout?.id ?? data.payout?.reference;
+    const ref = data.payout?.id ?? data.payout.reference;
     if (!ref) return;
 
     await this.payoutRepo.update(
@@ -838,7 +849,7 @@ export class CoincircuitWebhooksService {
           tx_type: TxType.DEPOSIT,
           reference_type: 'deposit',
           reference_id: data.id,
-          wallet_address: data.depositAccountId,
+          deposit_account_id: data.depositAccountId,
           currency: ledgerCurrency,
           credit_ngn: isNGN ? netAmount : 0,
           credit_usdt: isUSDT ? netAmount : 0,
@@ -901,7 +912,7 @@ export class CoincircuitWebhooksService {
         tx_type: TxType.DEPOSIT,
         reference_type: 'deposit',
         reference_id: data.id,
-        wallet_address: data.depositAccountId,
+        deposit_account_id: data.depositAccountId,
         currency: isNGN
           ? LedgerCurrency.NGN
           : isUSDT

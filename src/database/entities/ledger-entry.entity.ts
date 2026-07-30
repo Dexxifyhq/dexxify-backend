@@ -55,13 +55,13 @@ export class LedgerEntry {
 
   @Index()
   @Column({ type: 'text', nullable: true })
-  wallet_address: string;
+  deposit_account_id: string;
 
   @Column({ type: 'text' })
   reference_type: string;
 
   @Index()
-  @Column({ type: 'text' })
+  @Column({ type: 'text', unique: true })
   reference_id: string;
 
   @Column({ type: 'decimal', precision: 28, scale: 8, default: 0 })

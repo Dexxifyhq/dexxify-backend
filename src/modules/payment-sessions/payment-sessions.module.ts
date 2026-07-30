@@ -4,11 +4,13 @@ import { PaymentSessionsController } from './payment-sessions.controller';
 import { PaymentSessionsService } from './payment-sessions.service';
 import { PaymentSession, Customer } from '../../database/entities';
 import { CoincircuitModule } from '../../providers/coincircuit/coincircuit.module';
+import { CustomersModule } from '../customers/customers.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([PaymentSession, Customer]),
     CoincircuitModule,
+    CustomersModule,
   ],
   controllers: [PaymentSessionsController],
   providers: [PaymentSessionsService],
