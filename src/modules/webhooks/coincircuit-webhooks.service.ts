@@ -258,6 +258,7 @@ export class CoincircuitWebhooksService {
           status: CryptoTxStatus.PENDING,
           reference: session.reference,
           provider_reference: ref,
+          mode: session.mode,
           description: `Inbound crypto for session ${ref}`,
           metadata: {
             sessionId: tx.sessionId,
@@ -355,6 +356,7 @@ export class CoincircuitWebhooksService {
           credit_usdt: isUSD && isUSDT ? creditAmount : 0,
           credit_usdc: isUSD && isUSDC ? creditAmount : 0,
           status: LedgerEntryStatus.COMPLETED,
+          mode: session.mode,
           description: `Payment received for session ${session.id}`,
           metadata: session.metadata,
         }),
@@ -444,6 +446,7 @@ export class CoincircuitWebhooksService {
         credit_ngn: currency === 'NGN' ? amountPaid : 0,
         credit_usd: currency === 'USD' ? amountPaid : 0,
         debit_ngn: 0,
+        mode: invoice.mode,
         asset: data.invoice?.asset ?? 'USDT',
         status: LedgerEntryStatus.COMPLETED,
         description: `Invoice ${invoice.invoice_number} paid`,
@@ -487,6 +490,7 @@ export class CoincircuitWebhooksService {
         debit_ngn: Number(payout.amount),
         credit_ngn: 0,
         asset: 'NGN',
+        mode: payout.mode,
         status: LedgerEntryStatus.COMPLETED,
         description: `Payout to ${payout.account_number}`,
       }),
@@ -514,15 +518,17 @@ export class CoincircuitWebhooksService {
 
     // Resolve business_id from the entity the refund belongs to
     let developerId: string | null = null;
+    let session: PaymentSession | null = null;
+    let invoice: Invoice | null = null;
 
     if (refund.entity === 'session') {
-      const session = await this.sessionRepo.findOne({
+      session = await this.sessionRepo.findOne({
         where: { provider_session_reference: refund.reference },
         select: ['business_id'],
       });
       developerId = session?.business_id ?? null;
     } else if (refund.entity === 'invoice') {
-      const invoice = await this.invoiceRepo.findOne({
+      invoice = await this.invoiceRepo.findOne({
         where: { provider_invoice_reference: refund.reference },
         select: ['business_id'],
       });
@@ -552,6 +558,7 @@ export class CoincircuitWebhooksService {
         debit_usd: currency === 'USD' ? debitAmount : 0,
         credit_ngn: 0,
         asset: refund.asset ?? 'USDT',
+        mode: session?.mode ?? invoice?.mode,
         status: LedgerEntryStatus.COMPLETED,
         description: `Refund for ${refund.entity} ${refund.reference}`,
         metadata: {
@@ -601,6 +608,7 @@ export class CoincircuitWebhooksService {
         credit_ngn: toCurrency === 'NGN' ? targetAmount : 0,
         credit_usd: toCurrency === 'USDT' ? targetAmount : 0,
         asset: fromCurrency,
+        mode: record.mode,
         status: LedgerEntryStatus.COMPLETED,
         description: `Swap ${sourceAmount} ${fromCurrency} → ${targetAmount} ${toCurrency} @ ${swap.rate}`,
         metadata: { quotationId: swap.quotation?.id, rate: swap.rate },
@@ -633,6 +641,7 @@ export class CoincircuitWebhooksService {
         debit_ngn: feeNgn,
         credit_ngn: 0,
         asset: 'NGN',
+        mode: record.mode,
         status: LedgerEntryStatus.COMPLETED,
         description: `Offramp fee (${meta.feePercent ?? 1.5}%)`,
       }),
@@ -645,6 +654,7 @@ export class CoincircuitWebhooksService {
         credit_ngn: feeNgn,
         debit_ngn: 0,
         asset: 'NGN',
+        mode: record.mode,
         status: LedgerEntryStatus.COMPLETED,
         description: `Fee income: offramp (${meta.feePercent ?? 1.5}%)`,
       }),
@@ -677,6 +687,7 @@ export class CoincircuitWebhooksService {
         account_number: null,
         narration: 'Offramp payout',
         status: PayoutStatus.PENDING,
+        mode: record.mode,
         provider_payout_id: payoutData.id,
         metadata: { swapRecordId: record.id, recipientId: meta.recipientId },
       }),
@@ -744,7 +755,7 @@ export class CoincircuitWebhooksService {
         fiat_currency: data.currency,
         fee: data.fee != null ? Number(data.fee) : 0,
         status: CryptoTxStatus.PROCESSING,
-        mode: 'live',
+        mode: account.mode,
         provider_reference: data.depositAccountId,
         description: `${isCrypto ? 'Crypto' : 'Bank'} deposit processing: ${data.amount} ${data.currency}`,
         metadata: {
@@ -832,6 +843,7 @@ export class CoincircuitWebhooksService {
             status: CryptoTxStatus.COMPLETED,
             completed_at: new Date(),
             provider_reference: data.depositAccountId,
+            mode: account.mode,
             description: `${isCrypto ? 'Crypto' : 'Bank'} deposit: ${data.amount} ${currency}`,
             metadata: {
               customerId: data.customer?.id ?? null,
@@ -858,6 +870,7 @@ export class CoincircuitWebhooksService {
           debit_ngn: 0,
           asset,
           status: LedgerEntryStatus.COMPLETED,
+          mode: account.mode,
           description: `${isCrypto ? 'Crypto' : 'Bank'} deposit: ${data.amount} ${currency}`,
           metadata: {
             depositId: data.id,
@@ -926,6 +939,7 @@ export class CoincircuitWebhooksService {
         credit_usdc: 0,
         debit_ngn: 0,
         asset,
+        mode: account.mode,
         status: LedgerEntryStatus.REJECTED,
         description: `Failed deposit: ${data.amount} ${currency}`,
         metadata: {

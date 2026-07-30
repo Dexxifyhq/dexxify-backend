@@ -424,6 +424,7 @@ export class WalletsService {
         credit_usdc: isUSDC ? feeAmount : 0,
         debit_ngn: 0,
         asset: dto.token,
+        mode,
         status: LedgerEntryStatus.COMPLETED,
         description: `Fee income: ${this.STABLECOIN_FEE_PERCENT}% stablecoin withdrawal`,
       }),
