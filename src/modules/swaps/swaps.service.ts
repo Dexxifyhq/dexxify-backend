@@ -3,11 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CoincircuitService } from '../../providers/coincircuit/coincircuit.service';
 import { SwapRecord, SwapRecordStatus } from '../../database/entities';
-import {
-  EstimateSwapDto,
-  CreateSwapQuotationDto,
-  SwapQueryDto,
-} from './dto';
+import { EstimateSwapDto, CreateSwapQuotationDto, SwapQueryDto } from './dto';
 
 @Injectable()
 export class SwapsService {
@@ -39,8 +35,15 @@ export class SwapsService {
     return this.cc.getSwapQuotation(mode, quotationId);
   }
 
-  async executeQuotation(businessId: string, mode: 'live' | 'test', quotationId: string) {
-    const result = await this.cc.executeSwap(mode, quotationId);
+  async executeQuotation(
+    businessId: string,
+    mode: 'live' | 'test',
+    quotationId: string,
+  ) {
+    const result = await this.cc.executeSwap(mode, quotationId, {
+      webhookUrl:
+        'https://api.dexxify.com/api/v1/webhooks/incoming/coincircuit',
+    });
 
     const swap = result?.data;
     if (swap?.id) {
@@ -53,14 +56,18 @@ export class SwapsService {
             from_currency: swap.fromCurrency,
             to_currency: swap.toCurrency,
             source_amount: Number(swap.sourceAmount),
-            target_amount: swap.targetAmount != null ? Number(swap.targetAmount) : null,
-            status: swap.status === 'completed'
-              ? SwapRecordStatus.COMPLETED
-              : SwapRecordStatus.PENDING,
+            target_amount:
+              swap.targetAmount != null ? Number(swap.targetAmount) : null,
+            status:
+              swap.status === 'completed'
+                ? SwapRecordStatus.COMPLETED
+                : SwapRecordStatus.PENDING,
           }),
         );
       } catch (err) {
-        this.logger.warn(`Failed to save swap record for ${swap.id}: ${err.message}`);
+        this.logger.warn(
+          `Failed to save swap record for ${swap.id}: ${err.message}`,
+        );
       }
     }
 

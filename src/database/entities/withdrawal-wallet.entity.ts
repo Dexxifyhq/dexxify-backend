@@ -11,11 +11,11 @@ import {
 import { Business } from './business.entity';
 
 export enum WithdrawalWalletNetwork {
-  SOL = 'SOL',
-  TON = 'TON',
-  BSC = 'BSC',
-  ERC20 = 'EERC20',
-  TRC20 = 'TRC20',
+  BSC = 'bsc',
+  TRC20 = 'tron',
+  SOL = 'solana',
+  BASE = 'base',
+  ERC20 = 'ethereum',
 }
 
 export enum WithdrawalWalletToken {

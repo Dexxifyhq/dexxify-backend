@@ -491,7 +491,7 @@ export class AuthService {
     );
     return {
       mode,
-      access_token: tokens.access_token,
+      // access_token: tokens.access_token,
       user: this.sanitizeUser(user),
     };
   }

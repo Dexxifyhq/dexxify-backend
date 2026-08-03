@@ -142,11 +142,7 @@ export class CoincircuitService {
   }
 
   async getCCCustomer(mode: 'live' | 'test', id: string) {
-    return this.request<{ data: any }>(
-      'GET',
-      `/api/v1/customers/${id}`,
-      mode,
-    );
+    return this.request<{ data: any }>('GET', `/api/v1/customers/${id}`, mode);
   }
 
   // ── Invoices ──────────────────────────────────────────
@@ -192,10 +188,7 @@ export class CoincircuitService {
     );
   }
 
-  async listCCInvoices(
-    mode: 'live' | 'test',
-    params?: Record<string, string>,
-  ) {
+  async listCCInvoices(mode: 'live' | 'test', params?: Record<string, string>) {
     return this.request<{ data: any[] }>(
       'GET',
       '/api/v1/invoices',
@@ -281,12 +274,7 @@ export class CoincircuitService {
         | { chain: string; address: string };
     },
   ) {
-    return this.request<{ data: any }>(
-      'POST',
-      '/api/v1/recipients',
-      mode,
-      dto,
-    );
+    return this.request<{ data: any }>('POST', '/api/v1/recipients', mode, dto);
   }
 
   async validateRecipient(
@@ -499,11 +487,18 @@ export class CoincircuitService {
     );
   }
 
-  async executeSwap(mode: 'live' | 'test', quotationId: string) {
+  async executeSwap(
+    mode: 'live' | 'test',
+    quotationId: string,
+    dto?: {
+      webhookUrl?: string;
+    },
+  ) {
     return this.request<{ data: any }>(
       'POST',
       `/api/v1/swap/execute/${quotationId}`,
       mode,
+      dto,
     );
   }
 

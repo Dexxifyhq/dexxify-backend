@@ -14,11 +14,11 @@ import {
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export enum WithdrawalNetwork {
-  ERC20 = 'ERC20',
-  TRC20 = 'TRC20',
-  SOL = 'SOL',
-  BSC = 'BSC',
-  TON = 'TON',
+  BSC = 'bsc',
+  TRC20 = 'tron',
+  SOL = 'solana',
+  BASE = 'base',
+  ERC20 = 'ethereum',
 }
 
 export enum WithdrawalToken {
@@ -63,7 +63,8 @@ export class IssueDepositIdentityDto {
 
   @ApiPropertyOptional({
     example: '12345678901',
-    description: 'BVN of the account holder (11 digits). Required when type is ngn_virtual_account',
+    description:
+      'BVN of the account holder (11 digits). Required when type is ngn_virtual_account',
   })
   @ValidateIf((o) => o.type === DepositIdentityType.NGN_VIRTUAL_ACCOUNT)
   @IsNumberString()
@@ -213,7 +214,7 @@ export class AddWithdrawalAddressDto {
 
   @ApiProperty({
     description: 'Blockchain network',
-    example: WithdrawalNetwork.TON,
+    example: WithdrawalNetwork.BSC,
   })
   @IsEnum(WithdrawalNetwork)
   @IsNotEmpty()
@@ -269,7 +270,7 @@ export class InitiateStableCoinWithdrawalDto {
 
   @ApiProperty({
     description: 'Blockchain network',
-    example: WithdrawalNetwork.TON,
+    example: WithdrawalNetwork.BSC,
   })
   @IsEnum(WithdrawalNetwork)
   @IsNotEmpty()

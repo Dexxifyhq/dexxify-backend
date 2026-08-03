@@ -16,7 +16,6 @@ export enum TxType {
   TRANSFER = 'transfer',
   ONRAMP = 'onramp',
   OFFRAMP = 'offramp',
-  PAYOUT = 'payout',
   FEE = 'fee',
   SWAP = 'swap',
   REFUND = 'refund',

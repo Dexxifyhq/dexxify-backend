@@ -5,7 +5,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import {
   DepositAccount,
   LedgerEntry,
@@ -47,10 +47,11 @@ const WITHDRAWAL_CHAIN_MAP: Record<string, string> = {
 @Injectable()
 export class WalletsService {
   private readonly logger = new Logger(WalletsService.name);
-  private readonly STABLECOIN_FEE_PERCENT = 1.0;
-  private readonly FIAT_WITHDRAWAL_FEE_PERCENT = 1.5;
+  private readonly STABLECOIN_FEE_PERCENT = 0.5;
+  private readonly FIAT_WITHDRAWAL_FEE_PERCENT = 1.0;
 
   constructor(
+    private readonly dataSource: DataSource,
     @InjectRepository(DepositAccount)
     private readonly walletRepo: Repository<DepositAccount>,
     @InjectRepository(User)
@@ -63,8 +64,6 @@ export class WalletsService {
     private readonly ledgerRepo: Repository<LedgerEntry>,
     @InjectRepository(Customer)
     private readonly customerRepo: Repository<Customer>,
-    @InjectRepository(Payout)
-    private readonly payoutRepo: Repository<Payout>,
     private readonly cc: CoincircuitService,
     private readonly customer: CustomersService,
     private readonly platformCtx: PlatformContextService,
@@ -290,8 +289,7 @@ export class WalletsService {
     businessId: string,
     mode: 'live' | 'test',
   ) {
-    const ccChain =
-      WITHDRAWAL_CHAIN_MAP[data.network] || data.network.toLowerCase();
+    const ccChain = data.network;
 
     const result = await this.cc.createRecipient(mode, {
       type: 'crypto_address',
@@ -308,7 +306,7 @@ export class WalletsService {
       business_id: businessId,
       mode,
       address: data.address,
-      network: data.network as WithdrawalWalletNetwork,
+      network: ccChain as WithdrawalWalletNetwork,
       token: data.token as WithdrawalWalletToken,
       label: data.label,
       primary: details.isDefault,
@@ -358,8 +356,33 @@ export class WalletsService {
 
     const feeAmount = dto.amount * (this.STABLECOIN_FEE_PERCENT / 100);
     const netAmount = dto.amount - feeAmount;
-    const isStablecoin = ['USDT', 'USDC'].includes(dto.token.toUpperCase());
+    const token = dto.token.toUpperCase();
+    const isUSDT = token === 'USDT';
+    const isUSDC = token === 'USDC';
+    const withdrawalCurrency = isUSDT
+      ? LedgerCurrency.USDT
+      : LedgerCurrency.USDC;
 
+    // Credits: completed/reversed/rejected. Debits: completed + pending (to block double-spend)
+    const creditCol = isUSDT ? 'le.credit_usdt' : 'le.credit_usdc';
+    const debitCol = isUSDT ? 'le.debit_usdt' : 'le.debit_usdc';
+
+    const calculatedBalance = await this.ledgerRepo
+      .createQueryBuilder('le')
+      .select(
+        `SUM(CASE WHEN le.status IN ('completed','reversed','rejected') THEN ${creditCol} ELSE 0 END)
+         - SUM(CASE WHEN le.status IN ('completed','pending') THEN ${debitCol} ELSE 0 END)`,
+        'balance',
+      )
+      .where('le.business_id = :businessId', { businessId })
+      .andWhere('le.mode = :mode', { mode })
+      .getRawOne();
+
+    if (Number(calculatedBalance?.balance ?? 0) < dto.amount) {
+      throw new BadRequestException('Insufficient balance');
+    }
+
+    // CC call outside transaction — if it fails nothing is written
     const result = await this.cc.initiatePayout(mode, {
       recipientId: saved.id,
       amount: netAmount.toString(),
@@ -368,67 +391,55 @@ export class WalletsService {
     });
 
     const payoutId: string = result.data?.id;
-
-    const token = dto.token.toUpperCase();
-    const isUSDT = token === 'USDT';
-    const isUSDC = token === 'USDC';
-    const withdrawalCurrency = isUSDT
-      ? LedgerCurrency.USDT
-      : isUSDC
-        ? LedgerCurrency.USDC
-        : LedgerCurrency.NGN;
-
-    await this.ledgerRepo.save(
-      this.ledgerRepo.create({
-        business_id: businessId,
-        mode,
-        tx_type: TxType.WITHDRAWAL,
-        reference_type: 'withdrawal',
-        reference_id: payoutId,
-        currency: withdrawalCurrency,
-        debit_ngn: isStablecoin ? 0 : netAmount,
-        debit_usdt: isUSDT ? netAmount : 0,
-        debit_usdc: isUSDC ? netAmount : 0,
-        credit_ngn: 0,
-        asset: dto.token,
-        status: LedgerEntryStatus.PENDING,
-        description: `${dto.token} withdrawal to ${dto.address}`,
-      }),
-    );
-
     const platformBusinessId = this.platformCtx.getBusinessId();
-    await this.ledgerRepo.save([
-      this.ledgerRepo.create({
-        business_id: businessId,
-        mode,
-        tx_type: TxType.FEE,
-        reference_type: 'withdrawal',
-        reference_id: payoutId,
-        currency: withdrawalCurrency,
-        debit_ngn: isStablecoin ? 0 : feeAmount,
-        debit_usdt: isUSDT ? feeAmount : 0,
-        debit_usdc: isUSDC ? feeAmount : 0,
-        credit_ngn: 0,
-        asset: dto.token,
-        status: LedgerEntryStatus.COMPLETED,
-        description: `${this.STABLECOIN_FEE_PERCENT}% withdrawal fee`,
-      }),
-      this.ledgerRepo.create({
-        business_id: platformBusinessId,
-        tx_type: TxType.FEE,
-        reference_type: 'withdrawal',
-        reference_id: payoutId,
-        currency: withdrawalCurrency,
-        credit_ngn: isStablecoin ? 0 : feeAmount,
-        credit_usdt: isUSDT ? feeAmount : 0,
-        credit_usdc: isUSDC ? feeAmount : 0,
-        debit_ngn: 0,
-        asset: dto.token,
-        mode,
-        status: LedgerEntryStatus.COMPLETED,
-        description: `Fee income: ${this.STABLECOIN_FEE_PERCENT}% stablecoin withdrawal`,
-      }),
-    ]);
+
+    await this.dataSource.transaction(async (em) => {
+      const payout = await em.getRepository(Payout).save(
+        em.getRepository(Payout).create({
+          business_id: businessId,
+          mode,
+          amount: dto.amount,
+          fee: feeAmount,
+          status: PayoutStatus.PENDING,
+          provider_payout_id: payoutId,
+          metadata: { recipientId: saved.id },
+        }),
+      );
+
+      // Developer debit — PENDING until webhook confirms delivery
+      await em.getRepository(LedgerEntry).save(
+        em.getRepository(LedgerEntry).create({
+          business_id: businessId,
+          mode,
+          tx_type: TxType.WITHDRAWAL,
+          reference_type: 'payout',
+          reference_id: payout.id,
+          currency: withdrawalCurrency,
+          debit_usdt: isUSDT ? dto.amount : 0,
+          debit_usdc: isUSDC ? dto.amount : 0,
+          asset: dto.token,
+          status: LedgerEntryStatus.PENDING,
+          description: `Stablecoin withdrawal: ${dto.amount} ${token}`,
+        }),
+      );
+
+      // Platform fee — recognised immediately
+      await em.getRepository(LedgerEntry).save(
+        em.getRepository(LedgerEntry).create({
+          business_id: platformBusinessId,
+          mode,
+          tx_type: TxType.FEE,
+          reference_type: 'payout_fee',
+          reference_id: `${payout.id}_fee`,
+          currency: withdrawalCurrency,
+          credit_usdt: isUSDT ? feeAmount : 0,
+          credit_usdc: isUSDC ? feeAmount : 0,
+          asset: dto.token,
+          status: LedgerEntryStatus.PENDING,
+          description: `Fee income: ${this.STABLECOIN_FEE_PERCENT}% stablecoin withdrawal`,
+        }),
+      );
+    });
 
     this.logger.log(`Stablecoin withdrawal initiated: ${payoutId}`);
     return { ...result, fee: feeAmount, net_amount: netAmount };
@@ -442,23 +453,24 @@ export class WalletsService {
     const feeAmount = dto.amount * (this.FIAT_WITHDRAWAL_FEE_PERCENT / 100);
     const netAmount = dto.amount - feeAmount;
 
+    // Credits: completed/reversed/rejected. Debits: completed + pending (to block double-spend)
     const calculatedBalance = await this.ledgerRepo
-      .createQueryBuilder('ledger')
-      .select('SUM(ledger.credit_ngn) - SUM(ledger.debit_ngn)', 'balance')
-      .where('ledger.status IN (:...statuses)', {
-        statuses: [
-          LedgerEntryStatus.COMPLETED,
-          LedgerEntryStatus.REJECTED,
-          LedgerEntryStatus.REVERSED,
-        ],
-      })
-      .andWhere('ledger.business_id = :businessId', { businessId })
+      .createQueryBuilder('le')
+      .select(
+        `SUM(CASE WHEN le.status IN ('completed','reversed','rejected') THEN le.credit_ngn ELSE 0 END)
+         - SUM(CASE WHEN le.status IN ('completed','pending') THEN le.debit_ngn ELSE 0 END)`,
+        'balance',
+      )
+      .where('le.business_id = :businessId', { businessId })
+      .andWhere('le.currency = :currency', { currency: 'NGN' })
+      .andWhere('le.mode = :mode', { mode })
       .getRawOne();
 
-    if ((calculatedBalance.balance ?? 0) < dto.amount) {
+    if (Number(calculatedBalance?.balance ?? 0) < dto.amount) {
       throw new BadRequestException('Insufficient balance');
     }
 
+    // CC call outside transaction — if it fails nothing is written
     const result = await this.cc.initiatePayout(mode, {
       recipientId: dto.bank_id,
       amount: netAmount.toString(),
@@ -467,48 +479,54 @@ export class WalletsService {
     });
 
     const payoutId: string = result.data.id;
-
-    await this.payoutRepo.save(
-      this.payoutRepo.create({
-        business_id: businessId,
-        mode,
-        amount: dto.amount,
-        fee: feeAmount,
-        narration: dto.narration,
-        status: PayoutStatus.PENDING,
-        provider_payout_id: payoutId,
-        metadata: { recipientId: dto.bank_id },
-      }),
-    );
-
     const platformBusinessId = this.platformCtx.getBusinessId();
-    await this.ledgerRepo.save([
-      this.ledgerRepo.create({
-        business_id: businessId,
-        mode,
-        tx_type: TxType.FEE,
-        reference_type: 'withdrawal',
-        reference_id: payoutId,
-        currency: LedgerCurrency.NGN,
-        debit_ngn: feeAmount,
-        credit_ngn: 0,
-        asset: 'NGN',
-        status: LedgerEntryStatus.COMPLETED,
-        description: `${this.FIAT_WITHDRAWAL_FEE_PERCENT}% withdrawal fee`,
-      }),
-      this.ledgerRepo.create({
-        business_id: platformBusinessId,
-        tx_type: TxType.FEE,
-        reference_type: 'withdrawal',
-        reference_id: payoutId,
-        currency: LedgerCurrency.NGN,
-        credit_ngn: feeAmount,
-        debit_ngn: 0,
-        asset: 'NGN',
-        status: LedgerEntryStatus.COMPLETED,
-        description: `Fee income: ${this.FIAT_WITHDRAWAL_FEE_PERCENT}% fiat withdrawal`,
-      }),
-    ]);
+
+    await this.dataSource.transaction(async (em) => {
+      const payout = await em.getRepository(Payout).save(
+        em.getRepository(Payout).create({
+          business_id: businessId,
+          mode,
+          amount: dto.amount,
+          fee: feeAmount,
+          narration: dto.narration,
+          status: PayoutStatus.PENDING,
+          provider_payout_id: payoutId,
+          metadata: { recipientId: dto.bank_id },
+        }),
+      );
+
+      // Developer debit — PENDING until webhook confirms delivery
+      await em.getRepository(LedgerEntry).save(
+        em.getRepository(LedgerEntry).create({
+          business_id: businessId,
+          mode,
+          tx_type: TxType.WITHDRAWAL,
+          reference_type: 'payout',
+          reference_id: payout.id,
+          currency: LedgerCurrency.NGN,
+          debit_ngn: dto.amount,
+          asset: 'NGN',
+          status: LedgerEntryStatus.PENDING,
+          description: `Fiat withdrawal: ${dto.amount} NGN`,
+        }),
+      );
+
+      // Platform fee — recognised immediately
+      await em.getRepository(LedgerEntry).save(
+        em.getRepository(LedgerEntry).create({
+          business_id: platformBusinessId,
+          mode,
+          tx_type: TxType.FEE,
+          reference_type: 'payout_fee',
+          reference_id: `${payout.id}_fee`,
+          currency: LedgerCurrency.NGN,
+          credit_ngn: feeAmount,
+          asset: 'NGN',
+          status: LedgerEntryStatus.PENDING,
+          description: `Fee income: ${this.FIAT_WITHDRAWAL_FEE_PERCENT}% fiat withdrawal`,
+        }),
+      );
+    });
 
     this.logger.log(`Fiat withdrawal initiated: ${payoutId}`);
     return { ...result, fee: feeAmount, net_amount: netAmount };

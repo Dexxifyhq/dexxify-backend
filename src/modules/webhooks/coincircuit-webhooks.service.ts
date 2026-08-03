@@ -63,6 +63,7 @@ export enum CCWebhookEvent {
 export class CoincircuitWebhooksService {
   private readonly logger = new Logger(CoincircuitWebhooksService.name);
   private readonly webhookSecret: string;
+  private readonly FIAT_WITHDRAWAL_FEE_PERCENT = 1.0;
 
   constructor(
     private readonly config: ConfigService,
@@ -71,8 +72,6 @@ export class CoincircuitWebhooksService {
     private readonly platformCtx: PlatformContextService,
     @InjectRepository(PaymentSession)
     private readonly sessionRepo: Repository<PaymentSession>,
-    @InjectRepository(Payout)
-    private readonly payoutRepo: Repository<Payout>,
     @InjectRepository(LedgerEntry)
     private readonly ledgerRepo: Repository<LedgerEntry>,
     @InjectRepository(Invoice)
@@ -174,7 +173,7 @@ export class CoincircuitWebhooksService {
 
       // ── Payout ───────────────────────────────────────
       case CCWebhookEvent.PAYOUT_CREATED:
-        // no-op — payout already tracked locally
+        this.logger.log(`Payout initiated: ${payload.data?.payout?.id}`);
         break;
       case CCWebhookEvent.PAYOUT_SUCCESS:
         await this.handlePayoutSuccess(payload.data);
@@ -328,7 +327,6 @@ export class CoincircuitWebhooksService {
       );
 
       // Credit developer ledger — split by settlement currency
-      // const asset = (session.crypto_asset ?? '').toUpperCase();
       // USD === USDT === USDC, AVOID DOUBLE COUNTING BOTH USD AND USDT/USDC
       const asset = payment.asset;
       const isNGN = settlementCurrency === 'NGN';
@@ -467,47 +465,72 @@ export class CoincircuitWebhooksService {
   // ── Payout handlers ──────────────────────────────────
 
   private async handlePayoutSuccess(data: any): Promise<void> {
-    const ref = data.payout?.id ?? data.payout.reference;
+    const ref = data.payout?.id ?? data.payout?.reference;
     if (!ref) return;
 
-    await this.payoutRepo.update(
-      { provider_payout_id: ref },
-      { status: PayoutStatus.COMPLETED, completed_at: new Date() },
-    );
+    await this.dataSource.transaction(async (em) => {
+      const payout = await em
+        .getRepository(Payout)
+        .findOne({ where: { provider_payout_id: ref } });
+      if (!payout) return;
 
-    const payout = await this.payoutRepo.findOne({
-      where: { provider_payout_id: ref },
+      await em
+        .getRepository(Payout)
+        .update(
+          { provider_payout_id: ref },
+          { status: PayoutStatus.COMPLETED, completed_at: new Date() },
+        );
+
+      const isOfframp = !!payout.metadata?.swapRecordId;
+      const ledger = em.getRepository(LedgerEntry);
+
+      // Confirm the net payout debit (shared by both paths — written at initiation)
+      await ledger.update(
+        { reference_type: 'payout', reference_id: payout.id },
+        { status: LedgerEntryStatus.COMPLETED },
+      );
+
+      const feeRef = isOfframp ? `${payout.id}_plat_fee` : `${payout.id}_fee`;
+      await ledger.update(
+        { reference_id: feeRef },
+        { status: LedgerEntryStatus.COMPLETED },
+      );
     });
-    if (!payout) return;
-
-    await this.ledgerRepo.save(
-      this.ledgerRepo.create({
-        business_id: payout.business_id,
-        tx_type: TxType.PAYOUT,
-        reference_type: 'payout',
-        reference_id: payout.id,
-        currency: LedgerCurrency.NGN,
-        debit_ngn: Number(payout.amount),
-        credit_ngn: 0,
-        asset: 'NGN',
-        mode: payout.mode,
-        status: LedgerEntryStatus.COMPLETED,
-        description: `Payout to ${payout.account_number}`,
-      }),
-    );
   }
 
   private async handlePayoutFailed(data: any): Promise<void> {
     const ref = data.payout?.id ?? data.payout?.reference;
     if (!ref) return;
 
-    await this.payoutRepo.update(
-      { provider_payout_id: ref },
-      {
-        status: PayoutStatus.FAILED,
-        failure_reason: data.payout?.failureReason ?? 'Unknown',
-      },
-    );
+    await this.dataSource.transaction(async (em) => {
+      const payout = await em
+        .getRepository(Payout)
+        .findOne({ where: { provider_payout_id: ref } });
+      if (!payout) return;
+
+      await em.getRepository(Payout).update(
+        { provider_payout_id: ref },
+        {
+          status: PayoutStatus.FAILED,
+          failure_reason: data.payout?.failureReason ?? 'Unknown',
+        },
+      );
+
+      const isOfframp = !!payout.metadata?.swapRecordId;
+      const ledger = em.getRepository(LedgerEntry);
+
+      // Reverse the net payout debit (shared by both paths)
+      await ledger.update(
+        { reference_type: 'payout', reference_id: payout.id },
+        { status: LedgerEntryStatus.REVERSED },
+      );
+
+      const feeRef = isOfframp ? `${payout.id}_plat_fee` : `${payout.id}_fee`;
+      await ledger.update(
+        { reference_id: feeRef },
+        { status: LedgerEntryStatus.REVERSED },
+      );
+    });
   }
 
   // ── Refund handlers ──────────────────────────────────
@@ -602,11 +625,17 @@ export class CoincircuitWebhooksService {
         reference_type: 'swap',
         reference_id: record.id,
         currency:
-          toCurrency === 'NGN' ? LedgerCurrency.NGN : LedgerCurrency.USD,
+          toCurrency === 'NGN'
+            ? LedgerCurrency.NGN
+            : toCurrency === 'USDC'
+              ? LedgerCurrency.USDC
+              : LedgerCurrency.USDT,
         debit_ngn: fromCurrency === 'NGN' ? sourceAmount : 0,
-        debit_usd: fromCurrency === 'USDT' ? sourceAmount : 0,
+        debit_usdc: fromCurrency === 'USDC' ? sourceAmount : 0,
+        debit_usdt: fromCurrency === 'USDT' ? sourceAmount : 0,
         credit_ngn: toCurrency === 'NGN' ? targetAmount : 0,
-        credit_usd: toCurrency === 'USDT' ? targetAmount : 0,
+        credit_usdc: toCurrency === 'USDC' ? targetAmount : 0,
+        credit_usdt: toCurrency === 'USDT' ? targetAmount : 0,
         asset: fromCurrency,
         mode: record.mode,
         status: LedgerEntryStatus.COMPLETED,
@@ -626,41 +655,12 @@ export class CoincircuitWebhooksService {
     grossNgn: number,
   ): Promise<void> {
     const meta = record.metadata as { recipientId: string; feePercent: number };
-    const feeNgn = grossNgn * ((meta.feePercent ?? 1.5) / 100);
+    const feePercent = meta.feePercent ?? this.FIAT_WITHDRAWAL_FEE_PERCENT;
+    const feeNgn = grossNgn * (feePercent / 100);
     const netNgn = grossNgn - feeNgn;
-
-    // Fee debit from developer + matching credit to platform (double-entry)
     const platformId = this.platformCtx.getBusinessId();
-    await this.ledgerRepo.save([
-      this.ledgerRepo.create({
-        business_id: record.business_id,
-        tx_type: TxType.FEE,
-        reference_type: 'swap',
-        reference_id: record.id,
-        currency: LedgerCurrency.NGN,
-        debit_ngn: feeNgn,
-        credit_ngn: 0,
-        asset: 'NGN',
-        mode: record.mode,
-        status: LedgerEntryStatus.COMPLETED,
-        description: `Offramp fee (${meta.feePercent ?? 1.5}%)`,
-      }),
-      this.ledgerRepo.create({
-        business_id: platformId,
-        tx_type: TxType.FEE,
-        reference_type: 'swap',
-        reference_id: record.id,
-        currency: LedgerCurrency.NGN,
-        credit_ngn: feeNgn,
-        debit_ngn: 0,
-        asset: 'NGN',
-        mode: record.mode,
-        status: LedgerEntryStatus.COMPLETED,
-        description: `Fee income: offramp (${meta.feePercent ?? 1.5}%)`,
-      }),
-    ]);
 
-    // Initiate CC payout of net NGN to developer's bank
+    // CC call first — if it fails, nothing is written
     let payoutData: any;
     try {
       const result = await this.cc.initiatePayout(record.mode, {
@@ -677,21 +677,50 @@ export class CoincircuitWebhooksService {
       return;
     }
 
-    // Save Payout record — payout.success webhook writes the debit ledger entry
-    await this.payoutRepo.save(
-      this.payoutRepo.create({
-        business_id: record.business_id,
-        amount: netNgn,
-        fee: feeNgn,
-        bank_code: null,
-        account_number: null,
-        narration: 'Offramp payout',
-        status: PayoutStatus.PENDING,
-        mode: record.mode,
-        provider_payout_id: payoutData.id,
-        metadata: { swapRecordId: record.id, recipientId: meta.recipientId },
-      }),
-    );
+    await this.dataSource.transaction(async (em) => {
+      // Save payout first to get its local ID for ledger references
+      const payout = await em.getRepository(Payout).save(
+        em.getRepository(Payout).create({
+          business_id: record.business_id,
+          mode: record.mode,
+          amount: netNgn,
+          fee: feeNgn,
+          bank_code: null,
+          account_number: null,
+          narration: 'Offramp payout',
+          status: PayoutStatus.PENDING,
+          provider_payout_id: payoutData.id,
+          metadata: { swapRecordId: record.id, recipientId: meta.recipientId },
+        }),
+      );
+
+      // Fee entries — PENDING until payout.success confirms delivery
+      await em.getRepository(LedgerEntry).save([
+        em.getRepository(LedgerEntry).create({
+          business_id: platformId,
+          mode: record.mode,
+          tx_type: TxType.FEE,
+          reference_type: 'offramp_plat_fee',
+          reference_id: `${payout.id}_plat_fee`,
+          currency: LedgerCurrency.NGN,
+          credit_ngn: feeNgn,
+          status: LedgerEntryStatus.PENDING,
+          description: `Fee income: offramp (${feePercent}%)`,
+        }),
+        // Net payout debit — PENDING until delivery confirmed
+        em.getRepository(LedgerEntry).create({
+          business_id: record.business_id,
+          mode: record.mode,
+          tx_type: TxType.OFFRAMP,
+          reference_type: 'payout',
+          reference_id: payout.id,
+          currency: LedgerCurrency.NGN,
+          debit_ngn: netNgn,
+          status: LedgerEntryStatus.PENDING,
+          description: `Offramp payout: ₦${netNgn.toFixed(2)}`,
+        }),
+      ]);
+    });
 
     this.logger.log(
       `Offramp payout ${payoutData.id} initiated: ₦${netNgn.toFixed(2)} (fee ₦${feeNgn.toFixed(2)})`,
