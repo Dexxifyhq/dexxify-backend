@@ -23,7 +23,7 @@ import {
   EstimateRefundQueryDto,
   RefundEntityType,
 } from './dto';
-import { DualAuth, GetBusinessId, GetMode } from '../../common/decorators';
+import { DualAuth, GetMode } from '../../common/decorators';
 
 @ApiTags('Refunds')
 @ApiBearerAuth('api-key')

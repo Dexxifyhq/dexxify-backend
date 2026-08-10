@@ -1,7 +1,12 @@
 import { Controller, Get, Post, Body, Param, Delete } from '@nestjs/common';
 import { MiscService } from './misc.service';
 import { GetRateQueryDto, AddBankDto, VerifyBankAccountDto } from './dto';
-import { GetBusinessId, GetMode, Public, DualAuth } from '../../common/decorators';
+import {
+  GetBusinessId,
+  GetMode,
+  Public,
+  DualAuth,
+} from '../../common/decorators';
 import { ApiBody, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('Misc - Banks & Assets')
@@ -91,7 +96,12 @@ export class MiscController {
     @GetMode() mode: 'live' | 'test',
     @Body() body: { asset: string; amount: number; currency: string },
   ) {
-    return this.miscService.getRateCalculator(mode, body.asset, body.amount, body.currency);
+    return this.miscService.getRateCalculator(
+      mode,
+      body.asset,
+      body.amount,
+      body.currency,
+    );
   }
 }
 

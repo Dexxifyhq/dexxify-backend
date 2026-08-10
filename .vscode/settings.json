@@ -1,0 +1,6 @@
+{
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "eslint.useFlatConfig": true,
+  "eslint.experimental.useFlatConfig": true,
+  "js/ts.tsdk.path": "node_modules/typescript/lib"
+}

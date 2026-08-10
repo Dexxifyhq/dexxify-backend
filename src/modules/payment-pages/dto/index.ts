@@ -4,9 +4,7 @@ import {
   IsOptional,
   IsPositive,
   IsString,
-  IsBoolean,
   IsNotEmpty,
-  IsUUID,
   Min,
   IsEmail,
 } from 'class-validator';

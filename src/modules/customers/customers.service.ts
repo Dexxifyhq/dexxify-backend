@@ -12,6 +12,20 @@ import { parsePagination, buildPaginationMeta } from '../../common/utils';
 import { CreateCustomerDto, CustomerQueryDto, UpdateCustomerDto } from './dto';
 import { CoincircuitService } from '../../providers/coincircuit/coincircuit.service';
 
+interface CCCustomerData {
+  id: string;
+  [key: string]: unknown;
+}
+
+interface CCApiResult<T> {
+  data: T;
+}
+
+interface CCErrorShape {
+  response?: { status?: number };
+  status?: number;
+}
+
 @Injectable()
 export class CustomersService {
   private readonly logger = new Logger(CustomersService.name);
@@ -22,7 +36,11 @@ export class CustomersService {
     private readonly cc: CoincircuitService,
   ) {}
 
-  async create(businessId: string, mode: 'live' | 'test', dto: CreateCustomerDto) {
+  async create(
+    businessId: string,
+    mode: 'live' | 'test',
+    dto: CreateCustomerDto,
+  ) {
     const existing = await this.customerRepo.findOne({
       where: { business_id: businessId, email: dto.email, mode },
     });
@@ -33,13 +51,13 @@ export class CustomersService {
     }
 
     // Call CC first — if it fails, nothing is written to the DB
-    const ccResult = await this.cc.syncCustomer(mode, {
+    const ccResult = (await this.cc.syncCustomer(mode, {
       email: dto.email,
       firstName: dto.first_name,
       lastName: dto.last_name,
       phone: dto.phone,
       metadata: dto.metadata,
-    });
+    })) as CCApiResult<CCCustomerData>;
 
     const customer = this.customerRepo.create({
       business_id: businessId,
@@ -55,7 +73,11 @@ export class CustomersService {
     return this.customerRepo.save(customer);
   }
 
-  async findAll(businessId: string, mode: 'live' | 'test', query: CustomerQueryDto) {
+  async findAll(
+    businessId: string,
+    mode: 'live' | 'test',
+    query: CustomerQueryDto,
+  ) {
     const { page, limit, offset } = parsePagination(query);
 
     const qb = this.customerRepo
@@ -75,7 +97,7 @@ export class CustomersService {
 
     const result = await qb.getRawAndEntities();
 
-    const data = result.raw.map((raw: any, i: number) => ({
+    const data = result.raw.map((raw: { c_has_paid: unknown }, i: number) => ({
       ...result.entities[i],
       has_paid:
         raw.c_has_paid === true ||
@@ -117,8 +139,9 @@ export class CustomersService {
           phone: dto.phone,
         });
       } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
         this.logger.warn(
-          `CC customer update failed for ${saved.id}: ${err.message}`,
+          `CC customer update failed for ${saved.id}: ${message}`,
         );
       }
     }
@@ -132,7 +155,11 @@ export class CustomersService {
     return { message: 'Customer deleted.' };
   }
 
-  async getDepositAccount(businessId: string, mode: 'live' | 'test', customerId: string) {
+  async getDepositAccount(
+    businessId: string,
+    mode: 'live' | 'test',
+    customerId: string,
+  ) {
     const customer = await this.findOne(businessId, mode, customerId);
 
     if (!customer.cc_customer_id) {
@@ -142,21 +169,22 @@ export class CustomersService {
     }
 
     try {
-      const result = await this.cc.getCustomerDepositAccount(
+      const result = (await this.cc.getCustomerDepositAccount(
         mode,
         customer.cc_customer_id,
-      );
+      )) as CCApiResult<Record<string, unknown>>;
       return result.data;
     } catch (err) {
       // Only fall through to create if CC says "not found"
-      const status = err?.response?.status ?? err?.status;
+      const e = err as CCErrorShape;
+      const status = e?.response?.status ?? e?.status;
       if (status !== 404) throw err;
     }
 
-    const created = await this.cc.createDepositAccount(
+    const created = (await this.cc.createDepositAccount(
       mode,
       customer.cc_customer_id,
-    );
+    )) as CCApiResult<Record<string, unknown>>;
     return created.data;
   }
 }

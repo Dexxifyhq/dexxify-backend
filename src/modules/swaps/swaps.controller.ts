@@ -1,11 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Param,
-  Query,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query } from '@nestjs/common';
 import {
   ApiTags,
   ApiBearerAuth,
@@ -14,11 +7,7 @@ import {
   ApiParam,
 } from '@nestjs/swagger';
 import { SwapsService } from './swaps.service';
-import {
-  EstimateSwapDto,
-  CreateSwapQuotationDto,
-  SwapQueryDto,
-} from './dto';
+import { EstimateSwapDto, CreateSwapQuotationDto, SwapQueryDto } from './dto';
 import { DualAuth, GetBusinessId, GetMode } from '../../common/decorators';
 
 @ApiTags('Swaps')
@@ -39,24 +28,32 @@ export class SwapsController {
 
   @ApiOperation({
     summary: 'Create swap quotation',
-    description: 'Lock the current rate for 15 seconds. Execute before it expires.',
+    description:
+      'Lock the current rate for 15 seconds. Execute before it expires.',
   })
   @ApiBody({ type: CreateSwapQuotationDto })
   @Post('quotation')
-  createQuotation(@GetMode() mode: 'live' | 'test', @Body() dto: CreateSwapQuotationDto) {
+  createQuotation(
+    @GetMode() mode: 'live' | 'test',
+    @Body() dto: CreateSwapQuotationDto,
+  ) {
     return this.swapsService.createQuotation(mode, dto);
   }
 
   @ApiOperation({ summary: 'Get swap quotation by ID' })
   @ApiParam({ name: 'quotationId', description: 'Quotation ID' })
   @Get('quotation/:quotationId')
-  getQuotation(@GetMode() mode: 'live' | 'test', @Param('quotationId') quotationId: string) {
+  getQuotation(
+    @GetMode() mode: 'live' | 'test',
+    @Param('quotationId') quotationId: string,
+  ) {
     return this.swapsService.getQuotation(mode, quotationId);
   }
 
   @ApiOperation({
     summary: 'Execute swap quotation',
-    description: 'Execute a locked quotation. Must be done within 15 seconds of creation.',
+    description:
+      'Execute a locked quotation. Must be done within 15 seconds of creation.',
   })
   @ApiParam({ name: 'quotationId', description: 'Quotation ID to execute' })
   @Post('quotation/:quotationId/execute')

@@ -43,7 +43,10 @@ export class UpdateMemberDto {
   @IsOptional()
   role?: BusinessRole;
 
-  @ApiPropertyOptional({ enum: BusinessUserStatus, example: BusinessUserStatus.SUSPENDED })
+  @ApiPropertyOptional({
+    enum: BusinessUserStatus,
+    example: BusinessUserStatus.SUSPENDED,
+  })
   @IsEnum(BusinessUserStatus)
   @IsOptional()
   status?: BusinessUserStatus;
@@ -78,7 +81,10 @@ export class AcceptInviteDto {
   @IsNotEmpty()
   last_name: string;
 
-  @ApiProperty({ description: 'Password (min 8 chars)', example: 'StrongPass123!' })
+  @ApiProperty({
+    description: 'Password (min 8 chars)',
+    example: 'StrongPass123!',
+  })
   @IsString()
   @MinLength(8)
   password: string;

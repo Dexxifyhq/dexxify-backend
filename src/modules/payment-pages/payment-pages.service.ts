@@ -31,6 +31,7 @@ import {
   PaymentPageQueryDto,
   PublicPayDto,
 } from './dto';
+import { CCPaymentSessionData } from '../payment-sessions/payment-sessions.service';
 
 @Injectable()
 export class PaymentPagesService {
@@ -52,7 +53,11 @@ export class PaymentPagesService {
     // this.webhookUrl = `${this.config.get<string>('app.apiPrefix') || ''}/webhooks/incoming/coincircuit`;
   }
 
-  async create(businessId: string, mode: 'live' | 'test', dto: CreatePaymentPageDto) {
+  async create(
+    businessId: string,
+    mode: 'live' | 'test',
+    dto: CreatePaymentPageDto,
+  ) {
     if (!dto.amount) {
       throw new BadRequestException('amount is required.');
     }
@@ -75,7 +80,11 @@ export class PaymentPagesService {
     return this.formatWithUrl(saved);
   }
 
-  async findAll(businessId: string, mode: 'live' | 'test', query: PaymentPageQueryDto) {
+  async findAll(
+    businessId: string,
+    mode: 'live' | 'test',
+    query: PaymentPageQueryDto,
+  ) {
     const { page, limit, offset } = parsePagination(query);
 
     const qb = this.pageRepo
@@ -104,7 +113,12 @@ export class PaymentPagesService {
     return this.formatWithUrl(page);
   }
 
-  async update(businessId: string, mode: 'live' | 'test', pageId: string, dto: UpdatePaymentPageDto) {
+  async update(
+    businessId: string,
+    mode: 'live' | 'test',
+    pageId: string,
+    dto: UpdatePaymentPageDto,
+  ) {
     const page = await this.pageRepo.findOne({
       where: { id: pageId, business_id: businessId, mode },
     });
@@ -183,7 +197,11 @@ export class PaymentPagesService {
 
     // Find or create our local customer record (scoped to the page's mode)
     const existingCustomer = await this.customerRepo.findOne({
-      where: { email: dto.email, business_id: page.business_id, mode: page.mode },
+      where: {
+        email: dto.email,
+        business_id: page.business_id,
+        mode: page.mode,
+      },
     });
 
     const customer: Customer = existingCustomer
@@ -214,7 +232,7 @@ export class PaymentPagesService {
       webhookUrl: this.webhookUrl || undefined,
     });
 
-    const ccSession = ccResult.data;
+    const ccSession = ccResult.data as CCPaymentSessionData;
 
     const session = await this.sessionRepo.save(
       this.sessionRepo.create({

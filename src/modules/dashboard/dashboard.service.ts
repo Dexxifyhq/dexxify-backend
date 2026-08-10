@@ -22,6 +22,48 @@ import {
 import { CreateApiKeyDto, UpdateApiKeyDto } from './dto';
 import { generateApiKey } from '../../common/utils';
 
+interface BalancesRawRow {
+  balance_ngn: string | null;
+  balance_usdt: string | null;
+  balance_usdc: string | null;
+  received_ngn: string | null;
+  received_usdt: string | null;
+  received_usdc: string | null;
+}
+
+interface SessionStatusCountRow {
+  status: PaymentSessionStatus;
+  count: string;
+  volume: string;
+}
+
+interface InvoiceStatusCountRow {
+  status: InvoiceStatus;
+  count: string;
+  volume: string;
+}
+
+interface PendingPayoutsRow {
+  count: string | null;
+  total_amount: string | null;
+}
+
+interface RevenueChartRow {
+  date: string;
+  ngn: string;
+  usdt: string;
+  usdc: string;
+  tx_count: string;
+}
+
+interface AssetDistributionRow {
+  asset: string;
+  total_sessions: string;
+  completed: string;
+  pending: string;
+  total_volume: string;
+}
+
 @Injectable()
 export class DashboardService {
   constructor(
@@ -72,6 +114,7 @@ export class DashboardService {
     );
 
     const { key_hash, ...safeResult } = saved;
+    void key_hash;
     return { ...safeResult, key };
   }
 
@@ -158,7 +201,7 @@ export class DashboardService {
         .where('l.business_id = :businessId', { businessId })
         .andWhere('l.mode = :mode', { mode })
         .andWhere('l.status = :status', { status: LedgerEntryStatus.COMPLETED })
-        .getRawOne(),
+        .getRawOne<BalancesRawRow>(),
 
       // Payment sessions grouped by status
       this.sessionRepo
@@ -169,7 +212,7 @@ export class DashboardService {
         .where('s.business_id = :businessId', { businessId })
         .andWhere('s.mode = :mode', { mode })
         .groupBy('s.status')
-        .getRawMany(),
+        .getRawMany<SessionStatusCountRow>(),
 
       // Invoices grouped by status
       this.invoiceRepo
@@ -180,7 +223,7 @@ export class DashboardService {
         .where('i.business_id = :businessId', { businessId })
         .andWhere('i.mode = :mode', { mode })
         .groupBy('i.status')
-        .getRawMany(),
+        .getRawMany<InvoiceStatusCountRow>(),
 
       // Total customers
       this.customerRepo.count({ where: { business_id: businessId, mode } }),
@@ -209,7 +252,7 @@ export class DashboardService {
         .andWhere('p.status IN (:...statuses)', {
           statuses: [PayoutStatus.PENDING, PayoutStatus.PROCESSING],
         })
-        .getRawOne(),
+        .getRawOne<PendingPayoutsRow>(),
     ]);
 
     // Shape session breakdown
@@ -285,7 +328,7 @@ export class DashboardService {
       .andWhere('l.created_at >= :since', { since })
       .groupBy("DATE(l.created_at AT TIME ZONE 'UTC')")
       .orderBy('date', 'ASC')
-      .getRawMany();
+      .getRawMany<RevenueChartRow>();
 
     return {
       period_days: clampedDays,
@@ -318,7 +361,7 @@ export class DashboardService {
       .andWhere('s.crypto_asset IS NOT NULL')
       .groupBy('s.crypto_asset')
       .orderBy('total_sessions', 'DESC')
-      .getRawMany();
+      .getRawMany<AssetDistributionRow>();
 
     return {
       data: rows.map((r) => ({

@@ -10,6 +10,23 @@ import { Bank } from '../../database/entities/bank.entity';
 import { CoincircuitService } from '../../providers/coincircuit/coincircuit.service';
 import { generateUniqueId } from '../../common/utils';
 
+export interface CCRecipientDetails {
+  accountNumber?: string;
+  bankCode?: string;
+  accountName?: string;
+  bankName?: string;
+  currency?: string;
+  accountType?: string;
+}
+
+export interface CCRecipient {
+  id: string;
+  label?: string;
+  details?: CCRecipientDetails;
+  isDefault?: boolean;
+  isTrusted?: boolean;
+}
+
 @Injectable()
 export class MiscService {
   private readonly logger = new Logger(MiscService.name);
@@ -66,7 +83,7 @@ export class MiscService {
       },
     });
 
-    const recipient = result.data;
+    const recipient = result.data as CCRecipient;
     const details = recipient.details ?? {};
 
     const bank = Object.assign(this.bankRepo.create(), {
@@ -85,7 +102,7 @@ export class MiscService {
       type: details.accountType,
     } as Bank);
 
-    const saved = (await this.bankRepo.save(bank)) as Bank;
+    const saved = await this.bankRepo.save(bank);
     this.logger.log(`Bank account saved: ${saved.id}`);
     return { ...recipient, local_id: saved.id };
   }
@@ -128,7 +145,10 @@ export class MiscService {
     return this.cc.getSupportedAssets(mode);
   }
 
-  async getCryptoPrices(mode: 'live' | 'test', options: { from: string; to: string }) {
+  async getCryptoPrices(
+    mode: 'live' | 'test',
+    options: { from: string; to: string },
+  ) {
     return this.cc.getConversionRate(mode, options.from, options.to);
   }
 

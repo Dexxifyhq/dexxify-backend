@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Body, Param, HttpCode, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  HttpCode,
+  HttpStatus,
+} from '@nestjs/common';
 import { ApiOperation, ApiTags, ApiParam, ApiBody } from '@nestjs/swagger';
 import { PaymentPagesService } from './payment-pages.service';
 import { PublicPayDto } from './dto';
@@ -11,7 +19,8 @@ export class PublicPaymentController {
 
   @ApiOperation({
     summary: 'Get public payment page by slug',
-    description: 'Returns the page details a customer needs to complete payment. No auth required.',
+    description:
+      'Returns the page details a customer needs to complete payment. No auth required.',
   })
   @ApiParam({ name: 'slug', description: 'Page slug (e.g. summer-sale-x9k2)' })
   @Public()
@@ -22,7 +31,8 @@ export class PublicPaymentController {
 
   @ApiOperation({
     summary: 'Submit payment on a page',
-    description: 'Customer selects crypto asset and submits. Creates a payment session and returns it.',
+    description:
+      'Customer selects crypto asset and submits. Creates a payment session and returns it.',
   })
   @ApiParam({ name: 'slug', description: 'Page slug' })
   @ApiBody({ type: PublicPayDto })

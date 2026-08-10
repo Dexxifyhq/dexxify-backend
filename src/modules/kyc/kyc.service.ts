@@ -19,6 +19,25 @@ import {
 
 const KORA_BASE = 'https://api.korapay.com/merchant/api/v1';
 
+export interface KoraValidationResult {
+  [field: string]: { value: string; match: boolean };
+}
+
+export interface KoraIdentityData {
+  reference?: string;
+  status?: string;
+  validation?: KoraValidationResult;
+  image?: string;
+  signature?: string;
+  [key: string]: unknown;
+}
+
+export interface KoraApiResponse {
+  status?: boolean;
+  message?: string;
+  data?: KoraIdentityData | null;
+}
+
 @Injectable()
 export class KycService {
   private readonly logger = new Logger(KycService.name);
@@ -198,7 +217,9 @@ export class KycService {
     };
   }
 
-  async getVerificationByReference(reference: string) {
+  async getVerificationByReference(
+    reference: string,
+  ): Promise<KoraApiResponse> {
     const response = await fetch(
       `${KORA_BASE}/identities/verifications/${reference}`,
       {
@@ -209,7 +230,7 @@ export class KycService {
       },
     );
 
-    const result = await response.json();
+    const result = (await response.json()) as KoraApiResponse;
     if (!response.ok) {
       throw new NotFoundException(result.message || 'Verification not found.');
     }
@@ -236,11 +257,13 @@ export class KycService {
       type: KycType;
       id_number: string;
       validation_input: KycValidationDto | null;
-      result: { message: string; data: any };
+      result: { message: string; data: KoraIdentityData | null };
     },
   ) {
     const { data } = params.result;
     const { image, signature, ...safeData } = data ?? {};
+    void image;
+    void signature;
 
     const verification = await this.kycRepo.save(
       this.kycRepo.create({
@@ -264,7 +287,10 @@ export class KycService {
     };
   }
 
-  private async callKora(url: string, body: Record<string, any>) {
+  private async callKora(
+    url: string,
+    body: Record<string, any>,
+  ): Promise<{ message: string; data: KoraIdentityData | null }> {
     if (!this.secretKey) {
       throw new BadRequestException('Kora API key not configured.');
     }
@@ -278,7 +304,7 @@ export class KycService {
       body: JSON.stringify(body),
     });
 
-    const result = await response.json();
+    const result = (await response.json()) as KoraApiResponse;
 
     if (!response.ok) {
       const msg: string = result?.message || 'Verification request failed.';
@@ -288,7 +314,7 @@ export class KycService {
       throw new BadRequestException(msg);
     }
 
-    return { message: result.message, data: result.data };
+    return { message: result.message ?? '', data: result.data ?? null };
   }
 
   private computeOverallStatus(

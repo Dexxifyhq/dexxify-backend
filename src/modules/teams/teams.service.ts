@@ -14,7 +14,6 @@ import {
   User,
   UserStatus,
   BusinessUser,
-  BusinessRole,
   BusinessUserStatus,
 } from '../../database/entities';
 import { InviteMemberDto, UpdateMemberDto, AcceptInviteDto } from './dto';
@@ -38,7 +37,9 @@ export class TeamsService {
     businessId: string,
     dto: InviteMemberDto,
   ): Promise<Omit<BusinessUser, 'invite_token'>> {
-    const business = await this.businessRepo.findOne({ where: { id: businessId } });
+    const business = await this.businessRepo.findOne({
+      where: { id: businessId },
+    });
     if (!business) throw new NotFoundException('Business not found.');
 
     let invitee = await this.userRepo.findOne({ where: { email: dto.email } });
@@ -78,7 +79,9 @@ export class TeamsService {
         invite_expires_at: expiresAt,
         invited_by_user_id: inviterUserId,
       });
-      membership = (await this.businessUserRepo.findOne({ where: { id: existing.id } }))!;
+      membership = (await this.businessUserRepo.findOne({
+        where: { id: existing.id },
+      }))!;
     } else {
       membership = await this.businessUserRepo.save(
         this.businessUserRepo.create({
@@ -99,15 +102,24 @@ export class TeamsService {
       select: ['first_name', 'last_name'],
     });
 
-    const appUrl = this.config.get<string>('app.frontendUrl') || 'http://localhost:3000';
+    const appUrl =
+      this.config.get<string>('app.frontendUrl') || 'http://localhost:3000';
     const acceptUrl = `${appUrl}/accept-invite?token=${token}`;
-    const inviterName = `${inviter?.first_name ?? ''} ${inviter?.last_name ?? ''}`.trim();
+    const inviterName =
+      `${inviter?.first_name ?? ''} ${inviter?.last_name ?? ''}`.trim();
 
     this.mailService
-      .sendTeamInviteEmail(dto.email, inviterName || 'Your team', business.name, dto.role, acceptUrl)
+      .sendTeamInviteEmail(
+        dto.email,
+        inviterName || 'Your team',
+        business.name,
+        dto.role,
+        acceptUrl,
+      )
       .catch(() => {});
 
-    const { invite_token, ...safe } = membership as any;
+    const { invite_token, ...safe } = membership;
+    void invite_token;
     return safe;
   }
 
@@ -119,18 +131,21 @@ export class TeamsService {
     });
 
     return {
-      data: members.map(({ invite_token, ...m }) => ({
-        id: m.id,
-        user_id: m.user_id,
-        email: m.user?.email,
-        first_name: m.user?.first_name,
-        last_name: m.user?.last_name,
-        role: m.role,
-        status: m.status,
-        permissions: m.permissions,
-        joined_at: m.joined_at,
-        created_at: m.created_at,
-      })),
+      data: members.map(({ invite_token, ...m }) => {
+        void invite_token;
+        return {
+          id: m.id,
+          user_id: m.user_id,
+          email: m.user?.email,
+          first_name: m.user?.first_name,
+          last_name: m.user?.last_name,
+          role: m.role,
+          status: m.status,
+          permissions: m.permissions,
+          joined_at: m.joined_at,
+          created_at: m.created_at,
+        };
+      }),
     };
   }
 
@@ -153,7 +168,11 @@ export class TeamsService {
     };
   }
 
-  async updateMember(businessId: string, memberId: string, dto: UpdateMemberDto) {
+  async updateMember(
+    businessId: string,
+    memberId: string,
+    dto: UpdateMemberDto,
+  ) {
     const membership = await this.businessUserRepo.findOne({
       where: { id: memberId, business_id: businessId },
     });
@@ -178,7 +197,8 @@ export class TeamsService {
       business_id: businessId,
     });
 
-    if (result.affected === 0) throw new NotFoundException('Team member not found.');
+    if (result.affected === 0)
+      throw new NotFoundException('Team member not found.');
 
     return { removed: true, id: memberId };
   }
@@ -191,16 +211,23 @@ export class TeamsService {
     if (!membership) throw new BadRequestException('Invalid invitation token.');
 
     if (membership.status !== BusinessUserStatus.PENDING) {
-      throw new BadRequestException('This invitation has already been accepted.');
+      throw new BadRequestException(
+        'This invitation has already been accepted.',
+      );
     }
 
-    if (membership.invite_expires_at && new Date() > membership.invite_expires_at) {
+    if (
+      membership.invite_expires_at &&
+      new Date() > membership.invite_expires_at
+    ) {
       throw new BadRequestException(
         'This invitation has expired. Please ask the workspace owner to re-send it.',
       );
     }
 
-    const user = await this.userRepo.findOne({ where: { id: membership.user_id } });
+    const user = await this.userRepo.findOne({
+      where: { id: membership.user_id },
+    });
     if (!user) throw new BadRequestException('Invitation user not found.');
 
     const passwordHash = await bcrypt.hash(dto.password, 12);

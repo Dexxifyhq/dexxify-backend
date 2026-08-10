@@ -7,6 +7,12 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { WalletAsset, WalletNetwork } from '../../database/entities';
 
+/** Shape of a CoincircuitMCP API error response body */
+interface CCErrorResponse {
+  message?: string;
+  error?: string;
+}
+
 const CC_ASSET_MAP: Partial<Record<WalletAsset, string>> = {
   [WalletAsset.BTC]: 'BTC',
   [WalletAsset.ETH]: 'ETH',
@@ -98,14 +104,13 @@ export class CoincircuitService {
     });
 
     if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      const message =
-        (err as any).message || (err as any).error || res.statusText;
+      const err = (await res.json().catch(() => ({}))) as CCErrorResponse;
+      const message = err.message || err.error || res.statusText;
       this.logger.error(`CC API ${method} ${path} → ${res.status}: ${message}`);
       throw new HttpException(message, res.status);
     }
 
-    return res.json();
+    return res.json() as Promise<T>;
   }
 
   // ── Customers ─────────────────────────────────────────

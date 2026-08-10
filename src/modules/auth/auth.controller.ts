@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import type { Response, Request } from 'express';
-import { AuthService } from './auth.service';
+import { AuthService, type AuthenticatedUser } from './auth.service';
 import {
   RegisterDto,
   LoginDto,
@@ -23,7 +23,7 @@ import {
   SelectBusinessDto,
 } from './dto';
 import { Public, CookieAuth, GetUser } from '../../common/decorators';
-import { ApiOperation, ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('Authentication')
 @CookieAuth()
@@ -111,8 +111,8 @@ export class AuthController {
   @UseGuards(AuthGuard('jwt-refresh'))
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
-  async refresh(
-    @GetUser() developer: any,
+  refresh(
+    @GetUser() developer: AuthenticatedUser,
     @Res({ passthrough: true }) res: Response,
   ) {
     return this.authService.refresh(developer, res);
@@ -127,7 +127,7 @@ export class AuthController {
   @Post('select-business')
   @HttpCode(HttpStatus.OK)
   async selectBusiness(
-    @GetUser() developer: any,
+    @GetUser() developer: AuthenticatedUser,
     @Body() dto: SelectBusinessDto,
     @Res({ passthrough: true }) res: Response,
   ) {
@@ -142,8 +142,8 @@ export class AuthController {
   @UseGuards(AuthGuard('jwt'))
   @Post('mode')
   @HttpCode(HttpStatus.OK)
-  async switchMode(
-    @GetUser() developer: any,
+  switchMode(
+    @GetUser() developer: AuthenticatedUser,
     @Body() dto: SwitchModeDto,
     @Res({ passthrough: true }) res: Response,
   ) {
@@ -157,7 +157,7 @@ export class AuthController {
   @UseGuards(AuthGuard('jwt'))
   @Post('logout')
   @HttpCode(HttpStatus.OK)
-  async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+  logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     return this.authService.logout(res);
   }
 
@@ -167,7 +167,7 @@ export class AuthController {
   })
   @UseGuards(AuthGuard('jwt'))
   @Get('profile')
-  async getProfile(@GetUser() developer: any) {
+  async getProfile(@GetUser() developer: AuthenticatedUser) {
     return this.authService.getProfile(developer);
   }
 }

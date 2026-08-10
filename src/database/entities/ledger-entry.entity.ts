@@ -71,12 +71,6 @@ export class LedgerEntry {
   credit_ngn: number;
 
   @Column({ type: 'decimal', precision: 28, scale: 8, default: 0 })
-  debit_usd: number;
-
-  @Column({ type: 'decimal', precision: 28, scale: 8, default: 0 })
-  credit_usd: number;
-
-  @Column({ type: 'decimal', precision: 28, scale: 8, default: 0 })
   debit_usdt: number;
 
   @Column({ type: 'decimal', precision: 28, scale: 8, default: 0 })
@@ -93,6 +87,9 @@ export class LedgerEntry {
 
   @Column({ type: 'text', nullable: true })
   asset: string;
+
+  @Column({ type: 'text', nullable: true })
+  network: string;
 
   @Column({
     type: 'enum',

@@ -8,7 +8,8 @@ import { Repository } from 'typeorm';
 import { User, UserStatus } from '../../../database/entities';
 
 function extractRefreshFromCookie(req: Request): string | null {
-  return req?.cookies?.refresh_token || null;
+  const token = req.cookies?.refresh_token as string | undefined;
+  return token || null;
 }
 
 @Injectable()

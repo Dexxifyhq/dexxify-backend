@@ -6,7 +6,10 @@ import { Invoice, Customer, PaymentSession } from '../../database/entities';
 import { CoincircuitModule } from '../../providers/coincircuit/coincircuit.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Invoice, Customer, PaymentSession]), CoincircuitModule],
+  imports: [
+    TypeOrmModule.forFeature([Invoice, Customer, PaymentSession]),
+    CoincircuitModule,
+  ],
   controllers: [InvoicesController],
   providers: [InvoicesService],
   exports: [InvoicesService],

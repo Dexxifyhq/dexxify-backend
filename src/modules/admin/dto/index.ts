@@ -1,4 +1,11 @@
-import { IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import {
+  IsEnum,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Min,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class WithdrawFeesDto {
@@ -7,9 +14,13 @@ export class WithdrawFeesDto {
   @Min(1)
   amount: number;
 
-  @ApiProperty({ description: 'Currency', enum: ['NGN', 'USD'], example: 'NGN' })
-  @IsEnum(['NGN', 'USD'])
-  currency: 'NGN' | 'USD';
+  @ApiProperty({
+    description: 'Currency',
+    enum: ['NGN', 'USDT', 'USDC'],
+    example: 'NGN',
+  })
+  @IsEnum(['NGN', 'USDT', 'USDC'])
+  currency: 'NGN' | 'USDT' | 'USDC';
 
   @ApiProperty({
     description: 'CC recipient ID for the destination bank or wallet',
@@ -19,7 +30,10 @@ export class WithdrawFeesDto {
   @IsNotEmpty()
   recipient_id: string;
 
-  @ApiPropertyOptional({ description: 'Narration on bank statement', example: 'Dexxify revenue' })
+  @ApiPropertyOptional({
+    description: 'Narration on bank statement',
+    example: 'Dexxify revenue',
+  })
   @IsOptional()
   @IsString()
   narration?: string;

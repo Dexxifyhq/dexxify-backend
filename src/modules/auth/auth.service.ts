@@ -5,11 +5,11 @@ import {
   BadRequestException,
   ForbiddenException,
 } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
+import { JwtService, JwtSignOptions } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, MoreThan } from 'typeorm';
-import { Response } from 'express';
+import { Response, CookieOptions } from 'express';
 import * as bcrypt from 'bcryptjs';
 import {
   User,
@@ -41,6 +41,11 @@ export interface BusinessSummary {
   name: string;
   logo_url: string | null;
 }
+
+export type AuthenticatedUser = User & {
+  mode?: 'live' | 'test';
+  active_business_id?: string | null;
+};
 
 @Injectable()
 export class AuthService {
@@ -434,7 +439,11 @@ export class AuthService {
 
   // ── Select Business ────────────────────────────────────
 
-  async selectBusiness(user: User, dto: SelectBusinessDto, res: Response) {
+  async selectBusiness(
+    user: AuthenticatedUser,
+    dto: SelectBusinessDto,
+    res: Response,
+  ) {
     const membership = await this.businessUserRepo.findOne({
       where: {
         user_id: user.id,
@@ -458,17 +467,14 @@ export class AuthService {
       last_active_business_id: dto.business_id,
     });
 
-    const mode: 'live' | 'test' = (user as any).mode ?? 'test';
+    const mode: 'live' | 'test' = user.mode ?? 'test';
     this.setTokenCookies(res, user, mode, dto.business_id);
     return { business };
   }
 
   // ── Refresh, Logout, Profile ───────────────────────────
 
-  async refresh(
-    user: User & { mode?: 'live' | 'test'; active_business_id?: string },
-    res: Response,
-  ) {
+  refresh(user: AuthenticatedUser, res: Response) {
     this.setTokenCookies(
       res,
       user,
@@ -478,29 +484,19 @@ export class AuthService {
     return { user: this.sanitizeUser(user) };
   }
 
-  async switchMode(
-    user: User & { active_business_id?: string },
-    mode: 'live' | 'test',
-    res: Response,
-  ) {
-    const tokens = this.setTokenCookies(
-      res,
-      user,
-      mode,
-      user.active_business_id ?? null,
-    );
+  switchMode(user: AuthenticatedUser, mode: 'live' | 'test', res: Response) {
+    this.setTokenCookies(res, user, mode, user.active_business_id ?? null);
     return {
       mode,
-      // access_token: tokens.access_token,
       user: this.sanitizeUser(user),
     };
   }
 
-  async logout(res: Response) {
-    const cookieOptions = {
+  logout(res: Response) {
+    const cookieOptions: CookieOptions = {
       httpOnly: true,
       secure: this.isProduction,
-      sameSite: (this.isProduction ? 'none' : 'lax') as 'none' | 'lax',
+      sameSite: this.isProduction ? 'none' : 'lax',
       domain: this.isProduction ? '.dexxify.com' : undefined,
       path: '/',
     };
@@ -509,7 +505,7 @@ export class AuthService {
     return { message: 'Logged out successfully.' };
   }
 
-  async getProfile(user: any) {
+  async getProfile(user: AuthenticatedUser) {
     const found = await this.userRepo.findOne({ where: { id: user.id } });
     if (!found) throw new UnauthorizedException('User not found.');
     return this.sanitizeUser({ ...found, mode: user.mode });
@@ -558,19 +554,27 @@ export class AuthService {
     };
     if (businessId) payload.business_id = businessId;
 
-    const accessToken = this.jwtService.sign({ ...payload, type: 'access' }, {
+    const accessSignOptions: JwtSignOptions = {
       secret: this.jwtSecret,
-      expiresIn: this.jwtExpiresIn,
-    } as any);
-    const refreshToken = this.jwtService.sign({ ...payload, type: 'refresh' }, {
+      expiresIn: this.jwtExpiresIn as JwtSignOptions['expiresIn'],
+    };
+    const refreshSignOptions: JwtSignOptions = {
       secret: this.refreshSecret,
-      expiresIn: this.refreshExpiresIn,
-    } as any);
+      expiresIn: this.refreshExpiresIn as JwtSignOptions['expiresIn'],
+    };
+    const accessToken = this.jwtService.sign(
+      { ...payload, type: 'access' },
+      accessSignOptions,
+    );
+    const refreshToken = this.jwtService.sign(
+      { ...payload, type: 'refresh' },
+      refreshSignOptions,
+    );
 
-    const cookieBase = {
+    const cookieBase: CookieOptions = {
       httpOnly: true,
       secure: this.isProduction,
-      sameSite: (this.isProduction ? 'none' : 'lax') as 'none' | 'lax',
+      sameSite: this.isProduction ? 'none' : 'lax',
       domain: this.isProduction ? '.dexxify.com' : undefined,
       path: '/',
     };
@@ -605,8 +609,11 @@ export class AuthService {
     }
   }
 
-  private sanitizeUser(user: any) {
+  private sanitizeUser<T extends { password_hash?: string | null }>(
+    user: T,
+  ): Omit<T, 'password_hash'> {
     const { password_hash, ...safe } = user;
+    void password_hash;
     return safe;
   }
 }

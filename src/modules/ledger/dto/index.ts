@@ -2,12 +2,18 @@ import { IsOptional, IsString } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class LedgerQueryDto {
-  @ApiPropertyOptional({ description: 'Transaction type filter', example: 'deposit' })
+  @ApiPropertyOptional({
+    description: 'Transaction type filter',
+    example: 'deposit',
+  })
   @IsOptional()
   @IsString()
   tx_type?: string;
 
-  @ApiPropertyOptional({ description: 'Reference type filter', example: 'payment_session' })
+  @ApiPropertyOptional({
+    description: 'Reference type filter',
+    example: 'payment_session',
+  })
   @IsOptional()
   @IsString()
   reference_type?: string;

@@ -21,6 +21,7 @@ export enum CryptoTxStatus {
   PENDING = 'pending',
   PROCESSING = 'processing',
   COMPLETED = 'completed',
+  CONFIRMED = 'confirmed',
   FAILED = 'failed',
   REVERSED = 'reversed',
 }
@@ -45,7 +46,7 @@ export class CryptoTransaction {
   crypto_asset: WalletAsset | null;
 
   @Column({ type: 'decimal', precision: 28, scale: 8, nullable: true })
-  crypto_amount: number | null;
+  net_amount: number | null;
 
   @Column({ type: 'enum', enum: WalletNetwork, nullable: true })
   network: WalletNetwork | null;
@@ -57,19 +58,16 @@ export class CryptoTransaction {
   from_address: string | null;
 
   @Column({ type: 'text', nullable: true })
-  wallet_address: string | null;
+  to_address: string | null;
 
   @Column({ type: 'text', nullable: true })
   tx_hash: string | null;
 
   @Column({ type: 'decimal', precision: 18, scale: 8, nullable: true })
-  fiat_amount: number | null;
+  amount: number | null;
 
   @Column({ type: 'text', default: 'NGN' })
-  fiat_currency: string;
-
-  @Column({ type: 'decimal', precision: 18, scale: 8, nullable: true })
-  exchange_rate: number | null;
+  currency: string;
 
   @Column({ type: 'decimal', precision: 18, scale: 8, default: 0 })
   fee: number;
@@ -83,9 +81,6 @@ export class CryptoTransaction {
   status: CryptoTxStatus;
 
   @Column({ type: 'text', nullable: true })
-  reference: string | null;
-
-  @Column({ type: 'text', nullable: true })
   provider_reference: string | null;
 
   @Index()
@@ -95,6 +90,8 @@ export class CryptoTransaction {
   @Column({ type: 'text', nullable: true })
   description: string | null;
 
+  // GIN index for `metadata @> '{"key": "value"}'` containment lookups —
+  @Index('idx_crypto_transactions_metadata', { synchronize: false })
   @Column({ type: 'jsonb', default: {} })
   metadata: Record<string, any>;
 

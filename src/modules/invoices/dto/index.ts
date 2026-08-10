@@ -78,7 +78,10 @@ export class CreateInvoiceDto {
   @Type(() => InvoiceLineItemDto)
   line_items: InvoiceLineItemDto[];
 
-  @ApiPropertyOptional({ description: 'Tax rate as a percentage (e.g. 7.5)', example: 7.5 })
+  @ApiPropertyOptional({
+    description: 'Tax rate as a percentage (e.g. 7.5)',
+    example: 7.5,
+  })
   @IsOptional()
   @IsNumber()
   @Min(0)
@@ -91,7 +94,10 @@ export class CreateInvoiceDto {
   @Min(0)
   discount_amount?: number;
 
-  @ApiPropertyOptional({ description: 'Due date (ISO 8601)', example: '2026-07-01T00:00:00Z' })
+  @ApiPropertyOptional({
+    description: 'Due date (ISO 8601)',
+    example: '2026-07-01T00:00:00Z',
+  })
   @IsOptional()
   @IsDateString()
   due_date?: string;
@@ -114,7 +120,10 @@ export class UpdateInvoiceDto {
   @Type(() => InvoiceLineItemDto)
   line_items?: InvoiceLineItemDto[];
 
-  @ApiPropertyOptional({ description: 'Tax rate as a percentage', example: 7.5 })
+  @ApiPropertyOptional({
+    description: 'Tax rate as a percentage',
+    example: 7.5,
+  })
   @IsOptional()
   @IsNumber()
   @Min(0)

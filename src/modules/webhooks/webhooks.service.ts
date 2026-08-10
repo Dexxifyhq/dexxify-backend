@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, ArrayContains } from 'typeorm';
+import { Repository } from 'typeorm';
 import { randomBytes } from 'crypto';
 import {
   WebhookEndpoint,
@@ -28,7 +28,11 @@ export class WebhooksService {
     this.retryDelay = this.config.get<number>('webhook.retryDelayMs') || 5000;
   }
 
-  async create(businessId: string, mode: 'live' | 'test', dto: CreateWebhookDto) {
+  async create(
+    businessId: string,
+    mode: 'live' | 'test',
+    dto: CreateWebhookDto,
+  ) {
     const secret = `whsec_${randomBytes(24).toString('base64url')}`;
 
     const endpoint = this.endpointRepo.create({
@@ -115,7 +119,7 @@ export class WebhooksService {
       const savedEvent = await this.eventRepo.save(event);
 
       // In production, queue this via BullMQ
-      this.deliverWebhook(endpoint, savedEvent, eventPayload);
+      void this.deliverWebhook(endpoint, savedEvent, eventPayload);
     }
   }
 
@@ -159,9 +163,10 @@ export class WebhooksService {
         this.logger.warn(
           `Webhook delivery failed (attempt ${attempt}): ${response.status}`,
         );
-      } catch (err: any) {
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
         this.logger.error(
-          `Webhook delivery error (attempt ${attempt}): ${err.message}`,
+          `Webhook delivery error (attempt ${attempt}): ${message}`,
         );
 
         await this.eventRepo.update(event.id, {

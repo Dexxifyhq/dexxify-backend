@@ -5,7 +5,11 @@ import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 import compression from 'compression';
+import type { RequestHandler } from 'express';
 import { ConfigService } from '@nestjs/config';
+
+const createCompressionMiddleware =
+  compression as unknown as () => RequestHandler;
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -19,10 +23,10 @@ async function bootstrap() {
   app.use(cookieParser());
 
   // Performance: Compression
-  app.use(compression());
+  app.use(createCompressionMiddleware());
 
   // Global prefix
-  const apiPrefix = configService.get('app.apiPrefix');
+  const apiPrefix = configService.get<string>('app.apiPrefix') || 'api/v1';
   app.setGlobalPrefix(apiPrefix);
 
   // Security
@@ -82,25 +86,19 @@ async function bootstrap() {
       },
       'api-key',
     )
-    // .addCookieAuth(
-    //   'access_token',
-    //   {
-    //     type: 'apiKey',
-    //     in: 'cookie',
-    //     description: 'HTTP-only cookie for dashboard/auth',
-    //   },
-    //   'cookie-auth',
-    // )
     .build();
 
   const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('api', app, document);
 
   const port = process.env.PORT || 4000;
+  const nodeEnv = process.env.NODE_ENV || 'development';
   await app.listen(port);
 
   const logger = new Logger('Bootstrap');
   logger.log(`💵 Dexxify API running on port ${port}`);
-  logger.log(`📄 Swagger docs available at http://localhost:${port}/api`);
+  logger.log(
+    `📄 Swagger docs available at ${nodeEnv === 'development' ? `http://localhost:${port}/api` : 'https://api.dexxify.com/api'}`,
+  );
 }
-bootstrap();
+void bootstrap();

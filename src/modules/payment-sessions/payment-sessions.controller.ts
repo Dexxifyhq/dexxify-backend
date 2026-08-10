@@ -23,7 +23,12 @@ import {
   EstimatePaymentDto,
   PaymentSessionQueryDto,
 } from './dto';
-import { DualAuth, GetBusinessId, GetMode, Public } from '../../common/decorators';
+import {
+  DualAuth,
+  GetBusinessId,
+  GetMode,
+  Public,
+} from '../../common/decorators';
 
 @ApiTags('Payment Sessions')
 @ApiBearerAuth('api-key')

@@ -4,7 +4,6 @@ import {
   IsOptional,
   IsEnum,
   IsNumber,
-  Min,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';

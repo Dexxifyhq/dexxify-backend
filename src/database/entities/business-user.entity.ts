@@ -41,7 +41,11 @@ export class BusinessUser {
   @Column({ type: 'enum', enum: BusinessRole, default: BusinessRole.STAFF })
   role: BusinessRole;
 
-  @Column({ type: 'enum', enum: BusinessUserStatus, default: BusinessUserStatus.PENDING })
+  @Column({
+    type: 'enum',
+    enum: BusinessUserStatus,
+    default: BusinessUserStatus.PENDING,
+  })
   status: BusinessUserStatus;
 
   @Column({ type: 'uuid', nullable: true })

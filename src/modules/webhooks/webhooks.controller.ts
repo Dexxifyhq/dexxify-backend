@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common';
 import { WebhooksService } from './webhooks.service';
 import { CoincircuitWebhooksService } from './coincircuit-webhooks.service';
+import type { CCWebhookPayload } from './coincircuit-webhooks.service';
 import { CreateWebhookDto } from './dto';
 import {
   GetBusinessId,
@@ -93,7 +94,7 @@ export class IncomingWebhooksController {
   @Public()
   @Post('coincircuit')
   @HttpCode(200)
-  async handleCoincircuit(@Body() body: any, @Req() req: Request) {
+  handleCoincircuit(@Body() body: CCWebhookPayload, @Req() req: Request) {
     const verification = this.ccWebhooksService.verifyWebhookRequest(req);
     if (!verification.isValid) {
       this.logger.warn(`CC webhook verification failed: ${verification.error}`);
@@ -103,13 +104,17 @@ export class IncomingWebhooksController {
     const event = body.event;
     this.logger.log(`CC webhook received: ${event}`);
 
-    setImmediate(async () => {
-      try {
-        await this.ccWebhooksService.processWebhook(body);
-        this.logger.log(`CC webhook processed: ${event}`);
-      } catch (error: any) {
-        this.logger.error(`CC webhook processing failed: ${error.message}`);
-      }
+    setImmediate(() => {
+      void (async () => {
+        try {
+          await this.ccWebhooksService.processWebhook(body);
+          this.logger.log(`CC webhook processed: ${event}`);
+        } catch (error: unknown) {
+          const message =
+            error instanceof Error ? error.message : String(error);
+          this.logger.error(`CC webhook processing failed: ${message}`);
+        }
+      })();
     });
 
     return { received: true, event };

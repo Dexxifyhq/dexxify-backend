@@ -14,6 +14,10 @@ export interface ApiResponse<T> {
   timestamp: string;
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
 @Injectable()
 export class TransformInterceptor<T> implements NestInterceptor<
   T,
@@ -24,16 +28,20 @@ export class TransformInterceptor<T> implements NestInterceptor<
     next: CallHandler,
   ): Observable<ApiResponse<T>> {
     return next.handle().pipe(
-      map((data) => {
+      map((payload: unknown): ApiResponse<T> => {
+        const envelope = isRecord(payload) ? payload : undefined;
+
         // If the handler already returned a shaped response, pass through
-        if (data && data.success !== undefined) {
-          return data;
+        if (envelope && envelope.success !== undefined) {
+          return payload as ApiResponse<T>;
         }
+
+        const meta = isRecord(envelope?.meta) ? envelope.meta : undefined;
 
         return {
           success: true,
-          data: data?.data ?? data,
-          ...(data?.meta && { meta: data.meta }),
+          data: (envelope && 'data' in envelope ? envelope.data : payload) as T,
+          ...(meta && { meta }),
           timestamp: new Date().toISOString(),
         };
       }),

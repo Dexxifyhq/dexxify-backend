@@ -49,10 +49,18 @@ export class SwapRecord {
   @Column({ type: 'decimal', precision: 28, scale: 8, nullable: true })
   target_amount: number | null;
 
-  @Column({ type: 'enum', enum: SwapRecordStatus, default: SwapRecordStatus.PENDING })
+  @Column({
+    type: 'enum',
+    enum: SwapRecordStatus,
+    default: SwapRecordStatus.PENDING,
+  })
   status: SwapRecordStatus;
 
-  @Column({ type: 'enum', enum: SwapRecordType, default: SwapRecordType.MANUAL })
+  @Column({
+    type: 'enum',
+    enum: SwapRecordType,
+    default: SwapRecordType.MANUAL,
+  })
   type: SwapRecordType;
 
   @Column({ type: 'jsonb', default: {} })

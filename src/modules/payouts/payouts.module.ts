@@ -6,10 +6,7 @@ import { Payout, LedgerEntry } from '../../database/entities';
 import { CoincircuitModule } from '../../providers/coincircuit/coincircuit.module';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([Payout, LedgerEntry]),
-    CoincircuitModule,
-  ],
+  imports: [TypeOrmModule.forFeature([Payout, LedgerEntry]), CoincircuitModule],
   controllers: [PayoutsController],
   providers: [PayoutsService],
   exports: [PayoutsService],

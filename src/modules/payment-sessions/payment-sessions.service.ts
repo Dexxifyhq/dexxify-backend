@@ -29,6 +29,17 @@ import {
 } from '../../providers/coincircuit/coincircuit.service';
 import { CustomersService } from '../customers/customers.service';
 
+export interface CCPaymentSessionData {
+  reference?: string;
+  expiresAt?: string;
+  payment?: { address?: string };
+  [key: string]: unknown;
+}
+
+function getErrorMessage(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
+}
+
 @Injectable()
 export class PaymentSessionsService {
   private readonly logger = new Logger(PaymentSessionsService.name);
@@ -42,7 +53,11 @@ export class PaymentSessionsService {
     private readonly customersService: CustomersService,
   ) {}
 
-  async create(businessId: string, mode: 'live' | 'test', dto: CreatePaymentSessionDto) {
+  async create(
+    businessId: string,
+    mode: 'live' | 'test',
+    dto: CreatePaymentSessionDto,
+  ) {
     // Find or create our local customer record
     const existingCustomer = await this.customerRepo.findOne({
       where: { email: dto.customer_email, business_id: businessId, mode },
@@ -81,7 +96,7 @@ export class PaymentSessionsService {
       }
 
       const ccResult = await this.cc.createPaymentSession(mode, ccPayload);
-      const ccData = ccResult?.data;
+      const ccData = ccResult?.data as CCPaymentSessionData;
 
       const session = this.sessionRepo.create({
         business_id: businessId,
@@ -94,7 +109,7 @@ export class PaymentSessionsService {
         network: dto.network || null,
         status: PaymentSessionStatus.PENDING,
         metadata: dto.metadata || {},
-        expires_at: ccData.expiresAt,
+        expires_at: ccData.expiresAt ? new Date(ccData.expiresAt) : undefined,
       });
 
       const saved = await this.sessionRepo.save(session);
@@ -108,12 +123,18 @@ export class PaymentSessionsService {
       // saved.metadata = {};
       return saved;
     } catch (err) {
-      this.logger.warn(`Payment session creation failed, ${err.message}`);
+      this.logger.warn(
+        `Payment session creation failed, ${getErrorMessage(err)}`,
+      );
       throw err;
     }
   }
 
-  async findAll(businessId: string, mode: 'live' | 'test', query: PaymentSessionQueryDto) {
+  async findAll(
+    businessId: string,
+    mode: 'live' | 'test',
+    query: PaymentSessionQueryDto,
+  ) {
     const { page, limit, offset } = parsePagination(query);
 
     const qb = this.sessionRepo
@@ -158,10 +179,10 @@ export class PaymentSessionsService {
           session.mode,
           session.provider_session_reference,
         );
-        return { ...session, cc: ccResult?.data };
+        return { ...session, cc: ccResult?.data as CCPaymentSessionData };
       } catch (err) {
         this.logger.warn(
-          `CC session fetch failed for ${reference}: ${err.message}`,
+          `CC session fetch failed for ${reference}: ${getErrorMessage(err)}`,
         );
         throw err;
       }
@@ -182,9 +203,7 @@ export class PaymentSessionsService {
       );
     }
 
-    if (
-      session.status !== PaymentSessionStatus.PENDING
-    ) {
+    if (session.status !== PaymentSessionStatus.PENDING) {
       throw new BadRequestException(
         `Cannot generate address for session with status '${session.status}'.`,
       );
@@ -199,7 +218,8 @@ export class PaymentSessionsService {
       asset,
       chain,
     );
-    const address = ccResult?.data?.payment?.address ?? null;
+    const ccData = ccResult?.data as CCPaymentSessionData | undefined;
+    const address = ccData?.payment?.address ?? null;
 
     if (address) {
       await this.sessionRepo.update(session.id, {
@@ -221,17 +241,25 @@ export class PaymentSessionsService {
     const chain = toCCChain(dto.network);
 
     const session = dto.reference
-      ? await this.sessionRepo.findOne({ where: { provider_session_reference: dto.reference } })
+      ? await this.sessionRepo.findOne({
+          where: { provider_session_reference: dto.reference },
+        })
       : null;
 
-    const result = await this.cc.estimatePayment(
-      session?.mode ?? 'test',
-      { asset, chain, amount: dto.amount, currency: dto.currency, reference: dto.reference },
-    );
+    const result = await this.cc.estimatePayment(session?.mode ?? 'test', {
+      asset,
+      chain,
+      amount: dto.amount,
+      currency: dto.currency,
+      reference: dto.reference,
+    });
 
     if (session) {
       await this.sessionRepo.update(session.id, {
-        metadata: { ...session.metadata, estimate: { ...result.data } },
+        metadata: {
+          ...session.metadata,
+          estimate: { ...(result.data as Record<string, any>) },
+        } as Record<string, any>,
       });
     }
 

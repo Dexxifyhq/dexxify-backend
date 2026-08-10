@@ -4,7 +4,6 @@ import {
   Post,
   Body,
   Param,
-  Query,
   ParseUUIDPipe,
 } from '@nestjs/common';
 import { PayoutsService } from './payouts.service';
@@ -59,7 +58,10 @@ export class PayoutsController {
   })
   @ApiBody({ type: ResolveAccountDto })
   @Post('resolve')
-  async resolveAccount(@GetMode() mode: 'live' | 'test', @Body() dto: ResolveAccountDto) {
+  async resolveAccount(
+    @GetMode() mode: 'live' | 'test',
+    @Body() dto: ResolveAccountDto,
+  ) {
     return this.payoutsService.resolveAccount(mode, dto);
   }
 

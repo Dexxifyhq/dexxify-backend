@@ -36,13 +36,50 @@ import {
 } from '../../database/entities/withdrawal-wallet.entity';
 import { CustomersService } from '../customers/customers.service';
 
-const WITHDRAWAL_CHAIN_MAP: Record<string, string> = {
-  ERC20: 'ethereum',
-  TRC20: 'tron',
-  SOL: 'solana',
-  BSC: 'bsc',
-  TON: 'ton',
-};
+export interface CCDepositAddress {
+  chain: string;
+  address: string;
+  createdAt: string;
+}
+
+export interface CCNgnVirtualAccount {
+  currency: string;
+  accountNumber: string;
+  accountName: string;
+  bankName: string;
+  bankCode: string;
+  accountReference: string;
+  createdAt: string;
+}
+
+export interface CCDepositAccountData {
+  id: string;
+  staticDepositAddresses?: CCDepositAddress[];
+  ngnVirtualAccounts?: CCNgnVirtualAccount[];
+}
+
+interface CCRecipientDetails {
+  isDefault?: boolean;
+  chain?: string;
+  address?: string;
+  accountNumber?: string;
+  bankCode?: string;
+  accountType?: string;
+}
+
+interface CCRecipient {
+  id: string;
+  details: CCRecipientDetails;
+}
+
+interface CCPayoutData {
+  id: string;
+  [key: string]: unknown;
+}
+
+function getErrorMessage(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
+}
 
 @Injectable()
 export class WalletsService {
@@ -145,7 +182,7 @@ export class WalletsService {
 
     try {
       const account = await this.cc.createDepositAccount(mode, ccCustomerId);
-      const ccAccount = account.data;
+      const ccAccount = account.data as CCDepositAccountData;
       this.logger.log(`Created deposit account: ${ccAccount.id}`);
 
       const wallet = Object.assign(this.walletRepo.create(), {
@@ -158,8 +195,10 @@ export class WalletsService {
       });
 
       return this.walletRepo.save(wallet);
-    } catch (err) {
-      this.logger.error(`Deposit account creation failed: ${err.message}`);
+    } catch (err: unknown) {
+      this.logger.error(
+        `Deposit account creation failed: ${getErrorMessage(err)}`,
+      );
       throw new BadRequestException(
         'Failed to create deposit account with payment provider.',
       );
@@ -201,8 +240,9 @@ export class WalletsService {
     if (wallet.deposit_addresses?.length === 0) {
       try {
         const account = await this.cc.getDepositAccount(wallet.mode, wallet.id);
-        const addresses = account.data?.staticDepositAddresses || [];
-        const ngnAccounts = account.data?.ngnVirtualAccounts || [];
+        const data = account.data as CCDepositAccountData | undefined;
+        const addresses = data?.staticDepositAddresses || [];
+        const ngnAccounts = data?.ngnVirtualAccounts || [];
         if (addresses.length !== 0) {
           await this.walletRepo.update(wallet.id, {
             deposit_addresses: addresses,
@@ -231,7 +271,7 @@ export class WalletsService {
     mode: 'live' | 'test',
     walletId: string,
     dto: IssueDepositIdentityDto,
-  ) {
+  ): Promise<CCDepositAccountData> {
     await this.findOne(businessId, mode, walletId);
 
     const result = await this.cc.issueDepositIdentity(mode, walletId, {
@@ -244,9 +284,9 @@ export class WalletsService {
           : undefined,
     });
 
-    const account = result.data;
+    const account = result.data as CCDepositAccountData;
 
-    this.walletRepo.update(walletId, {
+    await this.walletRepo.update(walletId, {
       deposit_addresses: account.staticDepositAddresses ?? [],
       ngn_virtual_accounts: account.ngnVirtualAccounts ?? [],
     });
@@ -254,24 +294,24 @@ export class WalletsService {
     return account;
   }
 
-  async getWalletDetails(walletId: string): Promise<any> {
+  async getWalletDetails(walletId: string): Promise<CCDepositAccountData> {
     try {
       const account = await this.cc.getDepositAccount('live', walletId);
-      return account.data;
-    } catch (err) {
-      this.logger.error(`Wallet retrieval failed: ${err.message}`);
+      return account.data as CCDepositAccountData;
+    } catch (err: unknown) {
+      this.logger.error(`Wallet retrieval failed: ${getErrorMessage(err)}`);
       throw new BadRequestException(
         'Failed to retrieve wallet with crypto provider.',
       );
     }
   }
 
-  async getAllWalletDetails() {
+  async getAllWalletDetails(): Promise<CCDepositAccountData[]> {
     try {
       const accounts = await this.cc.listDepositAccounts('live');
-      return accounts.data;
-    } catch (err) {
-      this.logger.error(`Wallet retrieval failed: ${err.message}`);
+      return accounts.data as CCDepositAccountData[];
+    } catch (err: unknown) {
+      this.logger.error(`Wallet retrieval failed: ${getErrorMessage(err)}`);
       throw new BadRequestException(
         'Failed to retrieve wallets with crypto provider.',
       );
@@ -298,7 +338,7 @@ export class WalletsService {
       details: { chain: ccChain, address: data.address },
     });
 
-    const recipient = result.data;
+    const recipient = result.data as CCRecipient;
     const details = recipient.details;
 
     const saved = await this.withdrawalWalletRepo.save({
@@ -376,7 +416,7 @@ export class WalletsService {
       )
       .where('le.business_id = :businessId', { businessId })
       .andWhere('le.mode = :mode', { mode })
-      .getRawOne();
+      .getRawOne<{ balance: string | null }>();
 
     if (Number(calculatedBalance?.balance ?? 0) < dto.amount) {
       throw new BadRequestException('Insufficient balance');
@@ -390,7 +430,7 @@ export class WalletsService {
       narration: dto.externalId,
     });
 
-    const payoutId: string = result.data?.id;
+    const payoutId = (result.data as CCPayoutData).id;
     const platformBusinessId = this.platformCtx.getBusinessId();
 
     await this.dataSource.transaction(async (em) => {
@@ -464,7 +504,7 @@ export class WalletsService {
       .where('le.business_id = :businessId', { businessId })
       .andWhere('le.currency = :currency', { currency: 'NGN' })
       .andWhere('le.mode = :mode', { mode })
-      .getRawOne();
+      .getRawOne<{ balance: string | null }>();
 
     if (Number(calculatedBalance?.balance ?? 0) < dto.amount) {
       throw new BadRequestException('Insufficient balance');
@@ -478,7 +518,7 @@ export class WalletsService {
       narration: dto.narration,
     });
 
-    const payoutId: string = result.data.id;
+    const payoutId = (result.data as CCPayoutData).id;
     const platformBusinessId = this.platformCtx.getBusinessId();
 
     await this.dataSource.transaction(async (em) => {

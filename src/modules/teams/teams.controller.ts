@@ -10,7 +10,12 @@ import {
 } from '@nestjs/common';
 import { TeamsService } from './teams.service';
 import { InviteMemberDto, UpdateMemberDto, AcceptInviteDto } from './dto';
-import { DualAuth, GetBusinessId, GetUser, Public } from '../../common/decorators';
+import {
+  DualAuth,
+  GetBusinessId,
+  GetUser,
+  Public,
+} from '../../common/decorators';
 import {
   ApiBearerAuth,
   ApiBody,

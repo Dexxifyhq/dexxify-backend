@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  Logger,
-  BadRequestException,
-} from '@nestjs/common';
+import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import {
@@ -14,6 +10,22 @@ import {
 import { CoincircuitService } from '../../providers/coincircuit/coincircuit.service';
 import { PlatformContextService } from '../platform/platform-context.service';
 import { WithdrawFeesDto } from './dto';
+
+interface PlatformBalanceRaw {
+  total_revenue_ngn: string;
+  total_withdrawn_ngn: string;
+  available_ngn: string;
+  total_revenue_usdt: string;
+  total_withdrawn_usdt: string;
+  available_usdt: string;
+  total_revenue_usdc: string;
+  total_withdrawn_usdc: string;
+  available_usdc: string;
+}
+
+interface CoincircuitPayoutData {
+  id: string;
+}
 
 @Injectable()
 export class AdminService {
@@ -37,9 +49,12 @@ export class AdminService {
         'COALESCE(SUM(le.credit_ngn), 0) AS total_revenue_ngn',
         'COALESCE(SUM(le.debit_ngn), 0)  AS total_withdrawn_ngn',
         'COALESCE(SUM(le.credit_ngn) - SUM(le.debit_ngn), 0) AS available_ngn',
-        'COALESCE(SUM(le.credit_usd), 0) AS total_revenue_usd',
-        'COALESCE(SUM(le.debit_usd), 0)  AS total_withdrawn_usd',
-        'COALESCE(SUM(le.credit_usd) - SUM(le.debit_usd), 0) AS available_usd',
+        'COALESCE(SUM(le.credit_usdt), 0) AS total_revenue_usdt',
+        'COALESCE(SUM(le.debit_usdt), 0)  AS total_withdrawn_usdt',
+        'COALESCE(SUM(le.credit_usdt) - SUM(le.debit_usdt), 0) AS available_usdt',
+        'COALESCE(SUM(le.credit_usdc), 0) AS total_revenue_usdc',
+        'COALESCE(SUM(le.debit_usdc), 0)  AS total_withdrawn_usdc',
+        'COALESCE(SUM(le.credit_usdc) - SUM(le.debit_usdc), 0) AS available_usdc',
       ])
       .where('le.business_id = :platformId', { platformId })
       .andWhere('le.status IN (:...statuses)', {
@@ -49,18 +64,23 @@ export class AdminService {
           LedgerEntryStatus.REJECTED,
         ],
       })
-      .getRawOne();
+      .getRawOne<PlatformBalanceRaw>();
 
     return {
       ngn: {
-        total_revenue: Number(result.total_revenue_ngn),
-        total_withdrawn: Number(result.total_withdrawn_ngn),
-        available: Number(result.available_ngn),
+        total_revenue: Number(result?.total_revenue_ngn),
+        total_withdrawn: Number(result?.total_withdrawn_ngn),
+        available: Number(result?.available_ngn),
       },
-      usd: {
-        total_revenue: Number(result.total_revenue_usd),
-        total_withdrawn: Number(result.total_withdrawn_usd),
-        available: Number(result.available_usd),
+      usdt: {
+        total_revenue: Number(result?.total_revenue_usdt),
+        total_withdrawn: Number(result?.total_withdrawn_usdt),
+        available: Number(result?.available_usdt),
+      },
+      usdc: {
+        total_revenue: Number(result?.total_revenue_usdc),
+        total_withdrawn: Number(result?.total_withdrawn_usdc),
+        available: Number(result?.available_usdc),
       },
       as_of: new Date().toISOString(),
     };
@@ -72,7 +92,11 @@ export class AdminService {
     // Guard against withdrawing more than what's available
     const balance = await this.getPlatformBalance();
     const available =
-      dto.currency === 'NGN' ? balance.ngn.available : balance.usd.available;
+      dto.currency === 'NGN'
+        ? balance.ngn.available
+        : dto.currency === 'USDT'
+          ? balance.usdt.available
+          : balance.usdc.available;
 
     if (dto.amount > available) {
       throw new BadRequestException(
@@ -87,7 +111,7 @@ export class AdminService {
       narration: dto.narration || 'Platform fee withdrawal',
     });
 
-    const payoutId: string = result.data.id;
+    const payoutId: string = (result.data as CoincircuitPayoutData).id;
 
     // Save under the platform business_id.
     // payout.success webhook writes the debit ledger entry automatically.

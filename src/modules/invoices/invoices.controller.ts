@@ -18,7 +18,12 @@ import {
 } from '@nestjs/swagger';
 import { InvoicesService } from './invoices.service';
 import { CreateInvoiceDto, InvoicePaymentDto, InvoiceQueryDto } from './dto';
-import { DualAuth, GetBusinessId, GetMode, Public } from '../../common/decorators';
+import {
+  DualAuth,
+  GetBusinessId,
+  GetMode,
+  Public,
+} from '../../common/decorators';
 
 @ApiTags('Invoices')
 @ApiBearerAuth('api-key')

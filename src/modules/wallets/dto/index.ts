@@ -57,7 +57,10 @@ export class IssueDepositIdentityDto {
     example: DepositIdentityChain.TRON,
     description: 'Required when type is static_deposit_address',
   })
-  @ValidateIf((o) => o.type === DepositIdentityType.STATIC_DEPOSIT_ADDRESS)
+  @ValidateIf(
+    (o: IssueDepositIdentityDto) =>
+      o.type === DepositIdentityType.STATIC_DEPOSIT_ADDRESS,
+  )
   @IsEnum(DepositIdentityChain)
   chain?: DepositIdentityChain;
 
@@ -66,7 +69,10 @@ export class IssueDepositIdentityDto {
     description:
       'BVN of the account holder (11 digits). Required when type is ngn_virtual_account',
   })
-  @ValidateIf((o) => o.type === DepositIdentityType.NGN_VIRTUAL_ACCOUNT)
+  @ValidateIf(
+    (o: IssueDepositIdentityDto) =>
+      o.type === DepositIdentityType.NGN_VIRTUAL_ACCOUNT,
+  )
   @IsNumberString()
   @Length(11, 11, { message: 'bvn must be exactly 11 digits' })
   bvn?: string;

@@ -9,9 +9,22 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import type { Request } from 'express';
 import { ApiKey, User, UserStatus } from '../../database/entities';
 import { IS_PUBLIC_KEY, AUTH_TYPE_KEY } from '../decorators';
 import { hashApiKey } from '../utils';
+
+type RequestUser = User & {
+  mode?: 'live' | 'test';
+  active_business_id?: string | null;
+};
+
+interface AuthenticatedRequest extends Request {
+  user?: RequestUser;
+  developer?: RequestUser; // backward compat
+  apiKeyEnvironment?: string;
+  active_business_id?: string | null;
+}
 
 @Injectable()
 export class ApiKeyGuard implements CanActivate {
@@ -40,7 +53,7 @@ export class ApiKeyGuard implements CanActivate {
     // Cookie-only routes — Passport JWT guard handles them
     if (authType === 'cookie') return true;
 
-    const request = context.switchToHttp().getRequest();
+    const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
     const authHeader = request.headers['authorization'];
 
     // ── Dual auth: API key OR cookie JWT ────────────────
@@ -61,7 +74,7 @@ export class ApiKeyGuard implements CanActivate {
   }
 
   private async validateApiKey(
-    request: any,
+    request: AuthenticatedRequest,
     authHeader: string,
   ): Promise<boolean> {
     const apiKey = authHeader.startsWith('Bearer ')
@@ -87,7 +100,7 @@ export class ApiKeyGuard implements CanActivate {
     }
 
     if (keyRecord.ip_whitelist?.length > 0) {
-      const clientIp = request.ip || request.connection?.remoteAddress;
+      const clientIp = request.ip || request.socket?.remoteAddress || '';
       if (!keyRecord.ip_whitelist.includes(clientIp)) {
         throw new UnauthorizedException(
           'IP address not whitelisted for this API key.',
@@ -99,7 +112,7 @@ export class ApiKeyGuard implements CanActivate {
       throw new UnauthorizedException('User account is not active.');
     }
 
-    this.apiKeyRepo.update(keyRecord.id, { last_used_at: new Date() });
+    void this.apiKeyRepo.update(keyRecord.id, { last_used_at: new Date() });
 
     request.user = keyRecord.user;
     request.developer = keyRecord.user; // backward compat
@@ -109,8 +122,10 @@ export class ApiKeyGuard implements CanActivate {
     return true;
   }
 
-  private async validateCookieJwt(request: any): Promise<boolean> {
-    const token = request?.cookies?.access_token;
+  private async validateCookieJwt(
+    request: AuthenticatedRequest,
+  ): Promise<boolean> {
+    const token = request.cookies?.access_token as string | undefined;
 
     if (!token) {
       throw new UnauthorizedException(

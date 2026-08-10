@@ -5,6 +5,17 @@ import { LedgerEntry, LedgerEntryStatus } from '../../database/entities';
 import { LedgerQueryDto } from './dto';
 import { parsePagination, buildPaginationMeta } from '../../common/utils';
 
+interface LedgerBalanceRaw {
+  totalCreditNgn: string | null;
+  totalDebitNgn: string | null;
+  totalCreditUsd: string | null;
+  totalDebitUsd: string | null;
+  totalCreditUsdt: string | null;
+  totalDebitUsdt: string | null;
+  totalCreditUsdc: string | null;
+  totalDebitUsdc: string | null;
+}
+
 @Injectable()
 export class LedgerService {
   constructor(
@@ -12,7 +23,11 @@ export class LedgerService {
     private readonly ledgerRepo: Repository<LedgerEntry>,
   ) {}
 
-  async findAll(businessId: string, mode: 'live' | 'test', query: LedgerQueryDto) {
+  async findAll(
+    businessId: string,
+    mode: 'live' | 'test',
+    query: LedgerQueryDto,
+  ) {
     const { offset, limit, page } = parsePagination(query);
 
     const qb = this.ledgerRepo
@@ -67,7 +82,7 @@ export class LedgerService {
           LedgerEntryStatus.REJECTED,
         ],
       })
-      .getRawOne();
+      .getRawOne<LedgerBalanceRaw>();
 
     const creditNgn = Number(result?.totalCreditNgn ?? 0);
     const debitNgn = Number(result?.totalDebitNgn ?? 0);
@@ -103,7 +118,11 @@ export class LedgerService {
     };
   }
 
-  async getSettlementReport(businessId: string, mode: 'live' | 'test', query: { date?: string }) {
+  async getSettlementReport(
+    businessId: string,
+    mode: 'live' | 'test',
+    query: { date?: string },
+  ) {
     const targetDate = query.date || new Date().toISOString().split('T')[0];
     const startOfDay = new Date(`${targetDate}T00:00:00.000Z`);
     const endOfDay = new Date(`${targetDate}T23:59:59.999Z`);
@@ -147,8 +166,6 @@ export class LedgerService {
     for (const entry of entries) {
       summary.total_debits_ngn += Number(entry.debit_ngn);
       summary.total_credits_ngn += Number(entry.credit_ngn);
-      summary.total_debits_usd += Number(entry.debit_usd);
-      summary.total_credits_usd += Number(entry.credit_usd);
       summary.total_debits_usdt += Number(entry.debit_usdt);
       summary.total_credits_usdt += Number(entry.credit_usdt);
       summary.total_debits_usdc += Number(entry.debit_usdc);
@@ -170,8 +187,6 @@ export class LedgerService {
       summary.by_type[entry.tx_type].count++;
       summary.by_type[entry.tx_type].debit_ngn += Number(entry.debit_ngn);
       summary.by_type[entry.tx_type].credit_ngn += Number(entry.credit_ngn);
-      summary.by_type[entry.tx_type].debit_usd += Number(entry.debit_usd);
-      summary.by_type[entry.tx_type].credit_usd += Number(entry.credit_usd);
       summary.by_type[entry.tx_type].debit_usdt += Number(entry.debit_usdt);
       summary.by_type[entry.tx_type].credit_usdt += Number(entry.credit_usdt);
       summary.by_type[entry.tx_type].debit_usdc += Number(entry.debit_usdc);

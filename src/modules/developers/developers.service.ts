@@ -59,8 +59,12 @@ export class DevelopersService {
       throw new UnauthorizedException('No password set on this account.');
     }
 
-    const valid = await bcrypt.compare(dto.current_password, user.password_hash);
-    if (!valid) throw new UnauthorizedException('Current password is incorrect.');
+    const valid = await bcrypt.compare(
+      dto.current_password,
+      user.password_hash,
+    );
+    if (!valid)
+      throw new UnauthorizedException('Current password is incorrect.');
 
     const newHash = await bcrypt.hash(dto.new_password, 12);
     await this.userRepo.update(userId, { password_hash: newHash });

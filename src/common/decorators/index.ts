@@ -3,6 +3,20 @@ import {
   ExecutionContext,
   SetMetadata,
 } from '@nestjs/common';
+import { Request } from 'express';
+import { User } from '../../database/entities';
+
+type AuthenticatedUser = User & {
+  mode?: 'live' | 'test';
+  active_business_id?: string | null;
+};
+
+interface AuthenticatedRequest extends Request {
+  user?: AuthenticatedUser;
+  developer?: AuthenticatedUser;
+  active_business_id?: string | null;
+  apiKeyEnvironment?: 'live' | 'test';
+}
 
 // ── Auth strategy metadata keys ─────────────────────────────
 
@@ -39,9 +53,9 @@ export const DualAuth = () => SetMetadata(AUTH_TYPE_KEY, 'dual');
  */
 export const GetUser = createParamDecorator(
   (data: string, ctx: ExecutionContext) => {
-    const request = ctx.switchToHttp().getRequest();
+    const request = ctx.switchToHttp().getRequest<AuthenticatedRequest>();
     const user = request.user || request.developer;
-    return data ? user?.[data] : user;
+    return data ? (user as Record<string, unknown> | undefined)?.[data] : user;
   },
 );
 
@@ -52,7 +66,7 @@ export const GetUser = createParamDecorator(
  */
 export const GetBusinessId = createParamDecorator(
   (_data: unknown, ctx: ExecutionContext): string | null => {
-    const request = ctx.switchToHttp().getRequest();
+    const request = ctx.switchToHttp().getRequest<AuthenticatedRequest>();
     return request.active_business_id ?? null;
   },
 );
@@ -65,7 +79,7 @@ export const GetBusinessId = createParamDecorator(
  */
 export const GetMode = createParamDecorator(
   (_data: unknown, ctx: ExecutionContext): 'live' | 'test' => {
-    const request = ctx.switchToHttp().getRequest();
+    const request = ctx.switchToHttp().getRequest<AuthenticatedRequest>();
     const user = request.developer || request.user;
     return user?.mode || request.apiKeyEnvironment || 'test';
   },

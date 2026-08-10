@@ -24,21 +24,6 @@ import {
 export class OfframpController {
   constructor(private readonly offrampService: OfframpService) {}
 
-  // @ApiOperation({
-  //   summary: 'Get off-ramp rate',
-  //   description:
-  //     'Get current exchange rate for crypto to fiat conversion (e.g., USDT_NGN)',
-  // })
-  // @ApiParam({
-  //   name: 'pair',
-  //   description: 'Currency pair (e.g., USDT_NGN, BTC_GHS)',
-  //   example: 'USDT_NGN',
-  // })
-  // @Get('rates/:pair')
-  // async getRate(@Param('pair') pair: string) {
-  //   return this.offrampService.getRate(pair);
-  // }
-
   @ApiOperation({
     summary: 'Create off-ramp transaction',
     description:
@@ -56,11 +41,13 @@ export class OfframpController {
 
   @ApiOperation({
     summary: 'Get off-ramp transaction',
-    description: 'Retrieve details of a specific off-ramp transaction by ID',
+    description:
+      'Retrieve the status of an off-ramp, keyed by the id returned from POST /offramp. ' +
+      'Tracks the full lifecycle — before the swap settles, only swap status is available;',
   })
   @ApiParam({
     name: 'tx_id',
-    description: 'Transaction unique identifier',
+    description: 'The id returned by POST /offramp (a SwapRecord id)',
     example: '550e8400-e29b-41d4-a716-446655440000',
   })
   @Get('offramp/:tx_id')

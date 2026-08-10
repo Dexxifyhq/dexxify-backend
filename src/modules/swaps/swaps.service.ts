@@ -5,6 +5,19 @@ import { CoincircuitService } from '../../providers/coincircuit/coincircuit.serv
 import { SwapRecord, SwapRecordStatus } from '../../database/entities';
 import { EstimateSwapDto, CreateSwapQuotationDto, SwapQueryDto } from './dto';
 
+interface CCSwapData {
+  id: string;
+  fromCurrency?: string;
+  toCurrency?: string;
+  sourceAmount?: string | number;
+  targetAmount?: string | number | null;
+  status?: string;
+}
+
+function getErrorMessage(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
+}
+
 @Injectable()
 export class SwapsService {
   private readonly logger = new Logger(SwapsService.name);
@@ -45,7 +58,7 @@ export class SwapsService {
         'https://api.dexxify.com/api/v1/webhooks/incoming/coincircuit',
     });
 
-    const swap = result?.data;
+    const swap = result?.data as CCSwapData | undefined;
     if (swap?.id) {
       try {
         await this.swapRecordRepo.save(
@@ -66,7 +79,7 @@ export class SwapsService {
         );
       } catch (err) {
         this.logger.warn(
-          `Failed to save swap record for ${swap.id}: ${err.message}`,
+          `Failed to save swap record for ${swap.id}: ${getErrorMessage(err)}`,
         );
       }
     }

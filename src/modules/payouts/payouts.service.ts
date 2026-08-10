@@ -1,15 +1,23 @@
 import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import {
-  Payout,
-  PayoutStatus,
-  LedgerEntry,
-  TxType,
-} from '../../database/entities';
+import { Payout, PayoutStatus, LedgerEntry } from '../../database/entities';
 import { CreatePayoutDto, BatchPayoutDto, ResolveAccountDto } from './dto';
 import { parsePagination, buildPaginationMeta } from '../../common/utils';
 import { CoincircuitService } from '../../providers/coincircuit/coincircuit.service';
+
+interface RecipientValidationData {
+  details?: { accountName?: string };
+}
+
+interface RecipientData {
+  id: string;
+}
+
+interface PayoutData {
+  id: string;
+  reference?: string;
+}
 
 @Injectable()
 export class PayoutsService {
@@ -24,33 +32,37 @@ export class PayoutsService {
     private readonly cc: CoincircuitService,
   ) {}
 
-  async create(businessId: string, mode: 'live' | 'test', dto: CreatePayoutDto) {
+  async create(
+    businessId: string,
+    mode: 'live' | 'test',
+    dto: CreatePayoutDto,
+  ) {
     let accountName = dto.account_name;
     if (!accountName) {
-      const resolved = await this.resolveAccount(mode, {
+      const resolved = (await this.resolveAccount(mode, {
         account_number: dto.account_number,
         bank_code: dto.bank_code,
-      });
-      accountName = (resolved as any)?.data?.details?.accountName ?? dto.account_number;
+      })) as { data: RecipientValidationData };
+      accountName = resolved.data?.details?.accountName ?? dto.account_number;
     }
 
     // Ensure recipient exists in CoincircuitMCP
-    const recipientResult = await this.cc.createRecipient(mode, {
+    const recipientResult = (await this.cc.createRecipient(mode, {
       type: 'ngn_bank_account',
       details: {
         accountNumber: dto.account_number,
         bankCode: dto.bank_code,
       },
-    });
+    })) as { data: RecipientData };
     const recipientId = recipientResult.data.id;
 
     // Initiate payout via CoincircuitMCP
-    const payoutResult = await this.cc.initiatePayout(mode, {
+    const payoutResult = (await this.cc.initiatePayout(mode, {
       recipientId,
       amount: String(dto.amount),
       currency: 'NGN',
       narration: dto.narration,
-    });
+    })) as { data: PayoutData };
 
     const ccPayout = payoutResult.data;
 
@@ -72,7 +84,11 @@ export class PayoutsService {
     return this.payoutRepo.save(payout);
   }
 
-  async createBatch(businessId: string, mode: 'live' | 'test', dto: BatchPayoutDto) {
+  async createBatch(
+    businessId: string,
+    mode: 'live' | 'test',
+    dto: BatchPayoutDto,
+  ) {
     const batchId = crypto.randomUUID();
     const results: any[] = [];
 
@@ -81,12 +97,12 @@ export class PayoutsService {
         const result = await this.create(businessId, mode, payoutDto);
         await this.payoutRepo.update(result.id, { batch_id: batchId });
         results.push({ ...result, batch_id: batchId, success: true });
-      } catch (err: any) {
+      } catch (err) {
         results.push({
           account_number: payoutDto.account_number,
           amount: payoutDto.amount,
           success: false,
-          error: err.message,
+          error: err instanceof Error ? err.message : String(err),
         });
       }
     }
@@ -102,7 +118,11 @@ export class PayoutsService {
     return payout;
   }
 
-  async findAll(businessId: string, mode: 'live' | 'test', query: any) {
+  async findAll(
+    businessId: string,
+    mode: 'live' | 'test',
+    query: { page?: number; limit?: number },
+  ) {
     const { offset, limit, page } = parsePagination(query);
     const [data, total] = await this.payoutRepo.findAndCount({
       where: { business_id: businessId, mode },

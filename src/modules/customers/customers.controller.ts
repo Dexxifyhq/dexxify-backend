@@ -99,6 +99,10 @@ export class CustomersController {
     @GetMode() mode: 'live' | 'test',
     @Param('customer_id', ParseUUIDPipe) customerId: string,
   ) {
-    return this.customersService.getDepositAccount(businessId, mode, customerId);
+    return this.customersService.getDepositAccount(
+      businessId,
+      mode,
+      customerId,
+    );
   }
 }

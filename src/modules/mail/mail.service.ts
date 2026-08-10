@@ -174,14 +174,6 @@ export class MailService {
     html: string,
     text: string,
   ): Promise<boolean> {
-    const mailOptions = {
-      from: `"${this.fromName}" <${this.fromEmail}>`,
-      to,
-      subject,
-      html,
-      text,
-    };
-
     if (!this.transporter) {
       // Fallback: log to console in development
       this.logger.log(`── EMAIL (not sent — SMTP not configured) ──`);
@@ -220,7 +212,7 @@ export class MailService {
       });
 
       if (!response.ok) {
-        const errorBody = await response.json();
+        const errorBody: unknown = await response.json();
         this.logger.error(
           `Failed to send email to ${to}: [${response.status}] ${JSON.stringify(errorBody)}`,
         );
@@ -230,7 +222,8 @@ export class MailService {
       this.logger.log(`✅ Email sent to ${to}: ${subject}`);
       return true;
     } catch (error) {
-      this.logger.error(`Failed to send email to ${to}:`, error.message);
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.error(`Failed to send email to ${to}:`, message);
       return false;
     }
     // } catch (err: any) {

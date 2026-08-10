@@ -28,7 +28,7 @@ import {
   ApiCreatedResponse,
 } from '@nestjs/swagger';
 import { IsOptional, IsNumber, IsString, IsNotEmpty } from 'class-validator';
-import { DepositAccount } from 'src/database/entities';
+import { DepositAccount } from '../../database/entities';
 
 export class CustomQueryDto {
   @ApiPropertyOptional({ description: 'Page number', example: 1 })
@@ -55,7 +55,7 @@ export class UpdateWalletBankDetailsDto {
 
   @ApiPropertyOptional({ description: 'Narration', example: 'Dexxify Payout' })
   @IsString({
-    validateIf: (obj) =>
+    validateIf: (obj: UpdateWalletBankDetailsDto) =>
       obj.narration !== undefined && obj.narration.length <= 32,
   }) // Max 32 chars
   @IsOptional()

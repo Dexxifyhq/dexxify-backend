@@ -6,12 +6,25 @@ import { RefundDto, RefundQueryDto, EstimateRefundQueryDto } from './dto';
 export class RefundsService {
   constructor(private readonly cc: CoincircuitService) {}
 
-  refundSession(mode: 'live' | 'test', sessionReference: string, dto: RefundDto) {
+  refundSession(
+    mode: 'live' | 'test',
+    sessionReference: string,
+    dto: RefundDto,
+  ) {
     return this.cc.refundSession(mode, sessionReference, dto);
   }
 
-  estimateRefund(mode: 'live' | 'test', reference: string, query: EstimateRefundQueryDto) {
-    return this.cc.estimateRefund(mode, reference, query.entity, query.feePaidBy);
+  estimateRefund(
+    mode: 'live' | 'test',
+    reference: string,
+    query: EstimateRefundQueryDto,
+  ) {
+    return this.cc.estimateRefund(
+      mode,
+      reference,
+      query.entity,
+      query.feePaidBy,
+    );
   }
 
   findAll(mode: 'live' | 'test', query: RefundQueryDto) {

@@ -30,6 +30,11 @@ import {
   toCCAsset,
   toCCChain,
 } from '../../providers/coincircuit/coincircuit.service';
+import { CCPaymentSessionData } from '../payment-sessions/payment-sessions.service';
+
+function getErrorMessage(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
+}
 
 @Injectable()
 export class InvoicesService {
@@ -45,7 +50,11 @@ export class InvoicesService {
     private readonly cc: CoincircuitService,
   ) {}
 
-  async create(businessId: string, mode: 'live' | 'test', dto: CreateInvoiceDto) {
+  async create(
+    businessId: string,
+    mode: 'live' | 'test',
+    dto: CreateInvoiceDto,
+  ) {
     let customer = await this.customerRepo.findOne({
       where: { email: dto.customer.email, business_id: businessId, mode },
     });
@@ -95,7 +104,11 @@ export class InvoicesService {
     return saved;
   }
 
-  async findAll(businessId: string, mode: 'live' | 'test', query: InvoiceQueryDto) {
+  async findAll(
+    businessId: string,
+    mode: 'live' | 'test',
+    query: InvoiceQueryDto,
+  ) {
     const { page, limit, offset } = parsePagination(query);
 
     const qb = this.invoiceRepo
@@ -126,7 +139,11 @@ export class InvoicesService {
     return invoice;
   }
 
-  async findOneEnriched(businessId: string, mode: 'live' | 'test', invoiceId: string) {
+  async findOneEnriched(
+    businessId: string,
+    mode: 'live' | 'test',
+    invoiceId: string,
+  ) {
     const invoice = await this.findOne(businessId, mode, invoiceId);
 
     if (invoice.provider_invoice_reference) {
@@ -135,10 +152,10 @@ export class InvoicesService {
           mode,
           invoice.provider_invoice_reference,
         );
-        return { ...invoice, cc: ccResult?.data };
+        return { ...invoice, cc: ccResult?.data as CCPaymentSessionData };
       } catch (err) {
         this.logger.warn(
-          `CC invoice fetch failed for ${invoiceId}: ${err.message}`,
+          `CC invoice fetch failed for ${invoiceId}: ${getErrorMessage(err)}`,
         );
       }
     }
@@ -193,7 +210,7 @@ export class InvoicesService {
       metadata: { invoice_number: invoice.invoice_number },
     });
 
-    const ccData = ccResult?.data;
+    const ccData = ccResult?.data as CCPaymentSessionData | undefined;
 
     const session = await this.sessionRepo.save(
       this.sessionRepo.create({
@@ -205,11 +222,11 @@ export class InvoicesService {
         amount: invoice.total,
         currency: invoice.currency,
         crypto_asset: dto.crypto_asset,
-        deposit_address: ccResult?.data?.payment?.address || null,
+        deposit_address: ccData?.payment?.address || null,
         network: dto.network,
         status: PaymentSessionStatus.PENDING,
         provider_session_reference: ccData?.reference ?? null,
-        expires_at: ccData?.expiresAt ?? null,
+        expires_at: ccData?.expiresAt ? new Date(ccData.expiresAt) : undefined,
         metadata: { invoice_number: invoice.invoice_number, ...ccData },
       }),
     );
