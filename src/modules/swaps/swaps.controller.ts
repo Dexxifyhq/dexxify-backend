@@ -67,14 +67,22 @@ export class SwapsController {
 
   @ApiOperation({ summary: 'List swap history' })
   @Get()
-  list(@GetMode() mode: 'live' | 'test', @Query() query: SwapQueryDto) {
-    return this.swapsService.list(mode, query);
+  list(
+    @GetBusinessId() businessId: string,
+    @GetMode() mode: 'live' | 'test',
+    @Query() query: SwapQueryDto,
+  ) {
+    return this.swapsService.list(businessId, mode, query);
   }
 
   @ApiOperation({ summary: 'Get swap details by ID' })
   @ApiParam({ name: 'id', description: 'Swap ID' })
   @Get(':id')
-  findOne(@GetMode() mode: 'live' | 'test', @Param('id') id: string) {
-    return this.swapsService.findOne(mode, id);
+  findOne(
+    @GetBusinessId() businessId: string,
+    @GetMode() mode: 'live' | 'test',
+    @Param('id') id: string,
+  ) {
+    return this.swapsService.findOne(businessId, mode, id);
   }
 }

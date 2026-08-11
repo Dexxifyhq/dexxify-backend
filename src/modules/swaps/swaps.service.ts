@@ -1,9 +1,10 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CoincircuitService } from '../../providers/coincircuit/coincircuit.service';
 import { SwapRecord, SwapRecordStatus } from '../../database/entities';
 import { EstimateSwapDto, CreateSwapQuotationDto, SwapQueryDto } from './dto';
+import { parsePagination, buildPaginationMeta } from '../../common/utils';
 
 interface CCSwapData {
   id: string;
@@ -87,18 +88,45 @@ export class SwapsService {
     return result;
   }
 
-  list(mode: 'live' | 'test', query: SwapQueryDto) {
-    const params: Record<string, string> = {};
-    if (query.page) params.page = String(query.page);
-    if (query.size) params.size = String(query.size);
-    if (query.fromCurrency) params.fromCurrency = query.fromCurrency;
-    if (query.toCurrency) params.toCurrency = query.toCurrency;
-    if (query.startDate) params.startDate = query.startDate;
-    if (query.endDate) params.endDate = query.endDate;
-    return this.cc.listSwaps(mode, params);
+  async list(businessId: string, mode: 'live' | 'test', query: SwapQueryDto) {
+    const { offset, limit, page } = parsePagination({
+      page: query.page,
+      limit: query.size,
+    });
+
+    const qb = this.swapRecordRepo
+      .createQueryBuilder('sr')
+      .where('sr.business_id = :businessId', { businessId })
+      .andWhere('sr.mode = :mode', { mode })
+      .orderBy('sr.created_at', 'DESC')
+      .skip(offset)
+      .take(limit);
+
+    if (query.fromCurrency)
+      qb.andWhere('sr.from_currency = :fromCurrency', {
+        fromCurrency: query.fromCurrency,
+      });
+    if (query.toCurrency)
+      qb.andWhere('sr.to_currency = :toCurrency', {
+        toCurrency: query.toCurrency,
+      });
+    if (query.startDate)
+      qb.andWhere('sr.created_at >= :startDate', {
+        startDate: query.startDate,
+      });
+    if (query.endDate)
+      qb.andWhere('sr.created_at <= :endDate', { endDate: query.endDate });
+
+    const [data, total] = await qb.getManyAndCount();
+
+    return { data, meta: buildPaginationMeta(total, page, limit) };
   }
 
-  findOne(mode: 'live' | 'test', id: string) {
-    return this.cc.getSwap(mode, id);
+  async findOne(businessId: string, mode: 'live' | 'test', id: string) {
+    const record = await this.swapRecordRepo.findOne({
+      where: { cc_swap_id: id, business_id: businessId, mode },
+    });
+    if (!record) throw new NotFoundException('Swap not found.');
+    return record;
   }
 }
