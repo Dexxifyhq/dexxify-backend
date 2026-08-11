@@ -8,8 +8,6 @@ import { parsePagination, buildPaginationMeta } from '../../common/utils';
 interface LedgerBalanceRaw {
   totalCreditNgn: string | null;
   totalDebitNgn: string | null;
-  totalCreditUsd: string | null;
-  totalDebitUsd: string | null;
   totalCreditUsdt: string | null;
   totalDebitUsdt: string | null;
   totalCreditUsdc: string | null;
@@ -67,8 +65,6 @@ export class LedgerService {
       .createQueryBuilder('le')
       .select('SUM(le.credit_ngn)', 'totalCreditNgn')
       .addSelect('SUM(le.debit_ngn)', 'totalDebitNgn')
-      .addSelect('SUM(le.credit_usd)', 'totalCreditUsd')
-      .addSelect('SUM(le.debit_usd)', 'totalDebitUsd')
       .addSelect('SUM(le.credit_usdt)', 'totalCreditUsdt')
       .addSelect('SUM(le.debit_usdt)', 'totalDebitUsdt')
       .addSelect('SUM(le.credit_usdc)', 'totalCreditUsdc')
@@ -86,8 +82,6 @@ export class LedgerService {
 
     const creditNgn = Number(result?.totalCreditNgn ?? 0);
     const debitNgn = Number(result?.totalDebitNgn ?? 0);
-    const creditUsd = Number(result?.totalCreditUsd ?? 0);
-    const debitUsd = Number(result?.totalDebitUsd ?? 0);
     const creditUsdt = Number(result?.totalCreditUsdt ?? 0);
     const debitUsdt = Number(result?.totalDebitUsdt ?? 0);
     const creditUsdc = Number(result?.totalCreditUsdc ?? 0);
@@ -98,11 +92,6 @@ export class LedgerService {
         credits: creditNgn,
         debits: debitNgn,
         balance: creditNgn - debitNgn,
-      },
-      usd: {
-        credits: creditUsd,
-        debits: debitUsd,
-        balance: creditUsd - debitUsd,
       },
       usdt: {
         credits: creditUsdt,
@@ -141,8 +130,6 @@ export class LedgerService {
       total_entries: entries.length,
       total_debits_ngn: 0,
       total_credits_ngn: 0,
-      total_debits_usd: 0,
-      total_credits_usd: 0,
       total_debits_usdt: 0,
       total_credits_usdt: 0,
       total_debits_usdc: 0,
@@ -153,8 +140,6 @@ export class LedgerService {
           count: number;
           debit_ngn: number;
           credit_ngn: number;
-          debit_usd: number;
-          credit_usd: number;
           debit_usdt: number;
           credit_usdt: number;
           debit_usdc: number;
@@ -176,8 +161,6 @@ export class LedgerService {
           count: 0,
           debit_ngn: 0,
           credit_ngn: 0,
-          debit_usd: 0,
-          credit_usd: 0,
           debit_usdt: 0,
           credit_usdt: 0,
           debit_usdc: 0,
