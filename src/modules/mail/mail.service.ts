@@ -1,6 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import * as nodemailer from 'nodemailer';
 
 interface BrevoEmailPayload {
   sender: { name: string; email: string };
@@ -13,7 +12,6 @@ interface BrevoEmailPayload {
 @Injectable()
 export class MailService {
   private readonly logger = new Logger(MailService.name);
-  private transporter: nodemailer.Transporter;
   private readonly brevoApiUrl = 'https://api.brevo.com/v3/smtp/email';
   private readonly fromName: string;
   private readonly fromEmail: string;
@@ -26,21 +24,10 @@ export class MailService {
       this.config.get<string>('smtp.fromEmail') || 'hello@dexxify.com';
     this.apiKey = this.config.get<string>('smtp.apiKey') || '';
     this.replyToEmail = this.config.get<string>('smtp.replyToEmail') || '';
-    const host = this.config.get<string>('smtp.host');
-    const port = this.config.get<number>('smtp.port');
-    const user = this.config.get<string>('smtp.user');
-    const pass = this.config.get<string>('smtp.password');
 
-    if (host && user && pass) {
-      this.transporter = nodemailer.createTransport({
-        host,
-        port: port || 587,
-        secure: port === 465,
-        auth: { user, pass },
-      });
-    } else {
+    if (!this.apiKey) {
       this.logger.warn(
-        'SMTP not configured — emails will be logged to console instead of sent.',
+        'Brevo API key not configured — emails will be logged to console instead of sent.',
       );
     }
   }
@@ -174,9 +161,9 @@ export class MailService {
     html: string,
     text: string,
   ): Promise<boolean> {
-    if (!this.transporter) {
+    if (!this.apiKey) {
       // Fallback: log to console in development
-      this.logger.log(`── EMAIL (not sent — SMTP not configured) ──`);
+      this.logger.log(`── EMAIL (not sent — Brevo API key not configured) ──`);
       this.logger.log(`To: ${to}`);
       this.logger.log(`Subject: ${subject}`);
       this.logger.log(`Body: ${text}`);
@@ -184,9 +171,6 @@ export class MailService {
     }
 
     try {
-      //   const info = await this.transporter.sendMail(mailOptions);
-      //   this.logger.log(`Email sent to ${to}: ${info.messageId}`);
-
       const payload: BrevoEmailPayload = {
         sender: {
           name: this.fromName,
@@ -226,9 +210,5 @@ export class MailService {
       this.logger.error(`Failed to send email to ${to}:`, message);
       return false;
     }
-    // } catch (err: any) {
-    //   this.logger.error(`Failed to send email to ${to}: ${err.message}`);
-    //   throw err;
-    // }
   }
 }
