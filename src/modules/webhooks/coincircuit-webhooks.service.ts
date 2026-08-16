@@ -275,7 +275,7 @@ interface CCPayoutResult {
 export class CoincircuitWebhooksService {
   private readonly logger = new Logger(CoincircuitWebhooksService.name);
   private readonly webhookSecret: string;
-  private readonly FIAT_WITHDRAWAL_FEE_PERCENT = 1.0;
+  private readonly FIAT_WITHDRAWAL_FEE = 100.0;
 
   constructor(
     private readonly config: ConfigService,
@@ -971,7 +971,7 @@ export class CoincircuitWebhooksService {
       feePercent: number;
       quotationId?: string;
     };
-    const feePercent = meta.feePercent ?? this.FIAT_WITHDRAWAL_FEE_PERCENT;
+    const feePercent = meta.feePercent ?? this.FIAT_WITHDRAWAL_FEE;
     const feeNgn = grossNgn * (feePercent / 100);
     const netNgn = grossNgn - feeNgn;
     const platformId = this.platformCtx.getBusinessId();

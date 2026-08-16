@@ -59,16 +59,20 @@ export interface CCDepositAccountData {
 }
 
 interface CCRecipientDetails {
-  isDefault?: boolean;
   chain?: string;
   address?: string;
+  accountName?: string;
   accountNumber?: string;
+  bankName?: string;
   bankCode?: string;
   accountType?: string;
+  currency?: string;
 }
 
 interface CCRecipient {
   id: string;
+  isDefault?: boolean;
+  label?: string;
   details: CCRecipientDetails;
 }
 
@@ -84,8 +88,9 @@ function getErrorMessage(err: unknown): string {
 @Injectable()
 export class WalletsService {
   private readonly logger = new Logger(WalletsService.name);
-  private readonly STABLECOIN_FEE_PERCENT = 0.5;
-  private readonly FIAT_WITHDRAWAL_FEE_PERCENT = 1.0;
+  private readonly STABLECOIN_FEE = 0.2;
+  private readonly CC_STABLECOIN_FEE = 0.5;
+  private readonly FIAT_WITHDRAWAL_FEE = 100.0;
 
   constructor(
     private readonly dataSource: DataSource,
@@ -339,7 +344,6 @@ export class WalletsService {
     });
 
     const recipient = result.data as CCRecipient;
-    const details = recipient.details;
 
     const saved = await this.withdrawalWalletRepo.save({
       id: recipient.id,
@@ -349,7 +353,7 @@ export class WalletsService {
       network: ccChain as WithdrawalWalletNetwork,
       token: data.token as WithdrawalWalletToken,
       label: data.label,
-      primary: details.isDefault,
+      primary: recipient.isDefault,
     });
 
     this.logger.log(`Withdrawal address saved: ${saved.id}`);
@@ -394,8 +398,10 @@ export class WalletsService {
       );
     }
 
-    const feeAmount = dto.amount * (this.STABLECOIN_FEE_PERCENT / 100);
-    const netAmount = dto.amount - feeAmount;
+    const feeAmount = this.STABLECOIN_FEE + this.CC_STABLECOIN_FEE;
+    const platformFee = this.STABLECOIN_FEE;
+    const totalAmount = dto.amount + feeAmount;
+    const ccNetAmount = dto.amount - platformFee;
     const token = dto.token.toUpperCase();
     const isUSDT = token === 'USDT';
     const isUSDC = token === 'USDC';
@@ -425,7 +431,7 @@ export class WalletsService {
     // CC call outside transaction — if it fails nothing is written
     const result = await this.cc.initiatePayout(mode, {
       recipientId: saved.id,
-      amount: netAmount.toString(),
+      amount: ccNetAmount.toString(),
       currency: dto.token,
       narration: dto.externalId,
     });
@@ -455,8 +461,8 @@ export class WalletsService {
           reference_type: 'payout',
           reference_id: payout.id,
           currency: withdrawalCurrency,
-          debit_usdt: isUSDT ? dto.amount : 0,
-          debit_usdc: isUSDC ? dto.amount : 0,
+          debit_usdt: isUSDT ? totalAmount : 0,
+          debit_usdc: isUSDC ? totalAmount : 0,
           asset: dto.token,
           status: LedgerEntryStatus.PENDING,
           description: `Stablecoin withdrawal: ${dto.amount} ${token}`,
@@ -472,17 +478,17 @@ export class WalletsService {
           reference_type: 'payout_fee',
           reference_id: `${payout.id}_fee`,
           currency: withdrawalCurrency,
-          credit_usdt: isUSDT ? feeAmount : 0,
-          credit_usdc: isUSDC ? feeAmount : 0,
+          credit_usdt: isUSDT ? platformFee : 0,
+          credit_usdc: isUSDC ? platformFee : 0,
           asset: dto.token,
           status: LedgerEntryStatus.PENDING,
-          description: `Fee income: ${this.STABLECOIN_FEE_PERCENT}% stablecoin withdrawal`,
+          description: `Fee income: ${this.STABLECOIN_FEE} stablecoin withdrawal`,
         }),
       );
     });
 
     this.logger.log(`Stablecoin withdrawal initiated: ${payoutId}`);
-    return { ...result, fee: feeAmount, net_amount: netAmount };
+    return { fee: feeAmount, amount: dto.amount };
   }
 
   async initiateFiatWithdrawal(
@@ -490,7 +496,8 @@ export class WalletsService {
     businessId: string,
     mode: 'live' | 'test',
   ) {
-    const feeAmount = dto.amount * (this.FIAT_WITHDRAWAL_FEE_PERCENT / 100);
+    const feeAmount = this.FIAT_WITHDRAWAL_FEE;
+    // const totalAmount = dto.amount + feeAmount;
     const netAmount = dto.amount - feeAmount;
 
     // Credits: completed/reversed/rejected. Debits: completed + pending (to block double-spend)
@@ -563,7 +570,7 @@ export class WalletsService {
           credit_ngn: feeAmount,
           asset: 'NGN',
           status: LedgerEntryStatus.PENDING,
-          description: `Fee income: ${this.FIAT_WITHDRAWAL_FEE_PERCENT}% fiat withdrawal`,
+          description: `Fee income: ${this.FIAT_WITHDRAWAL_FEE} fiat withdrawal`,
         }),
       );
     });
