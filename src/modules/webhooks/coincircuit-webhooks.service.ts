@@ -1170,7 +1170,7 @@ export class CoincircuitWebhooksService {
 
     const account = await this.walletRepo.findOne({
       where: { id: data.depositAccountId },
-      select: ['id', 'business_id'],
+      select: ['id', 'business_id', 'mode'],
     });
 
     if (!account) {
