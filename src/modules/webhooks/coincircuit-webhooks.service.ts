@@ -88,6 +88,23 @@ interface CCWebhookPaymentSession {
   fiatAmountPaid?: string | number;
   settlements?: {
     currency?: string;
+    customerPaid?: {
+      amount?: string | number;
+    };
+    gross?: {
+      amount?: string | number;
+      conversionRate?: string | number;
+    };
+    fees?: {
+      processing?: {
+        amount?: string | number;
+        paidBy?: string;
+      };
+      gas?: {
+        amount?: string | number;
+        paidBy?: string;
+      };
+    };
     net?: { amount?: string | number };
   };
   payment: {
@@ -513,6 +530,10 @@ export class CoincircuitWebhooksService {
     const session = data.session;
     const settlements = session.settlements;
     const payment = session.payment;
+    const creditAmount = Number(session.amountPaid);
+    const fee =
+      Number(settlements?.fees?.processing?.amount ?? 0) +
+      Number(settlements?.fees?.gas?.amount ?? 0);
     const netAmount = settlements?.net?.amount
       ? Number(settlements.net.amount)
       : null;
@@ -526,8 +547,6 @@ export class CoincircuitWebhooksService {
         .getRepository(PaymentSession)
         .findOne({ where: { provider_session_reference: ref } });
       if (!session) return;
-
-      const creditAmount = Number(session.amount);
 
       session.status = PaymentSessionStatus.COMPLETED;
       session.completed_at = new Date();
@@ -551,6 +570,7 @@ export class CoincircuitWebhooksService {
           completed_at: new Date(),
           amount: creditAmount,
           net_amount: netAmount,
+          fee,
           currency: LedgerCurrency.USDT,
         },
       );
@@ -569,7 +589,7 @@ export class CoincircuitWebhooksService {
           reference_id: session.id,
           currency: LedgerCurrency.USDT,
           asset,
-          credit_usdt: creditAmount,
+          credit_usdt: netAmount ?? 0,
           // credit_usdt: settlementCurrency === 'USDT' ? creditAmount : 0,
           // credit_usdc: settlementCurrency === 'USDC' ? creditAmount : 0,
           status: LedgerEntryStatus.COMPLETED,
