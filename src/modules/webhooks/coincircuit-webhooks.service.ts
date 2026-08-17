@@ -275,7 +275,6 @@ interface CCPayoutResult {
 export class CoincircuitWebhooksService {
   private readonly logger = new Logger(CoincircuitWebhooksService.name);
   private readonly webhookSecret: string;
-  private readonly FIAT_WITHDRAWAL_FEE = 100.0;
 
   constructor(
     private readonly config: ConfigService,
@@ -968,12 +967,11 @@ export class CoincircuitWebhooksService {
   ): Promise<void> {
     const meta = record.metadata as {
       recipientId: string;
-      feePercent: number;
+      fee: number;
       quotationId?: string;
     };
-    const feePercent = meta.feePercent ?? this.FIAT_WITHDRAWAL_FEE;
-    const feeNgn = grossNgn * (feePercent / 100);
-    const netNgn = grossNgn - feeNgn;
+    const fee = Number(meta.fee);
+    const netNgn = grossNgn - fee;
     const platformId = this.platformCtx.getBusinessId();
 
     // CC call first — if it fails, nothing is written
@@ -1001,7 +999,7 @@ export class CoincircuitWebhooksService {
           business_id: record.business_id,
           mode: record.mode,
           amount: netNgn,
-          fee: feeNgn,
+          fee,
           bank_code: null,
           account_number: null,
           narration: 'Offramp payout',
@@ -1020,9 +1018,9 @@ export class CoincircuitWebhooksService {
           reference_type: 'offramp_plat_fee',
           reference_id: `${payout.id}_plat_fee`,
           currency: LedgerCurrency.NGN,
-          credit_ngn: feeNgn,
+          credit_ngn: fee,
           status: LedgerEntryStatus.PENDING,
-          description: `Fee income: offramp (${feePercent}%)`,
+          description: `Fee income: offramp (${fee}%)`,
         }),
         // Net payout debit — PENDING until delivery confirmed
         em.getRepository(LedgerEntry).create({
@@ -1048,7 +1046,7 @@ export class CoincircuitWebhooksService {
           amount: record.source_amount,
           net_amount: netNgn,
           currency: LedgerCurrency.NGN,
-          fee: feeNgn,
+          fee,
           status: CryptoTxStatus.INITIATED,
           provider_reference: payoutData.id,
           description: `Offramp ${record.source_amount} ${record.from_currency} → ₦${netNgn.toFixed(2)}`,
@@ -1061,7 +1059,7 @@ export class CoincircuitWebhooksService {
     });
 
     this.logger.log(
-      `Offramp payout ${payoutData.id} initiated: ₦${netNgn.toFixed(2)} (fee ₦${feeNgn.toFixed(2)})`,
+      `Offramp payout ${payoutData.id} initiated: ₦${netNgn.toFixed(2)} (fee ₦${fee.toFixed(2)})`,
     );
   }
 

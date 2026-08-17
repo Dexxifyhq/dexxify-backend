@@ -28,6 +28,11 @@ import {
   WalletQueryDto,
 } from './dto';
 import { parsePagination, buildPaginationMeta } from '../../common/utils';
+import {
+  STABLECOIN_FEE,
+  CC_STABLECOIN_FEE,
+  FIAT_WITHDRAWAL_FEE,
+} from '../../common/constants/fees.constants';
 import { CoincircuitService } from '../../providers/coincircuit/coincircuit.service';
 import { PlatformContextService } from '../platform/platform-context.service';
 import {
@@ -88,9 +93,6 @@ function getErrorMessage(err: unknown): string {
 @Injectable()
 export class WalletsService {
   private readonly logger = new Logger(WalletsService.name);
-  private readonly STABLECOIN_FEE = 0.2;
-  private readonly CC_STABLECOIN_FEE = 0.5;
-  private readonly FIAT_WITHDRAWAL_FEE = 100.0;
 
   constructor(
     private readonly dataSource: DataSource,
@@ -398,8 +400,8 @@ export class WalletsService {
       );
     }
 
-    const feeAmount = this.STABLECOIN_FEE + this.CC_STABLECOIN_FEE;
-    const platformFee = this.STABLECOIN_FEE;
+    const feeAmount = STABLECOIN_FEE + CC_STABLECOIN_FEE;
+    const platformFee = STABLECOIN_FEE;
     const totalAmount = dto.amount + feeAmount;
     const ccNetAmount = dto.amount - platformFee;
     const token = dto.token.toUpperCase();
@@ -482,7 +484,7 @@ export class WalletsService {
           credit_usdc: isUSDC ? platformFee : 0,
           asset: dto.token,
           status: LedgerEntryStatus.PENDING,
-          description: `Fee income: ${this.STABLECOIN_FEE} stablecoin withdrawal`,
+          description: `Fee income: ${STABLECOIN_FEE} stablecoin withdrawal`,
         }),
       );
     });
@@ -496,7 +498,7 @@ export class WalletsService {
     businessId: string,
     mode: 'live' | 'test',
   ) {
-    const feeAmount = this.FIAT_WITHDRAWAL_FEE;
+    const feeAmount = FIAT_WITHDRAWAL_FEE;
     // const totalAmount = dto.amount + feeAmount;
     const netAmount = dto.amount - feeAmount;
 
@@ -570,7 +572,7 @@ export class WalletsService {
           credit_ngn: feeAmount,
           asset: 'NGN',
           status: LedgerEntryStatus.PENDING,
-          description: `Fee income: ${this.FIAT_WITHDRAWAL_FEE} fiat withdrawal`,
+          description: `Fee income: ${FIAT_WITHDRAWAL_FEE} fiat withdrawal`,
         }),
       );
     });

@@ -13,6 +13,10 @@ import {
   SwapRecordStatus,
   SwapRecordType,
 } from '../../database/entities';
+import {
+  FIAT_WITHDRAWAL_FEE,
+  STABLECOIN_FEE,
+} from '../../common/constants/fees.constants';
 import { CreateOfframpDto } from './dto';
 import { WalletsService } from '../wallets/wallets.service';
 import { CoincircuitService } from '../../providers/coincircuit/coincircuit.service';
@@ -33,7 +37,6 @@ interface SwapExecutionData {
 @Injectable()
 export class OfframpService {
   private readonly logger = new Logger(OfframpService.name);
-  private readonly FEE_PERCENT = 1.5;
 
   constructor(
     @InjectRepository(CryptoTransaction)
@@ -57,14 +60,18 @@ export class OfframpService {
     })) as { data: SwapEstimateData };
 
     const baseRate = Number(estimate.data?.targetAmount ?? 0);
-    const feeAdjustedRate = baseRate * (1 - this.FEE_PERCENT / 100);
+    const fee =
+      quote === 'USDT' || quote === 'USDC'
+        ? Number(STABLECOIN_FEE)
+        : Number(FIAT_WITHDRAWAL_FEE);
+    const feeAdjustedRate = baseRate + fee;
 
     return {
       pair: `${base}/${quote}`,
       rate: feeAdjustedRate,
       base_rate: baseRate,
-      platform_fee_percent: this.FEE_PERCENT,
-      valid_for_seconds: 30,
+      platform_fee: fee,
+      valid_for_seconds: 15,
       timestamp: new Date().toISOString(),
     };
   }
@@ -117,7 +124,7 @@ export class OfframpService {
         type: SwapRecordType.OFFRAMP,
         metadata: {
           recipientId: dto.recipient_id,
-          feePercent: this.FEE_PERCENT,
+          fee: STABLECOIN_FEE,
           quotationId: quotation.id,
           ...(dto.metadata || {}),
         },
