@@ -403,7 +403,6 @@ export class WalletsService {
     const feeAmount = STABLECOIN_FEE + CC_STABLECOIN_FEE;
     const platformFee = STABLECOIN_FEE;
     const totalAmount = dto.amount + feeAmount;
-    const ccNetAmount = dto.amount - platformFee;
     const token = dto.token.toUpperCase();
     const isUSDT = token === 'USDT';
     const isUSDC = token === 'USDC';
@@ -433,7 +432,7 @@ export class WalletsService {
     // CC call outside transaction — if it fails nothing is written
     const result = await this.cc.initiatePayout(mode, {
       recipientId: saved.id,
-      amount: ccNetAmount.toString(),
+      amount: dto.amount.toString(),
       currency: dto.token,
       narration: dto.externalId,
     });
@@ -498,9 +497,9 @@ export class WalletsService {
     businessId: string,
     mode: 'live' | 'test',
   ) {
+    // Confirm CC withdrawal fee
     const feeAmount = FIAT_WITHDRAWAL_FEE;
-    // const totalAmount = dto.amount + feeAmount;
-    const netAmount = dto.amount - feeAmount;
+    const totalAmount = dto.amount + feeAmount;
 
     // Credits: completed/reversed/rejected. Debits: completed + pending (to block double-spend)
     const calculatedBalance = await this.ledgerRepo
@@ -522,7 +521,7 @@ export class WalletsService {
     // CC call outside transaction — if it fails nothing is written
     const result = await this.cc.initiatePayout(mode, {
       recipientId: dto.bank_id,
-      amount: netAmount.toString(),
+      amount: dto.amount.toString(),
       currency: 'NGN',
       narration: dto.narration,
     });
@@ -553,7 +552,7 @@ export class WalletsService {
           reference_type: 'payout',
           reference_id: payout.id,
           currency: LedgerCurrency.NGN,
-          debit_ngn: dto.amount,
+          debit_ngn: totalAmount,
           asset: 'NGN',
           status: LedgerEntryStatus.PENDING,
           description: `Fiat withdrawal: ${dto.amount} NGN`,
@@ -578,7 +577,7 @@ export class WalletsService {
     });
 
     this.logger.log(`Fiat withdrawal initiated: ${payoutId}`);
-    return { ...result, fee: feeAmount, net_amount: netAmount };
+    return { fee: feeAmount, amount: dto.amount };
   }
 
   async listPayouts(

@@ -47,6 +47,7 @@ export class OfframpService {
     private readonly cc: CoincircuitService,
   ) {}
 
+  // NOT CURRENTLY IN USE
   async getRate(mode: 'live' | 'test', pair: string) {
     const [base, quote] = pair.toUpperCase().split('_');
     if (!base || !quote) {
@@ -124,7 +125,7 @@ export class OfframpService {
         type: SwapRecordType.OFFRAMP,
         metadata: {
           recipientId: dto.recipient_id,
-          fee: STABLECOIN_FEE,
+          fee: FIAT_WITHDRAWAL_FEE,
           quotationId: quotation.id,
           ...(dto.metadata || {}),
         },
@@ -137,9 +138,7 @@ export class OfframpService {
 
   /**
    * `id` is the SwapRecord id returned by create() — the one stable
-   * identifier for the whole offramp lifecycle. The linked CryptoTransaction
-   * doesn't exist yet at creation time (see the comment in create()), so this
-   * resolves it once triggerOfframpPayout has written it.
+   * identifier for the whole offramp lifecycle.
    */
   async findOne(businessId: string, id: string) {
     const record = await this.swapRecordRepo.findOne({

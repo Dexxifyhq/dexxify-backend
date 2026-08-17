@@ -1,13 +1,13 @@
-# Dexxify Africa API
+# Dexxify API
 
-Crypto Infrastructure API for Africa, the single API that Nigerian developers use to add crypto wallets, Naira settlement, payouts and KYC to their products.
+Crypto Infrastructure API for Africa — the single API Nigerian developers use to add crypto wallets, Naira settlement, payouts, and KYC/KYB to their products.
 
 ## Tech Stack
 
 - **Framework:** NestJS
-- **Database:** Supabase (PostgreSQL)
+- **Database:** Supabase (PostgreSQL), accessed via TypeORM
 - **Hosting:** Railway
-- **Crypto Provider:** Breet
+- **Crypto Provider:** Coincircuit
 - **KYC/AML:** Kora
 
 ## Quick Start
@@ -22,12 +22,16 @@ pnpm install
 
 ```bash
 cp .env.example .env
-# Fill in your Supabase, Breet, Kora credentials
+# Fill in your database, Coincircuit, and Kora credentials
 ```
 
-### 3. Run the database migration
+### 3. Run the database migrations
 
-Copy the contents of `src/database/migrations/001_initial_schema.sql` into your Supabase SQL Editor and execute it.
+In order, paste the contents of each file in `src/database/migrations/` into your Supabase SQL Editor and execute it:
+
+1. `001_initial_schema.sql`
+2. `002_coincircuit_migration.sql`
+3. `003_crypto_transactions_metadata_gin_index.sql`
 
 ### 4. Start development server
 
@@ -35,174 +39,140 @@ Copy the contents of `src/database/migrations/001_initial_schema.sql` into your 
 pnpm start:dev
 ```
 
-The API will be available at `http://localhost:3000` and Swagger docs at `http://localhost:3000/docs`.
+The API listens on `http://localhost:4000` (or `$PORT`) under the `/api/v1` prefix, with Swagger docs at `http://localhost:4000/api`.
 
 ## Project Structure
 
 ```
 src/
-├── config/                  # Environment config (Supabase, Breet, Kora, etc.)
+├── config/                  # Environment config (database, Coincircuit, Kora, etc.)
 ├── database/
-│   ├── migrations/          # SQL schema
+│   ├── entities/             # TypeORM entities
+│   └── migrations/           # Numbered SQL migrations (applied manually via Supabase SQL Editor)
 ├── common/
-│   ├── decorators/          # @GetDeveloper, @Public, @ApiKeyAuth
-│   ├── filters/             # Global exception filter
-│   ├── guards/              # API key guard
-│   ├── interceptors/        # Response transform interceptor
-│   └── utils/               # API key generation, hashing, pagination
+│   ├── constants/             # Shared constants (fees, etc.)
+│   ├── decorators/            # @GetBusinessId, @GetMode, @DualAuth, @Public, ...
+│   ├── filters/                # Global exception filter
+│   ├── guards/                 # API key / JWT guards
+│   ├── interceptors/           # Response transform interceptor
+│   └── utils/                  # Pagination, webhook signing, misc helpers
 └── modules/
-    ├── auth/                # JWT login + registration
-    ├── dashboard/           # API key management + usage stats (JWT-protected)
-    ├── wallets/             # Wallet-as-a-Service via Breet
-    ├── offramp/             # Crypto → NGN conversion
-    ├── payouts/             # NGN bank payouts
-    ├── kyc/                 # BVN, NIN, document, liveness via Kora
-    ├── webhooks/            # Developer webhook management + incoming provider webhooks
-    └── ledger/              # Immutable transaction ledger + settlement reports
+    ├── auth/                # Register/login, OTP verification, JWT session, live/test mode
+    ├── businesses/           # Business (merchant) account management
+    ├── teams/                # Team member invites and role-based access per business
+    ├── developers/           # Developer profile management
+    ├── dashboard/            # API keys + analytics for the developer portal (JWT-protected)
+    ├── wallets/              # Deposit accounts (crypto addresses + NGN virtual accounts), withdrawals
+    ├── customers/             # End-customer records per business
+    ├── payment-sessions/      # Programmatic crypto checkout sessions
+    ├── payment-pages/        # Hosted/public payment links
+    ├── invoices/              # Crypto-payable invoices
+    ├── offramp/               # Crypto → NGN conversion + auto payout
+    ├── swaps/                 # Crypto/fiat swap quotations and execution
+    ├── payouts/                # NGN bank payouts (single, batch, account resolve)
+    ├── refunds/                # Refunds on payment sessions
+    ├── kyc/                    # BVN, NIN, vNIN, CAC verification via Kora
+    ├── ledger/                 # Transaction ledger, balances, settlement reports
+    ├── admin/                  # Platform-level balance and fee withdrawal
+    ├── webhooks/                # Developer webhook management + incoming Coincircuit webhooks
+    ├── mail/                    # Transactional email (Brevo API)
+    └── misc/                    # Banks, supported assets, crypto prices, rate calculator
 ```
 
 ## Authentication
 
-The API uses two auth mechanisms:
+The API uses two auth mechanisms, and most `/api/v1/*` business endpoints accept **either** (`@DualAuth()`):
 
-| Mechanism | Used For                                        | Header                          |
-| --------- | ----------------------------------------------- | ------------------------------- |
-| API Key   | All `/v1/*` endpoints (developer API)           | `x-api-key: dex_live_...`       |
-| JWT       | `/auth/*` and `/dashboard/*` (developer portal) | `Authorization: Bearer <token>` |
+| Mechanism | Used for                                        | Header                           |
+| --------- | ------------------------------------------------ | -------------------------------- |
+| API Key   | Server-to-server integration (`/api/v1/*`)        | `x-api-key: dex_live_...`        |
+| JWT       | Developer portal / dashboard, browser sessions    | `Authorization: Bearer <token>` (also set as an http-only cookie) |
 
-### Register and get API key
-
-```bash
-POST /auth/register
-{
-  "email": "dev@example.com",
-  "password": "securepass123",
-  "business_name": "My Fintech"
-}
-# Response includes your sandbox API key (shown once)
-```
-
-### Login
+### Auth flow
 
 ```bash
-POST /auth/login
-{
-  "email": "dev@example.com",
-  "password": "securepass123"
-}
-# Returns JWT access_token
+# 1. Register (creates a developer account, sends an email OTP)
+POST /api/v1/auth/register
+{ "email": "dev@example.com", "password": "securepass123" }
+
+# 2. Verify the OTP sent to that email
+POST /api/v1/auth/verify-otp
+{ "email": "dev@example.com", "otp": "123456" }
+
+# 3. Log in — issues a JWT and sets a refresh-token cookie
+POST /api/v1/auth/login
+{ "email": "dev@example.com", "password": "securepass123" }
+
+# 4. Create a business (if you don't have one yet)
+POST /api/v1/businesses
+{ "name": "My Fintech" }
+
+# 5. Select the active business — required if the developer owns more than one
+POST /api/v1/auth/select-business
+{ "business_id": "..." }
 ```
 
-## API Endpoints
+Every business account has a **live** and **test** mode (`POST /api/v1/auth/mode` to switch), so integrations can be built and tested safely before going live — mirrors the pattern used by Stripe/Paystack-style APIs.
 
-### Wallets (WaaS)
+## API Reference (by module)
 
-| Method | Endpoint                       | Description         |
-| ------ | ------------------------------ | ------------------- |
-| POST   | `/v1/wallets`                  | Create wallet       |
-| GET    | `/v1/wallets`                  | List wallets        |
-| GET    | `/v1/wallets/:id`              | Get wallet details  |
-| GET    | `/v1/wallets/:id/address`      | Get deposit address |
-| GET    | `/v1/wallets/:id/transactions` | Wallet transactions |
-| POST   | `/v1/wallets/transfer`         | Internal transfer   |
+This lists route prefixes and what each module owns — for full request/response shapes, use the Swagger UI at `/api`, which is generated directly from the code and won't drift out of date the way a hand-maintained table here would.
 
-### Offramp (Crypto to NGN)
+| Module | Base path | Covers |
+| --- | --- | --- |
+| Auth | `/api/v1/auth` | Register, OTP verification, login/logout, refresh, business selection, live/test mode |
+| Businesses | `/api/v1/businesses` | Create/list businesses, update profile, settlement + notification settings |
+| Teams | `/api/v1/teams` | Invite/manage team members and roles |
+| Developers | `/api/v1/developers` | Developer profile, password change |
+| Dashboard | `/api/v1/dashboard` | API key management, revenue/asset/activity analytics |
+| Wallets | `/api/v1/wallets` | Create deposit accounts, get deposit addresses/details, withdrawal addresses, stablecoin & local-currency withdrawals |
+| Customers | `/api/v1/customers` | CRUD for end-customers, get a customer's deposit account |
+| Payment Sessions | `/api/v1/payment-sessions` | Create/track checkout sessions, generate deposit addresses, price estimates |
+| Payment Pages | `/api/v1/payment-pages` (+ public `/api/v1/p/:slug`) | Hosted payment links, public checkout |
+| Invoices | `/api/v1/invoices` | Create/send/cancel/void invoices, public pay-by-number flow |
+| Offramp | `/api/v1/offramp` | Convert crypto to NGN and auto-payout to a linked bank account |
+| Swaps | `/api/v1/swaps` | Rate estimates, quotations, execution, swap history |
+| Payouts | `/api/v1/payouts` | Single/batch NGN payouts, account resolution |
+| Refunds | `/api/v1/refunds` | Refund estimates and execution on a payment session |
+| KYC | `/api/v1/kyc` | BVN, NIN, vNIN, CAC verification and status |
+| Ledger | `/api/v1` (`/transactions`, `/balance`, `/reports/settlement`) | Transaction history, balances, settlement reports |
+| Admin | `/api/v1/admin/platform` | Platform balance and fee withdrawal (internal) |
+| Webhooks | `/api/v1/webhooks` (+ `/api/v1/webhooks/incoming/coincircuit`) | Register/list/remove developer webhook endpoints; incoming Coincircuit event handler |
+| Misc | `/api/v1/misc` | Bank list, saved banks, account verification, supported assets, crypto prices, rate calculator |
 
-| Method | Endpoint             | Description                   |
-| ------ | -------------------- | ----------------------------- |
-| GET    | `/v1/rates/:pair`    | Get live rate (e.g. USDT_NGN) |
-| POST   | `/v1/offramp`        | Execute conversion            |
-| GET    | `/v1/offramp/:tx_id` | Get transaction status        |
+## Webhooks
 
-### Payouts (NGN)
+Two distinct directions:
 
-| Method | Endpoint              | Description          |
-| ------ | --------------------- | -------------------- |
-| POST   | `/v1/payouts`         | Single payout        |
-| POST   | `/v1/payouts/batch`   | Batch payout         |
-| POST   | `/v1/payouts/resolve` | Resolve account name |
-| GET    | `/v1/payouts/:id`     | Get payout status    |
+**Incoming** — Coincircuit calls `POST /api/v1/webhooks/incoming/coincircuit` for events like `payment.completed`, `transaction.confirmed`, `swap.completed`, `payout.success`, `deposit.completed`, etc. This is what drives status updates across payment sessions, wallets, swaps, and payouts internally.
 
-### KYC / Identity
+**Outgoing** — developers register their own endpoint via `POST /api/v1/webhooks`, subscribing to one or more of:
 
-| Method | Endpoint                  | Description           |
-| ------ | ------------------------- | --------------------- |
-| POST   | `/v1/kyc/bvn`             | Verify BVN            |
-| POST   | `/v1/kyc/nin`             | Verify NIN            |
-| POST   | `/v1/kyc/document`        | Document verification |
-| POST   | `/v1/kyc/liveness`        | Liveness check        |
-| GET    | `/v1/kyc/:user_id/status` | Get KYC status        |
+| Event | Description |
+| --- | --- |
+| `wallet.deposit.confirmed` | Crypto deposit received |
+| `offramp.completed` | Conversion and payout done |
+| `offramp.failed` | Conversion failed |
+| `payout.success` | NGN sent to bank |
+| `payout.failed` | Payout rejected |
+| `kyc.approved` | KYC passed |
+| `kyc.failed` | KYC failed |
 
-### Webhooks
-
-| Method | Endpoint           | Description          |
-| ------ | ------------------ | -------------------- |
-| POST   | `/v1/webhooks`     | Register webhook URL |
-| GET    | `/v1/webhooks`     | List webhooks        |
-| DELETE | `/v1/webhooks/:id` | Remove webhook       |
-
-### Ledger and Reports
-
-| Method | Endpoint                  | Description             |
-| ------ | ------------------------- | ----------------------- |
-| GET    | `/v1/transactions`        | List all transactions   |
-| GET    | `/v1/transactions/:tx_id` | Transaction detail      |
-| GET    | `/v1/balance`             | Aggregate balance       |
-| GET    | `/v1/reports/settlement`  | Daily settlement report |
-
-### Dashboard (JWT auth)
-
-| Method | Endpoint                  | Description                   |
-| ------ | ------------------------- | ----------------------------- |
-| POST   | `/dashboard/api-keys`     | Create new API key            |
-| GET    | `/dashboard/api-keys`     | List API keys                 |
-| PATCH  | `/dashboard/api-keys/:id` | Update key label/IP whitelist |
-| DELETE | `/dashboard/api-keys/:id` | Revoke API key                |
-| GET    | `/dashboard/overview`     | Account stats                 |
-| GET    | `/dashboard/usage`        | Usage analytics               |
-
-## Webhook Events
-
-| Event                      | Description                |
-| -------------------------- | -------------------------- |
-| `wallet.deposit.confirmed` | Crypto deposit received    |
-| `offramp.completed`        | Conversion and payout done |
-| `offramp.failed`           | Conversion failed          |
-| `payout.success`           | NGN sent to bank           |
-| `payout.failed`            | Payout rejected            |
-| `kyc.approved`             | KYC passed                 |
-| `kyc.failed`               | KYC failed                 |
-
-All webhook payloads are signed with HMAC-SHA256 via the `X-Dexxify-Signature` header.
+Outgoing payloads are signed with HMAC-SHA256 (`X-Dexxify-Signature` header, verify against your endpoint's registered secret) and retried on delivery failure.
 
 ## Deploy to Railway
 
 ```bash
-# Install Railway CLI
-pnpm install -g @railway/cli
-
-# Login and init
 railway login
 railway init
 
-# Set environment variables (from .env.example)
-railway variables set SUPABASE_URL=...
-railway variables set SUPABASE_SERVICE_ROLE_KEY=...
+# Set the variables listed in .env.example (database connection, Coincircuit, Kora, JWT secrets, etc.)
+railway variables set DATABASE_POOLER=...
+railway variables set COINCIRCUIT_API_KEY=...
 
-# Deploy
 railway up
 ```
 
-## TODO — Implement Provider Integrations
-
-All third-party calls are stubbed. Search `TODO` to find them:
-
-- `wallets.service.ts` — Breet wallet creation and deposit address
-- `offramp.service.ts` — Breet rate fetching and conversion execution
-- `payouts.service.ts` — Paystack recipient, transfer, account resolve
-- `kyc.service.ts` — Kora verification calls
-- `webhooks.controller.ts` — Incoming webhook signature verification and event routing
-
 ## License
 
-Confidential, Internal use only.
+Confidential, internal use only.
