@@ -58,6 +58,7 @@ interface RevenueChartRow {
 
 interface AssetDistributionRow {
   asset: string;
+  network: string | null;
   total_sessions: string;
   completed: string;
   pending: string;
@@ -186,7 +187,6 @@ export class DashboardService {
       invoiceRows,
       totalCustomers,
       newCustomers,
-      depositAccounts,
       pendingPayouts,
     ] = await Promise.all([
       // Current balances + lifetime received per currency
@@ -235,11 +235,6 @@ export class DashboardService {
           mode,
           created_at: MoreThanOrEqual(startOfMonth),
         },
-      }),
-
-      // Deposit accounts
-      this.depositAccountRepo.count({
-        where: { business_id: businessId, mode },
       }),
 
       // Pending / processing payouts
@@ -302,7 +297,6 @@ export class DashboardService {
         total: totalCustomers,
         new_this_month: newCustomers,
       },
-      deposit_accounts: depositAccounts,
       pending_payouts: {
         count: parseInt(pendingPayouts?.count ?? '0', 10),
         total_amount: Number(pendingPayouts?.total_amount ?? 0),
@@ -323,7 +317,9 @@ export class DashboardService {
       .addSelect('COUNT(*)', 'tx_count')
       .where('l.business_id = :businessId', { businessId })
       .andWhere('l.mode = :mode', { mode })
-      .andWhere('l.tx_type = :type', { type: TxType.DEPOSIT })
+      .andWhere('l.tx_type IN (:...types)', {
+        types: [TxType.DEPOSIT, TxType.ONRAMP],
+      })
       .andWhere('l.status = :status', { status: LedgerEntryStatus.COMPLETED })
       .andWhere('l.created_at >= :since', { since })
       .groupBy("DATE(l.created_at AT TIME ZONE 'UTC')")
@@ -331,7 +327,6 @@ export class DashboardService {
       .getRawMany<RevenueChartRow>();
 
     return {
-      period_days: clampedDays,
       data: rows.map((r) => ({
         date: r.date,
         ngn: Number(r.ngn),
@@ -346,6 +341,7 @@ export class DashboardService {
     const rows = await this.sessionRepo
       .createQueryBuilder('s')
       .select('s.crypto_asset', 'asset')
+      .addSelect('s.network', 'network')
       .addSelect('COUNT(*)', 'total_sessions')
       .addSelect(
         `SUM(CASE WHEN s.status = '${PaymentSessionStatus.COMPLETED}' THEN 1 ELSE 0 END)`,
@@ -360,12 +356,14 @@ export class DashboardService {
       .andWhere('s.mode = :mode', { mode })
       .andWhere('s.crypto_asset IS NOT NULL')
       .groupBy('s.crypto_asset')
+      .addGroupBy('s.network')
       .orderBy('total_sessions', 'DESC')
       .getRawMany<AssetDistributionRow>();
 
     return {
       data: rows.map((r) => ({
         asset: r.asset,
+        network: r.network,
         total_sessions: parseInt(r.total_sessions, 10),
         completed: parseInt(r.completed, 10),
         pending: parseInt(r.pending, 10),

@@ -2,13 +2,26 @@ import { IsArray, IsOptional, IsString, IsUrl } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export const WEBHOOK_EVENT_TYPES = [
-  'wallet.deposit.confirmed',
+  'payment.completed',
+  'payment.partial',
+  'payment.expired',
+  'payment.failed',
+  'transaction.received',
+  'transaction.confirmed',
+  'deposit.processing',
+  'deposit.confirmed',
+  'deposit.failed',
+  'swap.completed',
+  'swap.failed',
+  'offramp.processing',
   'offramp.completed',
   'offramp.failed',
+  'payout.created',
   'payout.success',
   'payout.failed',
-  'kyc.approved',
-  'kyc.failed',
+  'refund.created',
+  'refund.success',
+  'refund.failed',
 ] as const;
 
 export type WebhookEventType = (typeof WEBHOOK_EVENT_TYPES)[number];
@@ -23,7 +36,7 @@ export class CreateWebhookDto {
 
   @ApiProperty({
     description: 'Array of webhook events',
-    example: ['wallet.deposit.confirmed', 'offramp.completed'],
+    example: ['deposit.confirmed', 'offramp.completed'],
     isArray: true,
   })
   @IsArray()
@@ -50,7 +63,7 @@ export class UpdateWebhookDto {
 
   @ApiPropertyOptional({
     description: 'Array of webhook events',
-    example: ['wallet.deposit.confirmed', 'offramp.completed'],
+    example: ['deposit.confirmed', 'offramp.completed'],
     isArray: true,
   })
   @IsOptional()

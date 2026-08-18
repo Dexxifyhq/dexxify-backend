@@ -27,6 +27,7 @@ import {
 } from '../../database/entities';
 import { CoincircuitService } from '../../providers/coincircuit/coincircuit.service';
 import { PlatformContextService } from '../platform/platform-context.service';
+import { WebhooksService } from './webhooks.service';
 
 export enum CCWebhookEvent {
   // Payment session events
@@ -34,6 +35,7 @@ export enum CCWebhookEvent {
   PAYMENT_PARTIAL = 'payment.partial',
   PAYMENT_EXPIRED = 'payment.expired',
   PAYMENT_UNDERPAID = 'payment.underpaid',
+  PAYMENT_FAILED = 'payment.failed',
   // Transaction events (fired per blockchain tx inside a session)
   TRANSACTION_RECEIVED = 'transaction.received',
   TRANSACTION_CONFIRMED = 'transaction.confirmed',
@@ -117,6 +119,7 @@ interface CCWebhookPaymentSession {
     conversionRate?: string | number;
     gasFee?: string | number;
     feePaidBy?: string;
+    txHash?: string | null;
   };
 }
 
@@ -221,6 +224,11 @@ interface CCWebhookPaymentEventData {
   session: CCWebhookPaymentSession;
 }
 
+interface CCWebhookPaymentFailedEventData {
+  session: CCWebhookPaymentSession;
+  failureReason: string;
+}
+
 interface CCWebhookInvoiceEventData {
   invoice?: CCWebhookInvoice;
 }
@@ -251,6 +259,10 @@ export type CCWebhookPayload =
   | { event: CCWebhookEvent.PAYMENT_PARTIAL; data: CCWebhookPaymentEventData }
   | { event: CCWebhookEvent.PAYMENT_UNDERPAID; data: CCWebhookPaymentEventData }
   | { event: CCWebhookEvent.PAYMENT_EXPIRED; data: CCWebhookPaymentEventData }
+  | {
+      event: CCWebhookEvent.PAYMENT_FAILED;
+      data: CCWebhookPaymentFailedEventData;
+    }
   | { event: CCWebhookEvent.INVOICE_CREATED; data: CCWebhookInvoiceEventData }
   | { event: CCWebhookEvent.INVOICE_UPDATED; data: CCWebhookInvoiceEventData }
   | { event: CCWebhookEvent.INVOICE_PAID; data: CCWebhookInvoiceEventData }
@@ -281,6 +293,7 @@ export class CoincircuitWebhooksService {
     private readonly dataSource: DataSource,
     private readonly cc: CoincircuitService,
     private readonly platformCtx: PlatformContextService,
+    private readonly webhooksService: WebhooksService,
     @InjectRepository(PaymentSession)
     private readonly sessionRepo: Repository<PaymentSession>,
     @InjectRepository(LedgerEntry)
@@ -371,6 +384,9 @@ export class CoincircuitWebhooksService {
       case CCWebhookEvent.PAYMENT_EXPIRED:
         await this.handlePaymentExpired(payload.data);
         break;
+      case CCWebhookEvent.PAYMENT_FAILED:
+        await this.handlePaymentFailed(payload.data);
+        break;
 
       // ── Invoice ──────────────────────────────────────
       case CCWebhookEvent.INVOICE_CREATED:
@@ -388,7 +404,7 @@ export class CoincircuitWebhooksService {
 
       // ── Payout ───────────────────────────────────────
       case CCWebhookEvent.PAYOUT_CREATED:
-        this.logger.log(`Payout initiated: ${payload.data.payout?.id}`);
+        await this.handlePayoutCreated(payload.data);
         break;
       case CCWebhookEvent.PAYOUT_SUCCESS:
         await this.handlePayoutSuccess(payload.data);
@@ -399,13 +415,13 @@ export class CoincircuitWebhooksService {
 
       // ── Refund ───────────────────────────────────────
       case CCWebhookEvent.REFUND_CREATED:
-        this.logger.log(`Refund initiated: ${payload.data.refund?.id}`);
+        await this.handleRefundCreated(payload.data);
         break;
       case CCWebhookEvent.REFUND_SUCCESS:
         await this.handleRefundSuccess(payload.data);
         break;
       case CCWebhookEvent.REFUND_FAILED:
-        this.logger.warn(`Refund failed: ${payload.data.refund?.id}`);
+        await this.handleRefundFailed(payload.data);
         break;
 
       // ── Swap ─────────────────────────────────────────
@@ -450,6 +466,18 @@ export class CoincircuitWebhooksService {
       session.status = PaymentSessionStatus.PENDING;
       session.transaction_id = tx?.txHash ?? null;
       await em.getRepository(PaymentSession).save(session);
+
+      void this.webhooksService.dispatch(
+        session.business_id,
+        'transaction.received',
+        {
+          sessionReference: ref,
+          txHash: tx?.txHash ?? null,
+          asset: tx?.asset ?? null,
+          chain: tx?.chain ?? null,
+          amount: tx?.amount ?? null,
+        },
+      );
 
       if (!tx?.id) return;
 
@@ -518,6 +546,16 @@ export class CoincircuitWebhooksService {
         } as Record<string, any>,
       },
     );
+
+    void this.webhooksService.dispatch(
+      transaction.business_id,
+      'transaction.confirmed',
+      {
+        txHash: tx.txHash ?? transaction.tx_hash,
+        confirmations: tx.confirmations ?? null,
+        amount: transaction.amount,
+      },
+    );
   }
 
   private async handlePaymentCompleted(
@@ -576,6 +614,7 @@ export class CoincircuitWebhooksService {
 
       // Dashboard settlerment currency is set to USDT
       const asset = payment.asset;
+      const network = payment.chain;
       // const isNGN = settlementCurrency === 'NGN';
       // const isUSDT = settlementCurrency === 'USD';
       // const paymentCurrency = LedgerCurrency.USDT;
@@ -588,6 +627,7 @@ export class CoincircuitWebhooksService {
           reference_id: session.id,
           currency: LedgerCurrency.USDT,
           asset,
+          network,
           credit_usdt: netAmount ?? 0,
           // credit_usdt: settlementCurrency === 'USDT' ? creditAmount : 0,
           // credit_usdc: settlementCurrency === 'USDC' ? creditAmount : 0,
@@ -596,6 +636,18 @@ export class CoincircuitWebhooksService {
           description: `Payment received for session ${session.reference}`,
           metadata: session.metadata,
         }),
+      );
+
+      void this.webhooksService.dispatch(
+        session.business_id,
+        'payment.completed',
+        {
+          sessionReference: session.reference,
+          amount: creditAmount,
+          netAmount,
+          asset,
+          network,
+        },
       );
     });
   }
@@ -644,6 +696,16 @@ export class CoincircuitWebhooksService {
           amount: fiatAmountPaid,
         },
       );
+
+      void this.webhooksService.dispatch(
+        paymentSession.business_id,
+        'payment.partial',
+        {
+          sessionReference: ref,
+          fiatAmountPaid,
+          cryptoAmountReceived,
+        },
+      );
     });
   }
 
@@ -653,10 +715,87 @@ export class CoincircuitWebhooksService {
     const ref = data.session.reference;
     if (!ref) return;
 
-    await this.sessionRepo.update(
-      { provider_session_reference: ref },
-      { status: PaymentSessionStatus.EXPIRED },
-    );
+    const session = await this.sessionRepo.findOne({
+      where: { provider_session_reference: ref },
+      select: ['id', 'business_id'],
+    });
+    if (!session) return;
+
+    await this.sessionRepo.update(session.id, {
+      status: PaymentSessionStatus.EXPIRED,
+    });
+
+    void this.webhooksService.dispatch(session.business_id, 'payment.expired', {
+      sessionReference: ref,
+    });
+  }
+
+  /**
+   * Fired when a session is rejected for compliance/AML reasons — funds may
+   * already have arrived on-chain (per the payload), but the session itself
+   * is being closed as failed, so nothing gets credited to the merchant.
+   */
+  private async handlePaymentFailed(
+    data: CCWebhookPaymentFailedEventData,
+  ): Promise<void> {
+    const ref = data.session.reference;
+    if (!ref) return;
+
+    const payment = data.session.payment;
+    const failureReason = data.failureReason;
+
+    await this.dataSource.transaction(async (em) => {
+      const session = await em
+        .getRepository(PaymentSession)
+        .findOne({ where: { provider_session_reference: ref } });
+      if (!session) return;
+
+      session.status = PaymentSessionStatus.FAILED;
+      session.metadata = {
+        ...session.metadata,
+        failureReason,
+        paymentStatus: payment.status,
+      } as Record<string, any>;
+      await em.getRepository(PaymentSession).save(session);
+
+      // Funds may have arrived (amountReceived) but the session was rejected —
+      // mark the inbound crypto transaction failed rather than crediting it.
+      await em
+        .getRepository(CryptoTransaction)
+        .update(
+          { provider_reference: ref, direction: CryptoTxDirection.INBOUND },
+          { status: CryptoTxStatus.FAILED },
+        );
+
+      // Rejected ledger entry for audit trail — no credit, matches
+      // handleDepositFailed's pattern for compliance-rejected funds.
+      await em.getRepository(LedgerEntry).save(
+        em.getRepository(LedgerEntry).create({
+          business_id: session.business_id,
+          tx_type: TxType.DEPOSIT,
+          reference_type: 'payment_session',
+          reference_id: session.id,
+          currency: LedgerCurrency.USDT,
+          credit_usdt: 0,
+          asset: payment.asset ?? '',
+          network: payment.chain ?? '',
+          mode: session.mode,
+          status: LedgerEntryStatus.REJECTED,
+          description: `Payment rejected for session ${session.reference}: ${failureReason}`,
+          metadata: {
+            failureReason,
+            amountReceived: payment.amountReceived ?? null,
+            txHash: payment.txHash ?? null,
+          },
+        }),
+      );
+
+      void this.webhooksService.dispatch(
+        session.business_id,
+        'payment.failed',
+        { sessionReference: ref, failureReason },
+      );
+    });
   }
 
   // ── Invoice handlers ─────────────────────────────────
@@ -750,6 +889,26 @@ export class CoincircuitWebhooksService {
 
   // ── Payout handlers ──────────────────────────────────
 
+  private async handlePayoutCreated(
+    data: CCWebhookPayoutEventData,
+  ): Promise<void> {
+    const ref = data.payout?.id ?? data.payout?.reference;
+    if (!ref) return;
+
+    const payout = await this.dataSource.getRepository(Payout).findOne({
+      where: { provider_payout_id: ref },
+      select: ['id', 'business_id'],
+    });
+    if (!payout) {
+      this.logger.log(`Payout initiated: ${ref}`);
+      return;
+    }
+
+    void this.webhooksService.dispatch(payout.business_id, 'payout.created', {
+      payoutId: ref,
+    });
+  }
+
   private async handlePayoutSuccess(
     data: CCWebhookPayoutEventData,
   ): Promise<void> {
@@ -791,6 +950,19 @@ export class CoincircuitWebhooksService {
             { provider_reference: ref, direction: CryptoTxDirection.OUTBOUND },
             { status: CryptoTxStatus.COMPLETED, completed_at: new Date() },
           );
+      }
+
+      void this.webhooksService.dispatch(payout.business_id, 'payout.success', {
+        payoutId: ref,
+        amount: payout.amount,
+      });
+
+      if (isOfframp) {
+        void this.webhooksService.dispatch(
+          payout.business_id,
+          'offramp.completed',
+          { payoutId: ref, amount: payout.amount },
+        );
       }
     });
   }
@@ -838,10 +1010,87 @@ export class CoincircuitWebhooksService {
             { status: CryptoTxStatus.FAILED },
           );
       }
+
+      void this.webhooksService.dispatch(payout.business_id, 'payout.failed', {
+        payoutId: ref,
+        reason: data.payout?.failureReason ?? 'Unknown',
+      });
+
+      if (isOfframp) {
+        void this.webhooksService.dispatch(
+          payout.business_id,
+          'offramp.failed',
+          { payoutId: ref, reason: data.payout?.failureReason ?? 'Unknown' },
+        );
+      }
     });
   }
 
   // ── Refund handlers ──────────────────────────────────
+
+  /** Resolve which business a refund belongs to via the session/invoice it references. */
+  private async resolveRefundContext(refund: CCWebhookRefund): Promise<{
+    businessId: string | null;
+    session: PaymentSession | null;
+    invoice: Invoice | null;
+  }> {
+    let session: PaymentSession | null = null;
+    let invoice: Invoice | null = null;
+
+    if (refund.entity === 'session') {
+      session = await this.sessionRepo.findOne({
+        where: { provider_session_reference: refund.reference },
+        select: ['business_id', 'mode'],
+      });
+    } else if (refund.entity === 'invoice') {
+      invoice = await this.invoiceRepo.findOne({
+        where: { provider_invoice_reference: refund.reference },
+        select: ['business_id', 'mode'],
+      });
+    }
+
+    return {
+      businessId: session?.business_id ?? invoice?.business_id ?? null,
+      session,
+      invoice,
+    };
+  }
+
+  private async handleRefundCreated(
+    data: CCWebhookRefundEventData,
+  ): Promise<void> {
+    const refund = data.refund;
+    if (!refund) return;
+
+    const { businessId } = await this.resolveRefundContext(refund);
+    if (!businessId) {
+      this.logger.log(`Refund initiated: ${refund.id}`);
+      return;
+    }
+
+    void this.webhooksService.dispatch(businessId, 'refund.created', {
+      refundId: refund.id,
+      reference: refund.reference,
+    });
+  }
+
+  private async handleRefundFailed(
+    data: CCWebhookRefundEventData,
+  ): Promise<void> {
+    const refund = data.refund;
+    if (!refund) return;
+
+    const { businessId } = await this.resolveRefundContext(refund);
+    if (!businessId) {
+      this.logger.warn(`Refund failed: ${refund.id}`);
+      return;
+    }
+
+    void this.webhooksService.dispatch(businessId, 'refund.failed', {
+      refundId: refund.id,
+      reference: refund.reference,
+    });
+  }
 
   private async handleRefundSuccess(
     data: CCWebhookRefundEventData,
@@ -849,24 +1098,11 @@ export class CoincircuitWebhooksService {
     const refund = data.refund;
     if (!refund) return;
 
-    // Resolve business_id from the entity the refund belongs to
-    let developerId: string | null = null;
-    let session: PaymentSession | null = null;
-    let invoice: Invoice | null = null;
-
-    if (refund.entity === 'session') {
-      session = await this.sessionRepo.findOne({
-        where: { provider_session_reference: refund.reference },
-        select: ['business_id'],
-      });
-      developerId = session?.business_id ?? null;
-    } else if (refund.entity === 'invoice') {
-      invoice = await this.invoiceRepo.findOne({
-        where: { provider_invoice_reference: refund.reference },
-        select: ['business_id'],
-      });
-      developerId = invoice?.business_id ?? null;
-    }
+    const {
+      businessId: developerId,
+      session,
+      invoice,
+    } = await this.resolveRefundContext(refund);
 
     if (!developerId) {
       this.logger.warn(
@@ -899,6 +1135,12 @@ export class CoincircuitWebhooksService {
         },
       }),
     );
+
+    void this.webhooksService.dispatch(developerId, 'refund.success', {
+      refundId: refund.id,
+      reference: refund.reference,
+      amount: debitAmount,
+    });
   }
 
   // ── Swap handlers ────────────────────────────────────
@@ -954,6 +1196,14 @@ export class CoincircuitWebhooksService {
         metadata: { quotationId: swap.quotation?.id, rate: swap.rate },
       }),
     );
+
+    void this.webhooksService.dispatch(record.business_id, 'swap.completed', {
+      swapId: swap.id,
+      sourceAmount,
+      targetAmount,
+      fromCurrency,
+      toCurrency,
+    });
 
     // OFFRAMP: auto-trigger NGN payout to the developer's bank
     if (record.type === SwapRecordType.OFFRAMP) {
@@ -1058,6 +1308,12 @@ export class CoincircuitWebhooksService {
       );
     });
 
+    void this.webhooksService.dispatch(
+      record.business_id,
+      'offramp.processing',
+      { swapId: record.cc_swap_id, payoutId: payoutData.id, amount: netNgn },
+    );
+
     this.logger.log(
       `Offramp payout ${payoutData.id} initiated: ₦${netNgn.toFixed(2)} (fee ₦${fee.toFixed(2)})`,
     );
@@ -1067,6 +1323,10 @@ export class CoincircuitWebhooksService {
     const swap = data.swap;
     if (!swap?.id) return;
 
+    const record = await this.swapRecordRepo.findOne({
+      where: { cc_swap_id: swap.id },
+    });
+
     await this.swapRecordRepo.update(
       { cc_swap_id: swap.id },
       { status: SwapRecordStatus.FAILED },
@@ -1075,6 +1335,21 @@ export class CoincircuitWebhooksService {
     this.logger.warn(
       `Swap failed: ${swap.id} (${swap.fromCurrency} → ${swap.toCurrency})`,
     );
+
+    if (!record) return;
+
+    void this.webhooksService.dispatch(record.business_id, 'swap.failed', {
+      swapId: swap.id,
+      fromCurrency: swap.fromCurrency,
+      toCurrency: swap.toCurrency,
+    });
+
+    if (record.type === SwapRecordType.OFFRAMP) {
+      void this.webhooksService.dispatch(record.business_id, 'offramp.failed', {
+        swapId: swap.id,
+        reason: 'Swap failed before payout could be initiated',
+      });
+    }
   }
 
   private buildDepositFiatMetadata(data: CCWebhookDeposit) {
@@ -1155,6 +1430,12 @@ export class CoincircuitWebhooksService {
         description: `${isCrypto ? 'Crypto' : 'Bank'} deposit processing: ${data.amount} ${data.currency}`,
         metadata: this.buildDepositFiatMetadata(data),
       }),
+    );
+
+    void this.webhooksService.dispatch(
+      account.business_id,
+      'deposit.processing',
+      { depositId: data.id, amount: data.amount, currency: data.currency },
     );
   }
 
@@ -1268,6 +1549,12 @@ export class CoincircuitWebhooksService {
       );
     });
 
+    void this.webhooksService.dispatch(
+      account.business_id,
+      'deposit.confirmed',
+      { depositId: data.id, amount: netAmount, currency },
+    );
+
     this.logger.log(
       `Deposit completed: ${data.id} — ${data.netAmount ?? data.amount} ${currency} credited to ${account.business_id}`,
     );
@@ -1327,6 +1614,12 @@ export class CoincircuitWebhooksService {
         },
       }),
     );
+
+    void this.webhooksService.dispatch(account.business_id, 'deposit.failed', {
+      depositId: data.id,
+      amount: data.amount,
+      currency,
+    });
   }
 
   // ── Enum mapping helpers ─────────────────────────────

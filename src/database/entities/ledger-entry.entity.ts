@@ -13,7 +13,6 @@ import { DepositAccount } from './wallet.entity';
 export enum TxType {
   DEPOSIT = 'deposit',
   WITHDRAWAL = 'withdrawal',
-  TRANSFER = 'transfer',
   ONRAMP = 'onramp',
   OFFRAMP = 'offramp',
   FEE = 'fee',
