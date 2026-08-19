@@ -100,7 +100,7 @@ export class DashboardController {
     name: 'days',
     required: false,
     example: 30,
-    description: 'Number of days to include (1–365, default 30)',
+    description: 'Number of days to include (1-365, default 30)',
   })
   @Get('revenue-chart')
   async getRevenueChart(
@@ -132,7 +132,7 @@ export class DashboardController {
     name: 'limit',
     required: false,
     example: 10,
-    description: 'Number of entries to return (1–50, default 10)',
+    description: 'Number of entries to return (1-50, default 10)',
   })
   @Get('recent-activity')
   async getRecentActivity(

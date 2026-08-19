@@ -13,7 +13,6 @@ import { DepositAccount } from './wallet.entity';
 export enum TxType {
   DEPOSIT = 'deposit',
   WITHDRAWAL = 'withdrawal',
-  ONRAMP = 'onramp',
   OFFRAMP = 'offramp',
   FEE = 'fee',
   SWAP = 'swap',
@@ -31,7 +30,6 @@ export enum LedgerEntryStatus {
 
 export enum LedgerCurrency {
   NGN = 'NGN',
-  USD = 'USD',
   USDT = 'USDT',
   USDC = 'USDC',
 }

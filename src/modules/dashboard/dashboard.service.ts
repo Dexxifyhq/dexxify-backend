@@ -9,7 +9,6 @@ import {
   ApiKey,
   LedgerEntry,
   LedgerEntryStatus,
-  TxType,
   Payout,
   PayoutStatus,
   Customer,
@@ -17,7 +16,6 @@ import {
   PaymentSessionStatus,
   Invoice,
   InvoiceStatus,
-  DepositAccount,
 } from '../../database/entities';
 import { CreateApiKeyDto, UpdateApiKeyDto } from './dto';
 import { generateApiKey } from '../../common/utils';
@@ -50,9 +48,12 @@ interface PendingPayoutsRow {
 
 interface RevenueChartRow {
   date: string;
-  ngn: string;
-  usdt: string;
-  usdc: string;
+  credit_ngn: string;
+  credit_usdt: string;
+  credit_usdc: string;
+  debit_ngn: string;
+  debit_usdt: string;
+  debit_usdc: string;
   tx_count: string;
 }
 
@@ -80,8 +81,6 @@ export class DashboardService {
     private readonly sessionRepo: Repository<PaymentSession>,
     @InjectRepository(Invoice)
     private readonly invoiceRepo: Repository<Invoice>,
-    @InjectRepository(DepositAccount)
-    private readonly depositAccountRepo: Repository<DepositAccount>,
   ) {}
 
   // ── API Key Management ──────────────────────────────────
@@ -311,15 +310,15 @@ export class DashboardService {
     const rows = await this.ledgerRepo
       .createQueryBuilder('l')
       .select("DATE(l.created_at AT TIME ZONE 'UTC')", 'date')
-      .addSelect('COALESCE(SUM(l.credit_ngn), 0)', 'ngn')
-      .addSelect('COALESCE(SUM(l.credit_usdt), 0)', 'usdt')
-      .addSelect('COALESCE(SUM(l.credit_usdc), 0)', 'usdc')
+      .addSelect('COALESCE(SUM(l.credit_ngn), 0)', 'credit_ngn')
+      .addSelect('COALESCE(SUM(l.credit_usdt), 0)', 'credit_usdt')
+      .addSelect('COALESCE(SUM(l.credit_usdc), 0)', 'credit_usdc')
+      .addSelect('COALESCE(SUM(l.debit_ngn), 0)', 'debit_ngn')
+      .addSelect('COALESCE(SUM(l.debit_usdt), 0)', 'debit_usdt')
+      .addSelect('COALESCE(SUM(l.debit_usdc), 0)', 'debit_usdc')
       .addSelect('COUNT(*)', 'tx_count')
       .where('l.business_id = :businessId', { businessId })
       .andWhere('l.mode = :mode', { mode })
-      .andWhere('l.tx_type IN (:...types)', {
-        types: [TxType.DEPOSIT, TxType.ONRAMP],
-      })
       .andWhere('l.status = :status', { status: LedgerEntryStatus.COMPLETED })
       .andWhere('l.created_at >= :since', { since })
       .groupBy("DATE(l.created_at AT TIME ZONE 'UTC')")
@@ -329,9 +328,12 @@ export class DashboardService {
     return {
       data: rows.map((r) => ({
         date: r.date,
-        ngn: Number(r.ngn),
-        usdt: Number(r.usdt),
-        usdc: Number(r.usdc),
+        credit_ngn: Number(r.credit_ngn),
+        credit_usdt: Number(r.credit_usdt),
+        credit_usdc: Number(r.credit_usdc),
+        debit_ngn: Number(r.debit_ngn),
+        debit_usdt: Number(r.debit_usdt),
+        debit_usdc: Number(r.debit_usdc),
         tx_count: parseInt(r.tx_count, 10),
       })),
     };
@@ -351,7 +353,10 @@ export class DashboardService {
         `SUM(CASE WHEN s.status = '${PaymentSessionStatus.PENDING}' THEN 1 ELSE 0 END)`,
         'pending',
       )
-      .addSelect('COALESCE(SUM(s.amount), 0)', 'total_volume')
+      .addSelect(
+        `COALESCE(SUM(CASE WHEN s.status = '${PaymentSessionStatus.COMPLETED}' THEN s.amount_paid ELSE 0 END), 0)`,
+        'total_volume',
+      )
       .where('s.business_id = :businessId', { businessId })
       .andWhere('s.mode = :mode', { mode })
       .andWhere('s.crypto_asset IS NOT NULL')

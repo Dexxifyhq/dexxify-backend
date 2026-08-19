@@ -46,6 +46,9 @@ export class PaymentSession {
   @Column({ type: 'decimal', precision: 18, scale: 2, nullable: true })
   amount: number | null;
 
+  @Column({ type: 'decimal', precision: 18, scale: 2, nullable: true })
+  amount_paid: number | null;
+
   @Column({ type: 'text', default: 'USD' })
   currency: string;
 

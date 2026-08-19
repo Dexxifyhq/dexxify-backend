@@ -567,34 +567,34 @@ export class CoincircuitWebhooksService {
     const session = data.session;
     const settlements = session.settlements;
     const payment = session.payment;
-    const creditAmount = Number(session.amountPaid);
     const fee =
       Number(settlements?.fees?.processing?.amount ?? 0) +
       Number(settlements?.fees?.gas?.amount ?? 0);
     const netAmount = settlements?.net?.amount
       ? Number(settlements.net.amount)
       : null;
-    // const settlementCurrency: string =
-    //   payment.asset === LedgerCurrency.USDC
-    //     ? LedgerCurrency.USDC
-    //     : LedgerCurrency.USDT;
+    const fiatAmountPaid =
+      session.amountPaid != null ? Number(session.amountPaid) : null;
+    const cryptoAmountReceived =
+      payment.amountReceived != null ? Number(payment.amountReceived) : null;
 
     await this.dataSource.transaction(async (em) => {
-      const session = await em
+      const paymentSession = await em
         .getRepository(PaymentSession)
         .findOne({ where: { provider_session_reference: ref } });
-      if (!session) return;
+      if (!paymentSession) return;
 
-      session.status = PaymentSessionStatus.COMPLETED;
-      session.completed_at = new Date();
-      await em.getRepository(PaymentSession).save(session);
+      paymentSession.status = PaymentSessionStatus.COMPLETED;
+      paymentSession.amount_paid = fiatAmountPaid;
+      paymentSession.completed_at = new Date();
+      await em.getRepository(PaymentSession).save(paymentSession);
 
-      // If this session was created to pay an invoice, mark it paid
-      if (session.invoice_id) {
+      // If this paymentSession was created to pay an invoice, mark it paid
+      if (paymentSession.invoice_id) {
         await em
           .getRepository(Invoice)
           .update(
-            { id: session.invoice_id },
+            { id: paymentSession.invoice_id },
             { status: InvoiceStatus.PAID, paid_at: new Date() },
           );
       }
@@ -605,7 +605,7 @@ export class CoincircuitWebhooksService {
         {
           status: CryptoTxStatus.COMPLETED,
           completed_at: new Date(),
-          amount: creditAmount,
+          amount: cryptoAmountReceived,
           net_amount: netAmount,
           fee,
           currency: LedgerCurrency.USDT,
@@ -621,10 +621,10 @@ export class CoincircuitWebhooksService {
 
       await em.getRepository(LedgerEntry).save(
         em.getRepository(LedgerEntry).create({
-          business_id: session.business_id,
+          business_id: paymentSession.business_id,
           tx_type: TxType.DEPOSIT,
-          reference_type: 'payment_session',
-          reference_id: session.id,
+          reference_type: 'payment_paymentSession',
+          reference_id: paymentSession.id,
           currency: LedgerCurrency.USDT,
           asset,
           network,
@@ -632,18 +632,18 @@ export class CoincircuitWebhooksService {
           // credit_usdt: settlementCurrency === 'USDT' ? creditAmount : 0,
           // credit_usdc: settlementCurrency === 'USDC' ? creditAmount : 0,
           status: LedgerEntryStatus.COMPLETED,
-          mode: session.mode,
-          description: `Payment received for session ${session.reference}`,
-          metadata: session.metadata,
+          mode: paymentSession.mode,
+          description: `Payment received for paymentSession ${paymentSession.reference}`,
+          metadata: paymentSession.metadata,
         }),
       );
 
       void this.webhooksService.dispatch(
-        session.business_id,
+        paymentSession.business_id,
         'payment.completed',
         {
-          sessionReference: session.reference,
-          amount: creditAmount,
+          paymentSessionReference: paymentSession.reference,
+          amount: cryptoAmountReceived,
           netAmount,
           asset,
           network,
@@ -661,7 +661,7 @@ export class CoincircuitWebhooksService {
     const session = data.session;
     const payment = session.payment;
     const fiatAmountPaid =
-      session.fiatAmountPaid != null ? Number(session.fiatAmountPaid) : null;
+      session.amountPaid != null ? Number(session.amountPaid) : null;
     const cryptoAmountReceived =
       payment.amountReceived != null ? Number(payment.amountReceived) : null;
 
@@ -672,6 +672,7 @@ export class CoincircuitWebhooksService {
       if (!paymentSession) return;
 
       paymentSession.status = PaymentSessionStatus.PARTIAL;
+      paymentSession.amount_paid = fiatAmountPaid;
       paymentSession.metadata = {
         ...paymentSession.metadata,
         paymentStatus: payment.status,
@@ -693,7 +694,7 @@ export class CoincircuitWebhooksService {
         { provider_reference: ref, direction: CryptoTxDirection.INBOUND },
         {
           status: CryptoTxStatus.PROCESSING,
-          amount: fiatAmountPaid,
+          amount: cryptoAmountReceived,
         },
       );
 
