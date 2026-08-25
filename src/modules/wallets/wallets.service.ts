@@ -32,6 +32,7 @@ import {
   STABLECOIN_FEE,
   CC_STABLECOIN_FEE,
   FIAT_WITHDRAWAL_FEE,
+  CC_FIAT_WITHDRAWAL_FEE,
 } from '../../common/constants/fees.constants';
 import { CoincircuitService } from '../../providers/coincircuit/coincircuit.service';
 import { PlatformContextService } from '../platform/platform-context.service';
@@ -447,6 +448,7 @@ export class WalletsService {
           mode,
           amount: dto.amount,
           fee: feeAmount,
+          currency: withdrawalCurrency,
           status: PayoutStatus.PENDING,
           provider_payout_id: payoutId,
           metadata: { recipientId: saved.id },
@@ -466,7 +468,7 @@ export class WalletsService {
           debit_usdc: isUSDC ? totalAmount : 0,
           asset: dto.token,
           status: LedgerEntryStatus.PENDING,
-          description: `Stablecoin withdrawal: ${dto.amount} ${token}`,
+          description: `Stablecoin withdrawal: ${totalAmount} ${token}`,
         }),
       );
 
@@ -498,7 +500,8 @@ export class WalletsService {
     mode: 'live' | 'test',
   ) {
     // Confirm CC withdrawal fee
-    const feeAmount = FIAT_WITHDRAWAL_FEE;
+    const feeAmount = FIAT_WITHDRAWAL_FEE + CC_FIAT_WITHDRAWAL_FEE;
+    const platformFee = FIAT_WITHDRAWAL_FEE;
     const totalAmount = dto.amount + feeAmount;
 
     // Credits: completed/reversed/rejected. Debits: completed + pending (to block double-spend)
@@ -555,7 +558,7 @@ export class WalletsService {
           debit_ngn: totalAmount,
           asset: 'NGN',
           status: LedgerEntryStatus.PENDING,
-          description: `Fiat withdrawal: ${dto.amount} NGN`,
+          description: `Fiat withdrawal: ${totalAmount} NGN`,
         }),
       );
 
@@ -568,10 +571,10 @@ export class WalletsService {
           reference_type: 'payout_fee',
           reference_id: `${payout.id}_fee`,
           currency: LedgerCurrency.NGN,
-          credit_ngn: feeAmount,
+          credit_ngn: platformFee,
           asset: 'NGN',
           status: LedgerEntryStatus.PENDING,
-          description: `Fee income: ${FIAT_WITHDRAWAL_FEE} fiat withdrawal`,
+          description: `Fee income: ${platformFee} fiat withdrawal`,
         }),
       );
     });

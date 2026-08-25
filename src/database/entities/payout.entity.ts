@@ -9,6 +9,7 @@ import {
   Index,
 } from 'typeorm';
 import { Business } from './business.entity';
+import { LedgerCurrency } from './ledger-entry.entity';
 
 export enum PayoutStatus {
   PENDING = 'pending',
@@ -34,6 +35,9 @@ export class Payout {
 
   @Column({ type: 'decimal', precision: 18, scale: 2, default: 0 })
   fee: number;
+
+  @Column({ type: 'enum', enum: LedgerCurrency, default: LedgerCurrency.NGN })
+  currency: LedgerCurrency;
 
   @Column({ type: 'text', nullable: true })
   bank_code: string | null;
