@@ -1282,7 +1282,7 @@ export class CoincircuitWebhooksService {
     try {
       const result = await this.cc.initiatePayout(record.mode, {
         recipientId: meta.recipientId,
-        amount: grossNgn.toString(),
+        amount: grossNgn.toFixed(2).toString(),
         currency: 'NGN',
         narration: 'Offramp payout',
       });
