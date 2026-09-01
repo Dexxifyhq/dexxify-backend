@@ -129,7 +129,6 @@ export class OfframpService {
         type: SwapRecordType.OFFRAMP,
         metadata: {
           recipientId: dto.recipient_id,
-          fee: FIAT_WITHDRAWAL_FEE,
           quotationId: quotation.id,
           ...(dto.metadata || {}),
         },
