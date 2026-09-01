@@ -890,16 +890,35 @@ export class CoincircuitWebhooksService {
 
   // ── Payout handlers ──────────────────────────────────
 
+  /**
+   * Same race as findSwapRecordWithRetry — we call cc.initiatePayout(), they
+   * may fire a payout webhook before our own local Payout row has committed.
+   */
+  private async findPayoutWithRetry(
+    providerPayoutId: string,
+    attempts = 4,
+    delayMs = 500,
+  ): Promise<Payout | null> {
+    const payoutRepo = this.dataSource.getRepository(Payout);
+    for (let attempt = 1; attempt <= attempts; attempt++) {
+      const payout = await payoutRepo.findOne({
+        where: { provider_payout_id: providerPayoutId },
+      });
+      if (payout) return payout;
+      if (attempt < attempts) {
+        await new Promise((resolve) => setTimeout(resolve, delayMs * attempt));
+      }
+    }
+    return null;
+  }
+
   private async handlePayoutCreated(
     data: CCWebhookPayoutEventData,
   ): Promise<void> {
     const ref = data.payout?.id ?? data.payout?.reference;
     if (!ref) return;
 
-    const payout = await this.dataSource.getRepository(Payout).findOne({
-      where: { provider_payout_id: ref },
-      select: ['id', 'business_id'],
-    });
+    const payout = await this.findPayoutWithRetry(ref);
     if (!payout) {
       this.logger.log(`Payout initiated: ${ref}`);
       return;
@@ -915,6 +934,11 @@ export class CoincircuitWebhooksService {
   ): Promise<void> {
     const ref = data.payout?.id ?? data.payout?.reference;
     if (!ref) return;
+
+    // Retry outside the transaction so a race doesn't hold a DB connection
+    // idle for the duration of the backoff.
+    const exists = await this.findPayoutWithRetry(ref);
+    if (!exists) return;
 
     await this.dataSource.transaction(async (em) => {
       const payout = await em
@@ -973,6 +997,9 @@ export class CoincircuitWebhooksService {
   ): Promise<void> {
     const ref = data.payout?.id ?? data.payout?.reference;
     if (!ref) return;
+
+    const exists = await this.findPayoutWithRetry(ref);
+    if (!exists) return;
 
     await this.dataSource.transaction(async (em) => {
       const payout = await em
@@ -1146,15 +1173,36 @@ export class CoincircuitWebhooksService {
 
   // ── Swap handlers ────────────────────────────────────
 
+  /**
+   * Coincircuit can fire a webhook for something we just created before our
+   * own INSERT for it has committed (we call their API, they execute and may
+   * dispatch the webhook immediately, then we save locally) — retry with
+   * backoff instead of dropping the event on the first miss.
+   */
+  private async findSwapRecordWithRetry(
+    ccSwapId: string,
+    attempts = 4,
+    delayMs = 500,
+  ): Promise<SwapRecord | null> {
+    for (let attempt = 1; attempt <= attempts; attempt++) {
+      const record = await this.swapRecordRepo.findOne({
+        where: { cc_swap_id: ccSwapId },
+      });
+      if (record) return record;
+      if (attempt < attempts) {
+        await new Promise((resolve) => setTimeout(resolve, delayMs * attempt));
+      }
+    }
+    return null;
+  }
+
   private async handleSwapCompleted(
     data: CCWebhookSwapEventData,
   ): Promise<void> {
     const swap = data.swap;
     if (!swap?.id) return;
 
-    const record = await this.swapRecordRepo.findOne({
-      where: { cc_swap_id: swap.id },
-    });
+    const record = await this.findSwapRecordWithRetry(swap.id);
 
     if (!record) {
       this.logger.warn(`swap.completed: no local record for swap ${swap.id}`);
@@ -1324,9 +1372,7 @@ export class CoincircuitWebhooksService {
     const swap = data.swap;
     if (!swap?.id) return;
 
-    const record = await this.swapRecordRepo.findOne({
-      where: { cc_swap_id: swap.id },
-    });
+    const record = await this.findSwapRecordWithRetry(swap.id);
 
     await this.swapRecordRepo.update(
       { cc_swap_id: swap.id },

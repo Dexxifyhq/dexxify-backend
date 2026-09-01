@@ -119,6 +119,7 @@ export class WalletsService {
     mode: 'live' | 'test',
     dto: CreateWalletDto,
   ) {
+    // mode = 'live';
     let ccCustomerId: string | null = null;
     let localCustomer: Customer | null = null;
 
@@ -280,6 +281,7 @@ export class WalletsService {
     walletId: string,
     dto: IssueDepositIdentityDto,
   ): Promise<CCDepositAccountData> {
+    // mode = 'live';
     await this.findOne(businessId, mode, walletId);
 
     const result = await this.cc.issueDepositIdentity(mode, walletId, {
@@ -292,6 +294,7 @@ export class WalletsService {
           : undefined,
     });
 
+    console.log('result', result);
     const account = result.data as CCDepositAccountData;
 
     await this.walletRepo.update(walletId, {
@@ -302,9 +305,12 @@ export class WalletsService {
     return account;
   }
 
-  async getWalletDetails(walletId: string): Promise<CCDepositAccountData> {
+  async getWalletDetails(
+    walletId: string,
+    mode: 'live' | 'test',
+  ): Promise<CCDepositAccountData> {
     try {
-      const account = await this.cc.getDepositAccount('live', walletId);
+      const account = await this.cc.getDepositAccount(mode, walletId);
       return account.data as CCDepositAccountData;
     } catch (err: unknown) {
       this.logger.error(`Wallet retrieval failed: ${getErrorMessage(err)}`);
@@ -314,9 +320,11 @@ export class WalletsService {
     }
   }
 
-  async getAllWalletDetails(): Promise<CCDepositAccountData[]> {
+  async getAllWalletDetails(
+    mode: 'live' | 'test',
+  ): Promise<CCDepositAccountData[]> {
     try {
-      const accounts = await this.cc.listDepositAccounts('live');
+      const accounts = await this.cc.listDepositAccounts(mode);
       return accounts.data as CCDepositAccountData[];
     } catch (err: unknown) {
       this.logger.error(`Wallet retrieval failed: ${getErrorMessage(err)}`);

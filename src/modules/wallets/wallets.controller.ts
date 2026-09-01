@@ -141,8 +141,11 @@ export class WalletsController {
     description: 'Wallet unique identifier',
     example: '67063f653b4a1f6c7a60ec57',
   })
-  async getWalletDetails(@Param('wallet_id') walletId: string) {
-    return this.walletsService.getWalletDetails(walletId);
+  async getWalletDetails(
+    @Param('wallet_id') walletId: string,
+    @GetMode() mode: 'live' | 'test',
+  ) {
+    return this.walletsService.getWalletDetails(walletId, mode);
   }
 
   @Get('details/all')
@@ -150,8 +153,8 @@ export class WalletsController {
     summary: 'Get all wallet details',
     description: 'Retrieve detailed information for all wallets',
   })
-  async getAllWalletDetails() {
-    return this.walletsService.getAllWalletDetails();
+  async getAllWalletDetails(@GetMode() mode: 'live' | 'test') {
+    return this.walletsService.getAllWalletDetails(mode);
   }
 
   @Post(':wallet_id/identities')

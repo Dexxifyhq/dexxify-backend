@@ -92,9 +92,13 @@ export class OfframpService {
         amount: dto.crypto_amount.toString(),
       })) as { data: SwapQuotationData };
       quotation = quotationResult.data;
+      // console.log('result', quotationResult);
 
       // 2. Execute swap immediately against the quotation
-      const swapResult = (await this.cc.executeSwap(mode, quotation.id)) as {
+      const swapResult = (await this.cc.executeSwap(mode, quotation.id, {
+        webhookUrl:
+          'https://api.dexxify.com/api/v1/webhooks/incoming/coincircuit',
+      })) as {
         data: SwapExecutionData;
       };
       swap = swapResult.data;
