@@ -354,7 +354,7 @@ export class CoincircuitWebhooksService {
       );
 
       if (!isValid) {
-        this.logger.warn('CoincircuitMCP webhook signature mismatch');
+        this.logger.warn('Coincircuit webhook signature mismatch');
         return { isValid: false, error: 'Invalid signature' };
       }
     } catch {

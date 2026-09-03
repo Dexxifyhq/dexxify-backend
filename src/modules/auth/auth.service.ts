@@ -9,8 +9,10 @@ import { JwtService, JwtSignOptions } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, MoreThan } from 'typeorm';
-import { Response, CookieOptions } from 'express';
+import { Response, Request, CookieOptions } from 'express';
 import * as bcrypt from 'bcryptjs';
+import { randomUUID } from 'crypto';
+import { TokenBlocklistService } from './token-blocklist.service';
 import {
   User,
   UserStatus,
@@ -45,6 +47,7 @@ export interface BusinessSummary {
 export type AuthenticatedUser = User & {
   mode?: 'live' | 'test';
   active_business_id?: string | null;
+  session_id?: string;
 };
 
 @Injectable()
@@ -70,6 +73,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly config: ConfigService,
     private readonly mailService: MailService,
+    private readonly tokenBlocklist: TokenBlocklistService,
   ) {
     this.jwtSecret = this.config.get<string>('jwt.secret') || 'fallback-secret';
     this.jwtExpiresIn = this.config.get<string>('jwt.expiresIn') || '1800s';
@@ -163,7 +167,7 @@ export class AuthService {
 
   // ── Verify OTP ─────────────────────────────────────────
 
-  async verifyOtp(dto: VerifyOtpDto, res: Response) {
+  async verifyOtp(dto: VerifyOtpDto, res: Response, req?: Request) {
     const user = await this.userRepo.findOne({
       where: { email: dto.email },
     });
@@ -232,7 +236,7 @@ export class AuthService {
       }),
     );
 
-    this.setTokenCookies(res, user, 'test', businessId);
+    this.setTokenCookies(res, user, 'test', businessId, req);
 
     return {
       message: 'Email verified successfully.',
@@ -373,7 +377,7 @@ export class AuthService {
 
   // ── Login ──────────────────────────────────────────────
 
-  async login(dto: LoginDto, res: Response) {
+  async login(dto: LoginDto, res: Response, req?: Request) {
     const user = await this.userRepo.findOne({ where: { email: dto.email } });
 
     if (!user || !user.password_hash)
@@ -429,7 +433,7 @@ export class AuthService {
         })
       : null;
 
-    this.setTokenCookies(res, user, 'test', businessId);
+    this.setTokenCookies(res, user, 'test', businessId, req);
 
     return {
       user: this.sanitizeUser(user),
@@ -443,6 +447,7 @@ export class AuthService {
     user: AuthenticatedUser,
     dto: SelectBusinessDto,
     res: Response,
+    req?: Request,
   ) {
     const membership = await this.businessUserRepo.findOne({
       where: {
@@ -468,31 +473,75 @@ export class AuthService {
     });
 
     const mode: 'live' | 'test' = user.mode ?? 'test';
-    this.setTokenCookies(res, user, mode, dto.business_id);
+    this.setTokenCookies(res, user, mode, dto.business_id, req);
     return { business };
   }
 
   // ── Refresh, Logout, Profile ───────────────────────────
 
-  refresh(user: AuthenticatedUser, res: Response) {
+  refresh(user: AuthenticatedUser, res: Response, req?: Request) {
     this.setTokenCookies(
       res,
       user,
       user.mode ?? 'test',
       user.active_business_id ?? null,
+      req,
     );
     return { user: this.sanitizeUser(user) };
   }
 
-  switchMode(user: AuthenticatedUser, mode: 'live' | 'test', res: Response) {
-    this.setTokenCookies(res, user, mode, user.active_business_id ?? null);
+  switchMode(
+    user: AuthenticatedUser,
+    mode: 'live' | 'test',
+    res: Response,
+    req?: Request,
+  ) {
+    this.setTokenCookies(res, user, mode, user.active_business_id ?? null, req);
     return {
       mode,
       user: this.sanitizeUser(user),
     };
   }
 
-  logout(res: Response) {
+  async logout(req: Request, res: Response) {
+    const accessToken = req.cookies?.access_token as string | undefined;
+    const refreshToken = req.cookies?.refresh_token as string | undefined;
+
+    await Promise.all([
+      this.revokeTokenIfPresent(accessToken),
+      this.revokeTokenIfPresent(refreshToken),
+    ]);
+
+    this.clearAuthCookies(res);
+    return { message: 'Logged out successfully.' };
+  }
+
+  /** Revoke every session this user has — every device, every browser. */
+  async logoutAll(user: AuthenticatedUser, res: Response) {
+    const revokedCount = await this.tokenBlocklist.revokeAllForUser(user.id);
+
+    this.clearAuthCookies(res);
+    return {
+      message: 'Logged out of all devices.',
+      revoked_sessions: revokedCount,
+    };
+  }
+
+  async listSessions(user: AuthenticatedUser) {
+    const sessions = await this.tokenBlocklist.listSessions(
+      user.id,
+      user.session_id,
+    );
+    return { data: sessions };
+  }
+
+  async revokeSession(user: AuthenticatedUser, sessionId: string) {
+    const revoked = await this.tokenBlocklist.revokeSession(user.id, sessionId);
+    if (!revoked) throw new BadRequestException('Session not found.');
+    return { message: 'Session revoked.' };
+  }
+
+  private clearAuthCookies(res: Response) {
     const cookieOptions: CookieOptions = {
       httpOnly: true,
       secure: this.isProduction,
@@ -502,7 +551,21 @@ export class AuthService {
     };
     res.clearCookie('access_token', cookieOptions);
     res.clearCookie('refresh_token', cookieOptions);
-    return { message: 'Logged out successfully.' };
+  }
+
+  /** Blocklist a token's jti until it would have expired anyway. */
+  private async revokeTokenIfPresent(token: string | undefined) {
+    if (!token) return;
+
+    const decoded = this.jwtService.decode<{
+      jti?: string;
+      exp?: number;
+    } | null>(token);
+
+    if (!decoded?.jti || !decoded.exp) return;
+
+    const remainingSeconds = decoded.exp - Math.floor(Date.now() / 1000);
+    await this.tokenBlocklist.revoke(decoded.jti, remainingSeconds);
   }
 
   async getProfile(user: AuthenticatedUser) {
@@ -546,6 +609,7 @@ export class AuthService {
     user: User,
     mode: 'live' | 'test' = 'test',
     businessId: string | null = null,
+    req?: Request,
   ) {
     const payload: Record<string, unknown> = {
       sub: user.id,
@@ -562,14 +626,39 @@ export class AuthService {
       secret: this.refreshSecret,
       expiresIn: this.refreshExpiresIn as JwtSignOptions['expiresIn'],
     };
+    const accessJti = randomUUID();
+    // The refresh jti also doubles as the session id — it's the credential
+    // that actually represents "this device is logged in."
+    const refreshJti = randomUUID();
+
     const accessToken = this.jwtService.sign(
-      { ...payload, type: 'access' },
+      { ...payload, type: 'access', jti: accessJti, sid: refreshJti },
       accessSignOptions,
     );
     const refreshToken = this.jwtService.sign(
-      { ...payload, type: 'refresh' },
+      { ...payload, type: 'refresh', jti: refreshJti },
       refreshSignOptions,
     );
+
+    // Track this session against the user so it shows up in listSessions()
+    // and can be revoked later (individually or via logoutAll) — fire and
+    // forget, a tracking hiccup shouldn't block login.
+    const now = Math.floor(Date.now() / 1000);
+    const userAgentHeader: string | string[] | undefined =
+      req?.headers['user-agent'];
+    void this.tokenBlocklist.trackSession(user.id, {
+      accessJti,
+      refreshJti,
+      issuedAt: now,
+      accessExpiresAt:
+        now + Math.floor(this.parseExpiryToMs(this.jwtExpiresIn) / 1000),
+      refreshExpiresAt:
+        now + Math.floor(this.parseExpiryToMs(this.refreshExpiresIn) / 1000),
+      ip: req?.ip,
+      userAgent: Array.isArray(userAgentHeader)
+        ? String(userAgentHeader[0])
+        : userAgentHeader,
+    });
 
     const cookieBase: CookieOptions = {
       httpOnly: true,

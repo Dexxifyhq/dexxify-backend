@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { APP_GUARD, APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
-import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { ThrottlerModule } from '@nestjs/throttler';
 
 // Config
 import configuration from './config/configuration';
@@ -15,6 +15,7 @@ import { ApiKey, Business, User, BusinessUser } from './database/entities';
 import { GlobalExceptionFilter } from './common/filters/http-exception.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { ApiKeyGuard } from './common/guards/api-key.guard';
+import { RedisModule } from './common/redis/redis.module';
 
 // Feature modules
 import { MailModule } from './modules/mail/mail.module';
@@ -38,6 +39,8 @@ import { AdminModule } from './modules/admin/admin.module';
 import { BusinessesModule } from './modules/businesses/businesses.module';
 import { TeamsModule } from './modules/teams/teams.module';
 import { DevelopersModule } from './modules/developers/developers.module';
+import { CustomThrottlerGuard } from './common/guards/throttle.guards';
+import { ThrottlerRedisService } from './common/services/throttler-redis.service';
 
 @Module({
   imports: [
@@ -48,14 +51,26 @@ import { DevelopersModule } from './modules/developers/developers.module';
       envFilePath: '.env.local',
     }),
 
-    // Rate limiting
-    ThrottlerModule.forRoot([
-      {
-        name: 'global',
-        ttl: parseInt(process.env.THROTTLE_TTL || '60', 10) * 1000,
-        limit: parseInt(process.env.THROTTLE_LIMIT || '100', 10),
+    // Rate Limiting Configuration with Redis
+    ThrottlerModule.forRootAsync({
+      useFactory: () => {
+        const storage = new ThrottlerRedisService();
+
+        return {
+          throttlers: [
+            {
+              name: 'global',
+              ttl: 300000, // 5 minutes in milliseconds
+              limit: 100, // 100 requests
+            },
+          ],
+          storage,
+        };
       },
-    ]),
+    }),
+
+    // Redis — token blocklist, future caching/rate-limit storage
+    RedisModule,
 
     // Database — TypeORM + Postgres (provider-agnostic)
     DatabaseModule,
@@ -88,7 +103,7 @@ import { DevelopersModule } from './modules/developers/developers.module';
   ],
   providers: [
     { provide: APP_GUARD, useClass: ApiKeyGuard },
-    { provide: APP_GUARD, useClass: ThrottlerGuard },
+    { provide: APP_GUARD, useClass: CustomThrottlerGuard },
     { provide: APP_FILTER, useClass: GlobalExceptionFilter },
     { provide: APP_INTERCEPTOR, useClass: TransformInterceptor },
   ],

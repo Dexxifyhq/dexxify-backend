@@ -7,6 +7,7 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
+import { TokenBlocklistService } from './token-blocklist.service';
 import {
   User,
   BusinessUser,
@@ -29,7 +30,12 @@ import {
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, JwtRefreshStrategy],
-  exports: [AuthService, JwtModule],
+  providers: [
+    AuthService,
+    JwtStrategy,
+    JwtRefreshStrategy,
+    TokenBlocklistService,
+  ],
+  exports: [AuthService, JwtModule, TokenBlocklistService],
 })
 export class AuthModule {}

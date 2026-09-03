@@ -1,6 +1,7 @@
 import {
   CanActivate,
   ExecutionContext,
+  ForbiddenException,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -13,10 +14,12 @@ import type { Request } from 'express';
 import { ApiKey, User, UserStatus } from '../../database/entities';
 import { IS_PUBLIC_KEY, AUTH_TYPE_KEY } from '../decorators';
 import { hashApiKey } from '../utils';
+import { TokenBlocklistService } from '../../modules/auth/token-blocklist.service';
 
 type RequestUser = User & {
   mode?: 'live' | 'test';
   active_business_id?: string | null;
+  session_id?: string;
 };
 
 interface AuthenticatedRequest extends Request {
@@ -36,6 +39,7 @@ export class ApiKeyGuard implements CanActivate {
     private readonly reflector: Reflector,
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
+    private readonly tokenBlocklist: TokenBlocklistService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -128,7 +132,7 @@ export class ApiKeyGuard implements CanActivate {
     const token = request.cookies?.access_token as string | undefined;
 
     if (!token) {
-      throw new UnauthorizedException(
+      throw new ForbiddenException(
         'Missing authorization. Provide an API key or a valid session cookie.',
       );
     }
@@ -141,12 +145,18 @@ export class ApiKeyGuard implements CanActivate {
         sub: string;
         email: string;
         type: string;
+        jti?: string;
+        sid?: string;
         mode?: 'live' | 'test';
         business_id?: string | null;
       }>(token, { secret });
 
       if (payload.type !== 'access') {
-        throw new UnauthorizedException('Invalid token type.');
+        throw new ForbiddenException('Invalid token type.');
+      }
+
+      if (payload.jti && (await this.tokenBlocklist.isRevoked(payload.jti))) {
+        throw new ForbiddenException('Token has been revoked.');
       }
 
       const user = await this.userRepo.findOne({
@@ -154,22 +164,23 @@ export class ApiKeyGuard implements CanActivate {
       });
 
       if (!user) {
-        throw new UnauthorizedException('Invalid or inactive account.');
+        throw new ForbiddenException('Invalid or inactive account.');
       }
 
       const enrichedUser = Object.assign(user, {
         mode: payload.mode ?? 'test',
         active_business_id: payload.business_id ?? null,
+        session_id: payload.sid,
       });
 
       request.user = enrichedUser;
-      request.developer = enrichedUser; // backward compat
+      request.developer = enrichedUser; // backward compatible
       request.active_business_id = payload.business_id ?? null;
 
       return true;
     } catch (err) {
-      if (err instanceof UnauthorizedException) throw err;
-      throw new UnauthorizedException('Invalid or expired session token.');
+      if (err instanceof ForbiddenException) throw err;
+      throw new ForbiddenException('Invalid or expired session token.');
     }
   }
 }
