@@ -42,6 +42,7 @@ export class JwtRefreshStrategy extends PassportStrategy(
     email: string;
     type: string;
     jti?: string;
+    sid?: string;
     mode?: 'live' | 'test';
     business_id?: string | null;
   }) {
@@ -65,6 +66,7 @@ export class JwtRefreshStrategy extends PassportStrategy(
     return Object.assign(user, {
       mode: payload.mode ?? 'test',
       active_business_id: payload.business_id ?? null,
+      session_id: payload.sid,
     });
   }
 }

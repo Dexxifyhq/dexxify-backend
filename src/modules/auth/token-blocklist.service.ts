@@ -58,14 +58,9 @@ export class TokenBlocklistService {
     }
   }
 
-  /**
-   * Record a session (one login = one access/refresh jti pair) so it can be
-   * listed, revoked individually, or revoked in bulk later — the refresh
-   * jti doubles as the session id, since it's the credential that actually
-   * represents "this device is logged in."
-   */
   async trackSession(
     userId: string,
+    sessionId: string,
     session: Omit<SessionRecord, 'expiresAt'> & {
       accessExpiresAt: number;
       refreshExpiresAt: number;
@@ -73,8 +68,6 @@ export class TokenBlocklistService {
   ): Promise<void> {
     const key = this.sessionsKey(userId);
     const now = Math.floor(Date.now() / 1000);
-    // The session as a whole is only meaningfully alive as long as its
-    // refresh token is — that's what lets it keep minting new access tokens.
     const expiresAt = session.refreshExpiresAt;
     const ttl = expiresAt - now;
     if (ttl <= 0) return;
@@ -91,7 +84,7 @@ export class TokenBlocklistService {
     try {
       await this.redis
         .multi()
-        .hset(key, session.refreshJti, JSON.stringify(record))
+        .hset(key, sessionId, JSON.stringify(record))
         .expire(key, ttl)
         .exec();
       await this.pruneExpiredSessions(userId, now);

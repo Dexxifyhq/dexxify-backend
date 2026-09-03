@@ -473,7 +473,14 @@ export class AuthService {
     });
 
     const mode: 'live' | 'test' = user.mode ?? 'test';
-    this.setTokenCookies(res, user, mode, dto.business_id, req);
+    this.setTokenCookies(
+      res,
+      user,
+      mode,
+      dto.business_id,
+      req,
+      user.session_id,
+    );
     return { business };
   }
 
@@ -486,6 +493,7 @@ export class AuthService {
       user.mode ?? 'test',
       user.active_business_id ?? null,
       req,
+      user.session_id,
     );
     return { user: this.sanitizeUser(user) };
   }
@@ -496,7 +504,14 @@ export class AuthService {
     res: Response,
     req?: Request,
   ) {
-    this.setTokenCookies(res, user, mode, user.active_business_id ?? null, req);
+    this.setTokenCookies(
+      res,
+      user,
+      mode,
+      user.active_business_id ?? null,
+      req,
+      user.session_id,
+    );
     return {
       mode,
       user: this.sanitizeUser(user),
@@ -610,7 +625,13 @@ export class AuthService {
     mode: 'live' | 'test' = 'test',
     businessId: string | null = null,
     req?: Request,
+    sessionId?: string,
   ) {
+    // Reuse the caller's existing session id when we're continuing a
+    // session (refresh/select-business/switch-mode); generate a fresh one
+    // only for an actual new login (login/verify-otp pass nothing).
+    const sid = sessionId ?? randomUUID();
+
     const payload: Record<string, unknown> = {
       sub: user.id,
       email: user.email,
@@ -627,16 +648,14 @@ export class AuthService {
       expiresIn: this.refreshExpiresIn as JwtSignOptions['expiresIn'],
     };
     const accessJti = randomUUID();
-    // The refresh jti also doubles as the session id — it's the credential
-    // that actually represents "this device is logged in."
     const refreshJti = randomUUID();
 
     const accessToken = this.jwtService.sign(
-      { ...payload, type: 'access', jti: accessJti, sid: refreshJti },
+      { ...payload, type: 'access', jti: accessJti, sid },
       accessSignOptions,
     );
     const refreshToken = this.jwtService.sign(
-      { ...payload, type: 'refresh', jti: refreshJti },
+      { ...payload, type: 'refresh', jti: refreshJti, sid },
       refreshSignOptions,
     );
 
@@ -646,7 +665,7 @@ export class AuthService {
     const now = Math.floor(Date.now() / 1000);
     const userAgentHeader: string | string[] | undefined =
       req?.headers['user-agent'];
-    void this.tokenBlocklist.trackSession(user.id, {
+    void this.tokenBlocklist.trackSession(user.id, sid, {
       accessJti,
       refreshJti,
       issuedAt: now,
