@@ -4,6 +4,7 @@ import {
   UnauthorizedException,
   BadRequestException,
   ForbiddenException,
+  Logger,
 } from '@nestjs/common';
 import { JwtService, JwtSignOptions } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -52,6 +53,7 @@ export type AuthenticatedUser = User & {
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
   private readonly jwtSecret: string;
   private readonly jwtExpiresIn: string;
   private readonly refreshSecret: string;
@@ -91,6 +93,17 @@ export class AuthService {
   // ── Register ───────────────────────────────────────────
 
   async register(dto: RegisterDto) {
+    // Honeypot: a field real users never see or fill (hidden in the actual
+    // form)
+    if (dto.website) {
+      this.logger.warn(`Honeypot tripped on registration for ${dto.email}`);
+      return {
+        message:
+          'Registration successful. Please check your email for the verification code.',
+        email: dto.email,
+      };
+    }
+
     const existing = await this.userRepo.findOne({
       where: { email: dto.email },
     });
