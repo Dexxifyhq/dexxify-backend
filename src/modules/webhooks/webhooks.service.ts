@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  Logger,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -8,8 +13,12 @@ import {
   WebhookEvent,
   WebhookEventStatus,
 } from '../../database/entities';
-import { CreateWebhookDto, WebhookEventType } from './dto';
-import { signWebhookPayload } from '../../common/utils';
+import {
+  ListWebhookEventsQueryDto,
+  SaveWebhookDto,
+  WebhookEventType,
+} from './dto';
+import { buildPaginationMeta, signWebhookPayload } from '../../common/utils';
 
 @Injectable()
 export class WebhooksService {
@@ -28,79 +37,179 @@ export class WebhooksService {
     this.retryDelay = this.config.get<number>('webhook.retryDelayMs') || 5000;
   }
 
-  async create(
-    businessId: string,
-    mode: 'live' | 'test',
-    dto: CreateWebhookDto,
-  ) {
-    const secret = `whsec_${randomBytes(24).toString('base64url')}`;
+  async findOne(businessId: string, mode: 'live' | 'test') {
+    const endpoint = await this.endpointRepo.findOne({
+      where: { business_id: businessId, mode },
+    });
 
+    if (!endpoint) {
+      return {
+        configured: false,
+        id: null,
+        url: null,
+        secret: null,
+        is_active: false,
+        created_at: null,
+        updated_at: null,
+      };
+    }
+
+    return {
+      configured: true,
+      id: endpoint.id,
+      url: endpoint.url,
+      secret: endpoint.secret,
+      is_active: endpoint.is_active,
+      created_at: endpoint.created_at,
+      updated_at: endpoint.updated_at,
+    };
+  }
+
+  /** Create-or-update the single webhook endpoint for a business + mode. */
+  async upsert(businessId: string, mode: 'live' | 'test', dto: SaveWebhookDto) {
+    const existing = await this.endpointRepo.findOne({
+      where: { business_id: businessId, mode },
+    });
+
+    if (existing) {
+      if (dto.url !== undefined) existing.url = dto.url;
+      if (dto.is_active !== undefined) existing.is_active = dto.is_active;
+      const saved = await this.endpointRepo.save(existing);
+      return {
+        configured: true,
+        id: saved.id,
+        url: saved.url,
+        secret: saved.secret,
+        is_active: saved.is_active,
+        created_at: saved.created_at,
+        updated_at: saved.updated_at,
+      };
+    }
+
+    if (!dto.url) {
+      throw new BadRequestException(
+        'url is required to create a webhook endpoint.',
+      );
+    }
+
+    const secret = `whsec_${randomBytes(24).toString('base64url')}`;
     const endpoint = this.endpointRepo.create({
       business_id: businessId,
       mode,
       url: dto.url,
       secret,
-      events: dto.events,
-      description: dto.description,
+      is_active: dto.is_active ?? true,
     });
 
     const saved = await this.endpointRepo.save(endpoint);
-    return { ...saved, secret }; // Show secret only on creation
+    return {
+      configured: true,
+      id: saved.id,
+      url: saved.url,
+      secret: saved.secret,
+      is_active: saved.is_active,
+      created_at: saved.created_at,
+      updated_at: saved.updated_at,
+    };
   }
 
-  async findAll(businessId: string, mode: 'live' | 'test') {
-    return this.endpointRepo.find({
-      where: { business_id: businessId, mode },
-      select: [
-        'id',
-        'url',
-        'events',
-        'is_active',
-        'description',
-        'created_at',
-        'updated_at',
-      ],
-      order: { created_at: 'DESC' },
-    });
-  }
-
-  async remove(businessId: string, mode: 'live' | 'test', webhookId: string) {
+  async regenerateSecret(businessId: string, mode: 'live' | 'test') {
     const endpoint = await this.endpointRepo.findOne({
-      where: { id: webhookId, business_id: businessId, mode },
+      where: { business_id: businessId, mode },
+    });
+
+    if (!endpoint) throw new NotFoundException('Webhook endpoint not found.');
+
+    endpoint.secret = `whsec_${randomBytes(24).toString('base64url')}`;
+    const saved = await this.endpointRepo.save(endpoint);
+    return { id: saved.id, secret: saved.secret };
+  }
+
+  async remove(businessId: string, mode: 'live' | 'test') {
+    const endpoint = await this.endpointRepo.findOne({
+      where: { business_id: businessId, mode },
     });
 
     if (!endpoint) throw new NotFoundException('Webhook endpoint not found.');
 
     await this.endpointRepo.remove(endpoint);
-    return { deleted: true, id: webhookId };
+    return { deleted: true };
   }
 
-  /** Dispatch an event to all matching webhook endpoints for a developer */
+  /** Paginated delivery log for the business's webhook endpoint in the given mode. */
+  async findEvents(
+    businessId: string,
+    mode: 'live' | 'test',
+    query: ListWebhookEventsQueryDto,
+  ) {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 20;
+
+    const endpoint = await this.endpointRepo.findOne({
+      where: { business_id: businessId, mode },
+      select: ['id'],
+    });
+
+    if (!endpoint) {
+      return { data: [], total: 0, page, limit };
+    }
+
+    const [data, total] = await this.eventRepo.findAndCount({
+      where: {
+        webhook_endpoint_id: endpoint.id,
+        ...(query.status ? { status: query.status } : {}),
+      },
+      select: [
+        'id',
+        'event_type',
+        'status',
+        'attempts',
+        'response_status',
+        'last_attempt_at',
+        'next_retry_at',
+        'delivered_at',
+        'created_at',
+      ],
+      order: { created_at: 'DESC' },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+
+    return { data, meta: buildPaginationMeta(total, page, limit) };
+  }
+
+  /** A single delivery record, including its full payload and response body. */
+  async findEvent(businessId: string, mode: 'live' | 'test', eventId: string) {
+    const endpoint = await this.endpointRepo.findOne({
+      where: { business_id: businessId, mode },
+      select: ['id'],
+    });
+    if (!endpoint) throw new NotFoundException('Webhook event not found.');
+
+    const event = await this.eventRepo.findOne({
+      where: { id: eventId, webhook_endpoint_id: endpoint.id },
+    });
+    if (!event) throw new NotFoundException('Webhook event not found.');
+
+    return event;
+  }
+
+  /** Dispatch an event to the business's webhook endpoint for the given mode */
   async dispatch(
     businessId: string,
+    mode: 'live' | 'test',
     eventType: WebhookEventType,
     payload: Record<string, any>,
   ) {
     const endpoints = await this.endpointRepo.find({
       where: {
         business_id: businessId,
+        mode,
         is_active: true,
       },
     });
 
-    // Filter endpoints subscribed to this event type
-    const matching = endpoints.filter(
-      (ep) => ep.events.includes(eventType) || ep.events.includes('*'),
-    );
-
-    if (!matching.length) {
-      this.logger.debug(
-        `No webhook endpoints for ${eventType} (dev: ${businessId})`,
-      );
-      return;
-    }
-
-    for (const endpoint of matching) {
+    for (const endpoint of endpoints) {
       const eventPayload = {
         event: eventType,
         data: payload,

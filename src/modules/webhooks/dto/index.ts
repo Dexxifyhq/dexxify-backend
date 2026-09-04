@@ -1,5 +1,14 @@
-import { IsArray, IsOptional, IsString, IsUrl } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import {
+  IsBoolean,
+  IsEnum,
+  IsInt,
+  IsOptional,
+  IsUrl,
+  Max,
+  Min,
+} from 'class-validator';
+import { ApiPropertyOptional } from '@nestjs/swagger';
+import { WebhookEventStatus } from '../../../database/entities';
 
 export const WEBHOOK_EVENT_TYPES = [
   'payment.completed',
@@ -26,33 +35,7 @@ export const WEBHOOK_EVENT_TYPES = [
 
 export type WebhookEventType = (typeof WEBHOOK_EVENT_TYPES)[number];
 
-export class CreateWebhookDto {
-  @ApiProperty({
-    description: 'Webhook URL',
-    example: 'https://example.com/webhook',
-  })
-  @IsUrl()
-  url: string;
-
-  @ApiProperty({
-    description: 'Array of webhook events',
-    example: ['deposit.confirmed', 'offramp.completed'],
-    isArray: true,
-  })
-  @IsArray()
-  @IsString({ each: true })
-  events: string[];
-
-  @ApiPropertyOptional({
-    description: 'Webhook description',
-    example: 'Webhook for wallet and offramp events',
-  })
-  @IsOptional()
-  @IsString()
-  description?: string;
-}
-
-export class UpdateWebhookDto {
+export class SaveWebhookDto {
   @ApiPropertyOptional({
     description: 'Webhook URL',
     example: 'https://example.com/webhook',
@@ -62,20 +45,33 @@ export class UpdateWebhookDto {
   url?: string;
 
   @ApiPropertyOptional({
-    description: 'Array of webhook events',
-    example: ['deposit.confirmed', 'offramp.completed'],
-    isArray: true,
+    description: 'Whether the webhook endpoint is enabled',
+    example: true,
   })
   @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  events?: string[];
+  @IsBoolean()
+  is_active?: boolean;
+}
+
+export class ListWebhookEventsQueryDto {
+  @ApiPropertyOptional({ description: 'Page number (1-indexed)', default: 1 })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  page?: number;
+
+  @ApiPropertyOptional({ description: 'Results per page', default: 20 })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  limit?: number;
 
   @ApiPropertyOptional({
-    description: 'Webhook description',
-    example: 'Updated webhook description',
+    description: 'Filter by delivery status',
+    enum: WebhookEventStatus,
   })
   @IsOptional()
-  @IsString()
-  description?: string;
+  @IsEnum(WebhookEventStatus)
+  status?: WebhookEventStatus;
 }

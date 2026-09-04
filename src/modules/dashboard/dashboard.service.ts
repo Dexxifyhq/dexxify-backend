@@ -118,9 +118,9 @@ export class DashboardService {
     return { ...safeResult, key };
   }
 
-  async listApiKeys(userId: string) {
+  async listApiKeys(userId: string, businessId: string) {
     return this.apiKeyRepo.find({
-      where: { user_id: userId },
+      where: { user_id: userId, business_id: businessId, is_active: true },
       select: [
         'id',
         'key_prefix',
@@ -158,7 +158,7 @@ export class DashboardService {
       throw new NotFoundException('API key not found.');
 
     return this.apiKeyRepo.findOne({
-      where: { id: keyId },
+      where: { id: keyId, is_active: true },
       select: [
         'id',
         'key_prefix',

@@ -18,6 +18,7 @@ export enum WebhookEventStatus {
 }
 
 @Entity('webhook_endpoints')
+@Index(['business_id', 'mode'], { unique: true })
 export class WebhookEndpoint {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -35,14 +36,8 @@ export class WebhookEndpoint {
   @Column({ type: 'text' })
   secret: string;
 
-  @Column({ type: 'text', array: true, default: '{}' })
-  events: string[];
-
-  @Column({ type: 'boolean', default: true })
+  @Column({ type: 'boolean', default: false })
   is_active: boolean;
-
-  @Column({ type: 'text', nullable: true })
-  description: string;
 
   @CreateDateColumn({ type: 'timestamptz' })
   created_at: Date;

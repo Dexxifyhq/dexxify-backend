@@ -1,19 +1,21 @@
 import {
   Controller,
   Get,
+  Put,
   Post,
   Delete,
   Body,
   Param,
-  Req,
   ParseUUIDPipe,
+  Query,
+  Req,
   HttpCode,
   Logger,
 } from '@nestjs/common';
 import { WebhooksService } from './webhooks.service';
 import { CoincircuitWebhooksService } from './coincircuit-webhooks.service';
 import type { CCWebhookPayload } from './coincircuit-webhooks.service';
-import { CreateWebhookDto } from './dto';
+import { ListWebhookEventsQueryDto, SaveWebhookDto } from './dto';
 import {
   GetBusinessId,
   GetMode,
@@ -23,9 +25,9 @@ import {
 import {
   ApiOperation,
   ApiTags,
-  ApiParam,
   ApiBody,
   ApiHeader,
+  ApiParam,
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import type { Request } from 'express';
@@ -37,35 +39,67 @@ import type { Request } from 'express';
 export class WebhooksController {
   constructor(private readonly webhooksService: WebhooksService) {}
 
-  @ApiOperation({ summary: 'Create webhook endpoint' })
-  @ApiBody({ type: CreateWebhookDto })
-  @Post()
-  async create(
-    @GetBusinessId() businessId: string,
-    @GetMode() mode: 'live' | 'test',
-    @Body() dto: CreateWebhookDto,
-  ) {
-    return this.webhooksService.create(businessId, mode, dto);
-  }
-
-  @ApiOperation({ summary: 'List webhook endpoints' })
+  @ApiOperation({ summary: 'Get the webhook endpoint for the current mode' })
   @Get()
-  async findAll(
+  async findOne(
     @GetBusinessId() businessId: string,
     @GetMode() mode: 'live' | 'test',
   ) {
-    return this.webhooksService.findAll(businessId, mode);
+    return this.webhooksService.findOne(businessId, mode);
   }
 
-  @ApiOperation({ summary: 'Delete webhook endpoint' })
-  @ApiParam({ name: 'id', description: 'Webhook endpoint ID' })
-  @Delete(':id')
+  @ApiOperation({
+    summary: 'Create or update the webhook endpoint for the current mode',
+  })
+  @ApiBody({ type: SaveWebhookDto })
+  @Put()
+  async upsert(
+    @GetBusinessId() businessId: string,
+    @GetMode() mode: 'live' | 'test',
+    @Body() dto: SaveWebhookDto,
+  ) {
+    return this.webhooksService.upsert(businessId, mode, dto);
+  }
+
+  @ApiOperation({ summary: 'Regenerate the webhook signing secret' })
+  @Post('regenerate-secret')
+  async regenerateSecret(
+    @GetBusinessId() businessId: string,
+    @GetMode() mode: 'live' | 'test',
+  ) {
+    return this.webhooksService.regenerateSecret(businessId, mode);
+  }
+
+  @ApiOperation({ summary: 'Delete the webhook endpoint for the current mode' })
+  @Delete()
   async remove(
+    @GetBusinessId() businessId: string,
+    @GetMode() mode: 'live' | 'test',
+  ) {
+    return this.webhooksService.remove(businessId, mode);
+  }
+
+  @ApiOperation({
+    summary: 'List webhook delivery events for the current mode',
+  })
+  @Get('events')
+  async findEvents(
+    @GetBusinessId() businessId: string,
+    @GetMode() mode: 'live' | 'test',
+    @Query() query: ListWebhookEventsQueryDto,
+  ) {
+    return this.webhooksService.findEvents(businessId, mode, query);
+  }
+
+  @ApiOperation({ summary: 'Get a single webhook delivery event' })
+  @ApiParam({ name: 'id', description: 'Webhook event ID' })
+  @Get('events/:id')
+  async findEvent(
     @GetBusinessId() businessId: string,
     @GetMode() mode: 'live' | 'test',
     @Param('id', ParseUUIDPipe) id: string,
   ) {
-    return this.webhooksService.remove(businessId, mode, id);
+    return this.webhooksService.findEvent(businessId, mode, id);
   }
 }
 

@@ -50,8 +50,11 @@ export class DashboardController {
 
   @ApiOperation({ summary: 'List API keys' })
   @Get('api-keys')
-  async listApiKeys(@GetUser('id') userId: string) {
-    return this.dashboardService.listApiKeys(userId);
+  async listApiKeys(
+    @GetUser('id') userId: string,
+    @GetBusinessId() businessId: string,
+  ) {
+    return this.dashboardService.listApiKeys(userId, businessId);
   }
 
   @ApiOperation({ summary: 'Update API key label or IP whitelist' })
