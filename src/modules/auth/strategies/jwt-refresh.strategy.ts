@@ -1,7 +1,7 @@
 import {
-  ForbiddenException,
+  // ForbiddenException,
   Injectable,
-  // UnauthorizedException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
@@ -47,12 +47,13 @@ export class JwtRefreshStrategy extends PassportStrategy(
     business_id?: string | null;
   }) {
     if (payload.type !== 'refresh') {
-      throw new ForbiddenException('Invalid token type.');
+      throw new UnauthorizedException('Invalid token type.');
+      // throw new ForbiddenException('Invalid token type.');
     }
 
     if (payload.jti && (await this.tokenBlocklist.isRevoked(payload.jti))) {
-      // throw new UnauthorizedException('Token has been revoked.');
-      throw new ForbiddenException('Token has been revoked.');
+      throw new UnauthorizedException('Token has been revoked.');
+      // throw new ForbiddenException('Token has been revoked.');
     }
 
     const user = await this.userRepo.findOne({
@@ -60,7 +61,8 @@ export class JwtRefreshStrategy extends PassportStrategy(
     });
 
     if (!user) {
-      throw new ForbiddenException('Invalid or inactive account.');
+      throw new UnauthorizedException('Invalid or inactive account.');
+      // throw new ForbiddenException('Invalid or inactive account.');
     }
 
     return Object.assign(user, {

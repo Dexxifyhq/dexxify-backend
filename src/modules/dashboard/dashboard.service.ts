@@ -85,22 +85,27 @@ export class DashboardService {
 
   // ── API Key Management ──────────────────────────────────
 
-  async createApiKey(userId: string, businessId: string, dto: CreateApiKeyDto) {
+  async createApiKey(
+    userId: string,
+    businessId: string,
+    dto: CreateApiKeyDto,
+    mode: 'test' | 'live',
+  ) {
     const count = await this.apiKeyRepo.count({
       where: {
         business_id: businessId,
-        mode: dto.mode,
+        mode,
         is_active: true,
       },
     });
 
     if (count >= 5) {
       throw new BadRequestException(
-        `Maximum 5 active ${dto.mode} API keys allowed.`,
+        `Maximum 5 active ${mode} API keys allowed.`,
       );
     }
 
-    const { key, prefix, hash } = generateApiKey(dto.mode);
+    const { key, prefix, hash } = generateApiKey(mode);
 
     const saved = await this.apiKeyRepo.save(
       this.apiKeyRepo.create({
@@ -108,8 +113,8 @@ export class DashboardService {
         business_id: businessId,
         key_hash: hash,
         key_prefix: prefix,
-        label: dto.label || `${dto.mode} key`,
-        mode: dto.mode,
+        label: dto.label || `${mode} key`,
+        mode,
       }),
     );
 
@@ -118,9 +123,14 @@ export class DashboardService {
     return { ...safeResult, key };
   }
 
-  async listApiKeys(userId: string, businessId: string) {
+  async listApiKeys(userId: string, businessId: string, mode: 'test' | 'live') {
     return this.apiKeyRepo.find({
-      where: { user_id: userId, business_id: businessId, is_active: true },
+      where: {
+        user_id: userId,
+        business_id: businessId,
+        is_active: true,
+        mode,
+      },
       select: [
         'id',
         'key_prefix',

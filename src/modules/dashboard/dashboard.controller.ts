@@ -43,9 +43,10 @@ export class DashboardController {
   async createApiKey(
     @GetUser('id') userId: string,
     @GetBusinessId() businessId: string,
+    @GetMode() mode: 'live' | 'test',
     @Body() dto: CreateApiKeyDto,
   ) {
-    return this.dashboardService.createApiKey(userId, businessId, dto);
+    return this.dashboardService.createApiKey(userId, businessId, dto, mode);
   }
 
   @ApiOperation({ summary: 'List API keys' })
@@ -53,8 +54,9 @@ export class DashboardController {
   async listApiKeys(
     @GetUser('id') userId: string,
     @GetBusinessId() businessId: string,
+    @GetMode() mode: 'live' | 'test',
   ) {
-    return this.dashboardService.listApiKeys(userId, businessId);
+    return this.dashboardService.listApiKeys(userId, businessId, mode);
   }
 
   @ApiOperation({ summary: 'Update API key label or IP whitelist' })

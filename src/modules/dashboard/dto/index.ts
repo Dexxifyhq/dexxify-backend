@@ -1,5 +1,5 @@
-import { IsEnum, IsOptional, IsString } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsOptional, IsString } from 'class-validator';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateApiKeyDto {
   @ApiPropertyOptional({
@@ -9,10 +9,6 @@ export class CreateApiKeyDto {
   @IsString()
   @IsOptional()
   label?: string;
-
-  @ApiProperty({ description: 'Mode', enum: ['test', 'live'] })
-  @IsEnum(['test', 'live'])
-  mode: 'test' | 'live';
 }
 
 export class UpdateApiKeyDto {
