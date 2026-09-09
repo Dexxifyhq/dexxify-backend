@@ -74,7 +74,6 @@ export class TeamsService {
     if (existing) {
       await this.businessUserRepo.update(existing.id, {
         role: dto.role,
-        permissions: dto.permissions ?? [],
         invite_token: token,
         invite_expires_at: expiresAt,
         invited_by_user_id: inviterUserId,
@@ -88,7 +87,6 @@ export class TeamsService {
           user_id: invitee.id,
           business_id: businessId,
           role: dto.role,
-          permissions: dto.permissions ?? [],
           status: BusinessUserStatus.PENDING,
           invite_token: token,
           invite_expires_at: expiresAt,
@@ -141,7 +139,6 @@ export class TeamsService {
           last_name: m.user?.last_name,
           role: m.role,
           status: m.status,
-          permissions: m.permissions,
           joined_at: m.joined_at,
           created_at: m.created_at,
         };
@@ -161,7 +158,6 @@ export class TeamsService {
         id: m.id,
         email: m.user?.email,
         role: m.role,
-        permissions: m.permissions,
         invite_expires_at: m.invite_expires_at,
         created_at: m.created_at,
       })),
@@ -181,7 +177,6 @@ export class TeamsService {
     const updates: Partial<BusinessUser> = {};
     if (dto.role !== undefined) updates.role = dto.role;
     if (dto.status !== undefined) updates.status = dto.status;
-    if (dto.permissions !== undefined) updates.permissions = dto.permissions;
 
     await this.businessUserRepo.update(memberId, updates);
 

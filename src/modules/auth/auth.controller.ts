@@ -35,8 +35,8 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @ApiOperation({
-    summary: 'Register new developer',
-    description: 'Register a new developer account with email verification',
+    summary: 'Register new user',
+    description: 'Register a new user account with email verification',
   })
   @Public()
   @Throttle({ global: { limit: 5, ttl: 60000 } })
@@ -100,7 +100,7 @@ export class AuthController {
 
   @ApiOperation({
     summary: 'Login',
-    description: 'Authenticate developer and set refresh token cookie',
+    description: 'Authenticate user and set refresh token cookie',
   })
   @Public()
   @Throttle({ global: { limit: 5, ttl: 60000 } })
@@ -123,28 +123,28 @@ export class AuthController {
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   refresh(
-    @GetUser() developer: AuthenticatedUser,
+    @GetUser() user: AuthenticatedUser,
     @Res({ passthrough: true }) res: Response,
     @Req() req: Request,
   ) {
-    return this.authService.refresh(developer, res, req);
+    return this.authService.refresh(user, res, req);
   }
 
   @ApiOperation({
     summary: 'Select active business',
     description:
-      'Activate a specific business workspace. Required after login when the developer owns multiple businesses. Issues a new JWT with the selected business_id embedded.',
+      'Activate a specific business workspace. Required after login when the user owns multiple businesses. Issues a new JWT with the selected business_id embedded.',
   })
   @UseGuards(AuthGuard('jwt'))
   @Post('select-business')
   @HttpCode(HttpStatus.OK)
   async selectBusiness(
-    @GetUser() developer: AuthenticatedUser,
+    @GetUser() user: AuthenticatedUser,
     @Body() dto: SelectBusinessDto,
     @Res({ passthrough: true }) res: Response,
     @Req() req: Request,
   ) {
-    return this.authService.selectBusiness(developer, dto, res, req);
+    return this.authService.selectBusiness(user, dto, res, req);
   }
 
   @ApiOperation({
@@ -156,17 +156,17 @@ export class AuthController {
   @Post('mode')
   @HttpCode(HttpStatus.OK)
   switchMode(
-    @GetUser() developer: AuthenticatedUser,
+    @GetUser() user: AuthenticatedUser,
     @Body() dto: SwitchModeDto,
     @Res({ passthrough: true }) res: Response,
     @Req() req: Request,
   ) {
-    return this.authService.switchMode(developer, dto.mode, res, req);
+    return this.authService.switchMode(user, dto.mode, res, req);
   }
 
   @ApiOperation({
     summary: 'Logout',
-    description: 'Clear authentication cookies and logout developer',
+    description: 'Clear authentication cookies and logout user',
   })
   @UseGuards(AuthGuard('jwt'))
   @Post('logout')
@@ -184,10 +184,10 @@ export class AuthController {
   @Post('logout-all')
   @HttpCode(HttpStatus.OK)
   async logoutAll(
-    @GetUser() developer: AuthenticatedUser,
+    @GetUser() user: AuthenticatedUser,
     @Res({ passthrough: true }) res: Response,
   ) {
-    return this.authService.logoutAll(developer, res);
+    return this.authService.logoutAll(user, res);
   }
 
   @ApiOperation({
@@ -197,8 +197,8 @@ export class AuthController {
   })
   @UseGuards(AuthGuard('jwt'))
   @Get('sessions')
-  async listSessions(@GetUser() developer: AuthenticatedUser) {
-    return this.authService.listSessions(developer);
+  async listSessions(@GetUser() user: AuthenticatedUser) {
+    return this.authService.listSessions(user);
   }
 
   @ApiOperation({
@@ -210,19 +210,19 @@ export class AuthController {
   @Delete('sessions/:sessionId')
   @HttpCode(HttpStatus.OK)
   async revokeSession(
-    @GetUser() developer: AuthenticatedUser,
+    @GetUser() user: AuthenticatedUser,
     @Param('sessionId') sessionId: string,
   ) {
-    return this.authService.revokeSession(developer, sessionId);
+    return this.authService.revokeSession(user, sessionId);
   }
 
   @ApiOperation({
     summary: 'Get profile',
-    description: 'Get authenticated developer profile information',
+    description: 'Get authenticated user profile information',
   })
   @UseGuards(AuthGuard('jwt'))
   @Get('profile')
-  async getProfile(@GetUser() developer: AuthenticatedUser) {
-    return this.authService.getProfile(developer);
+  async getProfile(@GetUser() user: AuthenticatedUser) {
+    return this.authService.getProfile(user);
   }
 }

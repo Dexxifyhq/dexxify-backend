@@ -61,9 +61,6 @@ export class BusinessUser {
   @Column({ type: 'timestamptz', nullable: true })
   joined_at: Date | null;
 
-  @Column({ type: 'text', array: true, default: [] })
-  permissions: string[];
-
   @ManyToOne(() => User, (u) => u.business_memberships, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'user_id' })
   user: User;

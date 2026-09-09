@@ -11,7 +11,12 @@ import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import type { Request } from 'express';
-import { ApiKey, User, UserStatus } from '../../database/entities';
+import {
+  ApiKey,
+  BusinessRole,
+  User,
+  UserStatus,
+} from '../../database/entities';
 import { IS_PUBLIC_KEY, AUTH_TYPE_KEY } from '../decorators';
 import { hashApiKey } from '../utils';
 import { TokenBlocklistService } from '../../modules/auth/token-blocklist.service';
@@ -20,11 +25,11 @@ type RequestUser = User & {
   mode?: 'live' | 'test';
   active_business_id?: string | null;
   session_id?: string;
+  role?: BusinessRole;
 };
 
 interface AuthenticatedRequest extends Request {
   user?: RequestUser;
-  developer?: RequestUser; // backward compat
   apiKeyEnvironment?: string;
   active_business_id?: string | null;
 }
@@ -119,7 +124,6 @@ export class ApiKeyGuard implements CanActivate {
     void this.apiKeyRepo.update(keyRecord.id, { last_used_at: new Date() });
 
     request.user = keyRecord.user;
-    request.developer = keyRecord.user; // backward compat
     request.apiKeyEnvironment = keyRecord.mode;
     request.active_business_id = keyRecord.business_id ?? null;
 
@@ -149,6 +153,7 @@ export class ApiKeyGuard implements CanActivate {
         sid?: string;
         mode?: 'live' | 'test';
         business_id?: string | null;
+        role?: BusinessRole;
       }>(token, { secret });
 
       if (payload.type !== 'access') {
@@ -171,10 +176,10 @@ export class ApiKeyGuard implements CanActivate {
         mode: payload.mode ?? 'test',
         active_business_id: payload.business_id ?? null,
         session_id: payload.sid,
+        role: payload.role,
       });
 
       request.user = enrichedUser;
-      request.developer = enrichedUser; // backward compatible
       request.active_business_id = payload.business_id ?? null;
 
       return true;

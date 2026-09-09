@@ -39,9 +39,4 @@ export class PlatformContextService implements OnApplicationBootstrap {
   getBusinessId(): string {
     return this.platformBusinessId ?? '';
   }
-
-  /** @deprecated Use getBusinessId() */
-  getDeveloperId(): string {
-    return this.getBusinessId();
-  }
 }

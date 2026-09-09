@@ -9,7 +9,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Strategy } from 'passport-jwt';
 import { Request } from 'express';
 import { Repository } from 'typeorm';
-import { User, UserStatus } from '../../../database/entities';
+import { User, UserStatus, BusinessRole } from '../../../database/entities';
 import { TokenBlocklistService } from '../token-blocklist.service';
 
 function extractFromCookie(req: Request): string | null {
@@ -40,6 +40,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     sid?: string;
     mode?: 'live' | 'test';
     business_id?: string | null;
+    role?: BusinessRole;
   }) {
     if (payload.type !== 'access') {
       throw new UnauthorizedException('Invalid token type.');
@@ -64,6 +65,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
       mode: payload.mode ?? 'test',
       active_business_id: payload.business_id ?? null,
       session_id: payload.sid,
+      role: payload.role,
     });
   }
 }

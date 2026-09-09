@@ -36,7 +36,7 @@ import {
   ResetPasswordDto,
   SelectBusinessDto,
 } from './dto';
-import { generateApiKey, generateOtp, hashOtp } from '../../common/utils';
+import { generateOtp, hashOtp } from '../../common/utils';
 import { MailService } from '../mail/mail.service';
 
 export interface BusinessSummary {
@@ -49,6 +49,7 @@ export type AuthenticatedUser = User & {
   mode?: 'live' | 'test';
   active_business_id?: string | null;
   session_id?: string;
+  role?: BusinessRole;
 };
 
 @Injectable()
@@ -237,24 +238,20 @@ export class AuthService {
     if (!businessId)
       throw new BadRequestException('No business found for user.');
 
-    const { key, prefix, hash } = generateApiKey('test');
-    await this.apiKeyRepo.save(
-      this.apiKeyRepo.create({
-        user_id: user.id,
-        business_id: businessId,
-        key_hash: hash,
-        key_prefix: prefix,
-        label: 'Default Test Key',
-        mode: 'test',
-      }),
+    const { role } = await this.setTokenCookies(
+      res,
+      user,
+      'test',
+      businessId,
+      req,
     );
-
-    this.setTokenCookies(res, user, 'test', businessId, req);
 
     return {
       message: 'Email verified successfully.',
       user: this.sanitizeUser(user),
-      api_key: key,
+      mode: 'test' as const,
+      business_id: businessId,
+      role,
     };
   }
 
@@ -446,11 +443,20 @@ export class AuthService {
         })
       : null;
 
-    this.setTokenCookies(res, user, 'test', businessId, req);
+    const { role } = await this.setTokenCookies(
+      res,
+      user,
+      'test',
+      businessId,
+      req,
+    );
 
     return {
       user: this.sanitizeUser(user),
       business,
+      mode: 'test' as const,
+      business_id: businessId,
+      role,
     };
   }
 
@@ -486,7 +492,7 @@ export class AuthService {
     });
 
     const mode: 'live' | 'test' = user.mode ?? 'test';
-    this.setTokenCookies(
+    const { role } = await this.setTokenCookies(
       res,
       user,
       mode,
@@ -494,13 +500,13 @@ export class AuthService {
       req,
       user.session_id,
     );
-    return { business };
+    return { business, mode, business_id: dto.business_id, role };
   }
 
   // ── Refresh, Logout, Profile ───────────────────────────
 
-  refresh(user: AuthenticatedUser, res: Response, req?: Request) {
-    this.setTokenCookies(
+  async refresh(user: AuthenticatedUser, res: Response, req?: Request) {
+    const { role } = await this.setTokenCookies(
       res,
       user,
       user.mode ?? 'test',
@@ -508,16 +514,16 @@ export class AuthService {
       req,
       user.session_id,
     );
-    return { user: this.sanitizeUser(user) };
+    return { user: this.sanitizeUser({ ...user, role }) };
   }
 
-  switchMode(
+  async switchMode(
     user: AuthenticatedUser,
     mode: 'live' | 'test',
     res: Response,
     req?: Request,
   ) {
-    this.setTokenCookies(
+    const { role } = await this.setTokenCookies(
       res,
       user,
       mode,
@@ -527,7 +533,7 @@ export class AuthService {
     );
     return {
       mode,
-      user: this.sanitizeUser(user),
+      user: this.sanitizeUser({ ...user, role }),
     };
   }
 
@@ -599,7 +605,12 @@ export class AuthService {
   async getProfile(user: AuthenticatedUser) {
     const found = await this.userRepo.findOne({ where: { id: user.id } });
     if (!found) throw new UnauthorizedException('User not found.');
-    return this.sanitizeUser({ ...found, mode: user.mode });
+    return this.sanitizeUser({
+      ...found,
+      mode: user.mode,
+      active_business_id: user.active_business_id ?? null,
+      role: user.role ?? null,
+    });
   }
 
   // ── Internal helpers ───────────────────────────────────
@@ -632,7 +643,7 @@ export class AuthService {
     );
   }
 
-  private setTokenCookies(
+  private async setTokenCookies(
     res: Response,
     user: User,
     mode: 'live' | 'test' = 'test',
@@ -645,12 +656,23 @@ export class AuthService {
     // only for an actual new login (login/verify-otp pass nothing).
     const sid = sessionId ?? randomUUID();
 
+    // Re-checked fresh on every token mint (not carried over from a prior
+    // token) so a role change takes effect on the next refresh/mode-switch
+    // rather than being pinned for the lifetime of an old session.
+    const membership = businessId
+      ? await this.businessUserRepo.findOne({
+          where: { user_id: user.id, business_id: businessId },
+          select: ['role'],
+        })
+      : null;
+
     const payload: Record<string, unknown> = {
       sub: user.id,
       email: user.email,
       mode,
     };
     if (businessId) payload.business_id = businessId;
+    if (membership) payload.role = membership.role;
 
     const accessSignOptions: JwtSignOptions = {
       secret: this.jwtSecret,
@@ -709,7 +731,11 @@ export class AuthService {
       maxAge: this.parseExpiryToMs(this.refreshExpiresIn),
     });
 
-    return { access_token: accessToken, refresh_token: refreshToken };
+    return {
+      access_token: accessToken,
+      refresh_token: refreshToken,
+      role: membership?.role ?? null,
+    };
   }
 
   private parseExpiryToMs(expiry: string): number {

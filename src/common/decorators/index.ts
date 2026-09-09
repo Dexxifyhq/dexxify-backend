@@ -4,16 +4,16 @@ import {
   SetMetadata,
 } from '@nestjs/common';
 import { Request } from 'express';
-import { User } from '../../database/entities';
+import { User, BusinessRole } from '../../database/entities';
 
 type AuthenticatedUser = User & {
   mode?: 'live' | 'test';
   active_business_id?: string | null;
+  role?: BusinessRole;
 };
 
 interface AuthenticatedRequest extends Request {
   user?: AuthenticatedUser;
-  developer?: AuthenticatedUser;
   active_business_id?: string | null;
   apiKeyEnvironment?: 'live' | 'test';
 }
@@ -45,6 +45,17 @@ export const ApiKeyAuth = () => SetMetadata(AUTH_TYPE_KEY, 'apiKey');
  */
 export const DualAuth = () => SetMetadata(AUTH_TYPE_KEY, 'dual');
 
+/**
+ * Restrict a route to specific business roles (checked against
+ * request.user.role, populated from the JWT's `role` claim).
+ * Only meaningful on routes reached via cookie/JWT auth — a caller
+ * authenticated with a raw API key has no role, so ROLES_KEY-protected
+ * routes reject that path unless the guard is extended to look one up.
+ */
+export const ROLES_KEY = 'roles';
+export const Roles = (...roles: BusinessRole[]) =>
+  SetMetadata(ROLES_KEY, roles);
+
 // ── Param decorators ────────────────────────────────────────
 
 /**
@@ -54,7 +65,7 @@ export const DualAuth = () => SetMetadata(AUTH_TYPE_KEY, 'dual');
 export const GetUser = createParamDecorator(
   (data: string, ctx: ExecutionContext) => {
     const request = ctx.switchToHttp().getRequest<AuthenticatedRequest>();
-    const user = request.user || request.developer;
+    const user = request.user;
     return data ? (user as Record<string, unknown> | undefined)?.[data] : user;
   },
 );
@@ -80,7 +91,7 @@ export const GetBusinessId = createParamDecorator(
 export const GetMode = createParamDecorator(
   (_data: unknown, ctx: ExecutionContext): 'live' | 'test' => {
     const request = ctx.switchToHttp().getRequest<AuthenticatedRequest>();
-    const user = request.developer || request.user;
+    const user = request.user;
     return user?.mode || request.apiKeyEnvironment || 'test';
   },
 );

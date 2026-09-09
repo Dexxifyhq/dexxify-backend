@@ -7,6 +7,7 @@ import {
   Body,
   Param,
   ParseUUIDPipe,
+  UseGuards,
 } from '@nestjs/common';
 import { TeamsService } from './teams.service';
 import { InviteMemberDto, UpdateMemberDto, AcceptInviteDto } from './dto';
@@ -15,7 +16,10 @@ import {
   GetBusinessId,
   GetUser,
   Public,
+  Roles,
 } from '../../common/decorators';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { BusinessRole } from '../../database/entities';
 import {
   ApiBearerAuth,
   ApiBody,
@@ -33,6 +37,8 @@ export class TeamsController {
 
   @ApiOperation({ summary: 'Invite a team member to your workspace' })
   @ApiBody({ type: InviteMemberDto })
+  @Roles(BusinessRole.OWNER, BusinessRole.ADMIN)
+  @UseGuards(RolesGuard)
   @Post('invite')
   async invite(
     @GetUser('id') userId: string,
@@ -57,6 +63,8 @@ export class TeamsController {
   @ApiOperation({ summary: 'Update a team member (role, permissions, status)' })
   @ApiParam({ name: 'id', description: 'Business user member ID' })
   @ApiBody({ type: UpdateMemberDto })
+  @Roles(BusinessRole.OWNER, BusinessRole.ADMIN)
+  @UseGuards(RolesGuard)
   @Patch('members/:id')
   async updateMember(
     @GetBusinessId() businessId: string,
@@ -68,6 +76,8 @@ export class TeamsController {
 
   @ApiOperation({ summary: 'Remove a team member from your workspace' })
   @ApiParam({ name: 'id', description: 'Business user member ID' })
+  @Roles(BusinessRole.OWNER, BusinessRole.ADMIN)
+  @UseGuards(RolesGuard)
   @Delete('members/:id')
   async removeMember(
     @GetBusinessId() businessId: string,

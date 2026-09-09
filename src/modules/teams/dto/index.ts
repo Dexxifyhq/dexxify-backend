@@ -4,7 +4,7 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
-  IsArray,
+  Matches,
   MinLength,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -25,16 +25,6 @@ export class InviteMemberDto {
   })
   @IsEnum(BusinessRole)
   role: BusinessRole;
-
-  @ApiPropertyOptional({
-    description: 'Granular permission keys to grant',
-    example: ['withdraw_bank', 'manage_payment_pages'],
-    type: [String],
-  })
-  @IsArray()
-  @IsString({ each: true })
-  @IsOptional()
-  permissions?: string[];
 }
 
 export class UpdateMemberDto {
@@ -50,16 +40,6 @@ export class UpdateMemberDto {
   @IsEnum(BusinessUserStatus)
   @IsOptional()
   status?: BusinessUserStatus;
-
-  @ApiPropertyOptional({
-    description: 'Updated permission keys',
-    example: ['manage_payment_pages'],
-    type: [String],
-  })
-  @IsArray()
-  @IsString({ each: true })
-  @IsOptional()
-  permissions?: string[];
 }
 
 export class AcceptInviteDto {
@@ -82,10 +62,16 @@ export class AcceptInviteDto {
   last_name: string;
 
   @ApiProperty({
-    description: 'Password (min 8 chars)',
-    example: 'StrongPass123!',
+    description:
+      'User password — min 8 characters, must include at least one uppercase letter, one number, and one special character',
+    example: 'Password123!',
+    minLength: 8,
   })
   @IsString()
   @MinLength(8)
+  @Matches(/(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9])/, {
+    message:
+      'Password must contain at least one uppercase letter, one number, and one special character.',
+  })
   password: string;
 }
