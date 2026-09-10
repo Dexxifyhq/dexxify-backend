@@ -78,7 +78,9 @@ export const GetUser = createParamDecorator(
 export const GetBusinessId = createParamDecorator(
   (_data: unknown, ctx: ExecutionContext): string | null => {
     const request = ctx.switchToHttp().getRequest<AuthenticatedRequest>();
-    return request.active_business_id ?? null;
+    return (
+      request.active_business_id ?? request.user?.active_business_id ?? null
+    );
   },
 );
 
