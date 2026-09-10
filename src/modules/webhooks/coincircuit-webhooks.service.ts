@@ -1250,32 +1250,45 @@ export class CoincircuitWebhooksService {
       { status: SwapRecordStatus.COMPLETED, target_amount: targetAmount },
     );
 
-    // Swap ledger entry — debit source, credit target (applies to all swap types)
-    await this.ledgerRepo.save(
+    const swapCurrency = (c: string): LedgerCurrency =>
+      c === 'NGN'
+        ? LedgerCurrency.NGN
+        : c === 'USDC'
+          ? LedgerCurrency.USDC
+          : LedgerCurrency.USDT;
+
+    await this.ledgerRepo.save([
       this.ledgerRepo.create({
         business_id: record.business_id,
         tx_type: TxType.SWAP,
         reference_type: 'swap',
-        reference_id: record.id,
-        currency:
-          toCurrency === 'NGN'
-            ? LedgerCurrency.NGN
-            : toCurrency === 'USDC'
-              ? LedgerCurrency.USDC
-              : LedgerCurrency.USDT,
+        reference_id: `${record.id}_debit`,
+        currency: swapCurrency(fromCurrency),
         debit_ngn: fromCurrency === 'NGN' ? sourceAmount : 0,
         debit_usdc: fromCurrency === 'USDC' ? sourceAmount : 0,
         debit_usdt: fromCurrency === 'USDT' ? sourceAmount : 0,
+        asset: toCurrency,
+        mode: record.mode,
+        status: LedgerEntryStatus.COMPLETED,
+        description: `Swap debit: ${sourceAmount} ${fromCurrency} → ${targetAmount} ${toCurrency} @ ${swap.rate}`,
+        metadata: { quotationId: swap.quotation?.id, rate: swap.rate },
+      }),
+      this.ledgerRepo.create({
+        business_id: record.business_id,
+        tx_type: TxType.SWAP,
+        reference_type: 'swap',
+        reference_id: `${record.id}_credit`,
+        currency: swapCurrency(toCurrency),
         credit_ngn: toCurrency === 'NGN' ? targetAmount : 0,
         credit_usdc: toCurrency === 'USDC' ? targetAmount : 0,
         credit_usdt: toCurrency === 'USDT' ? targetAmount : 0,
         asset: fromCurrency,
         mode: record.mode,
         status: LedgerEntryStatus.COMPLETED,
-        description: `Swap ${sourceAmount} ${fromCurrency} → ${targetAmount} ${toCurrency} @ ${swap.rate}`,
+        description: `Swap credit: ${sourceAmount} ${fromCurrency} → ${targetAmount} ${toCurrency} @ ${swap.rate}`,
         metadata: { quotationId: swap.quotation?.id, rate: swap.rate },
       }),
-    );
+    ]);
 
     void this.webhooksService.dispatch(
       record.business_id,
@@ -1350,17 +1363,19 @@ export class CoincircuitWebhooksService {
           business_id: platformId,
           mode: record.mode,
           tx_type: TxType.FEE,
+          asset: record.from_currency,
           reference_type: 'offramp_plat_fee',
           reference_id: `${payout.id}_plat_fee`,
           currency: LedgerCurrency.NGN,
           credit_ngn: platformFee,
           status: LedgerEntryStatus.PENDING,
-          description: `Fee income: offramp (${fee}%)`,
+          description: `Fee income: offramp (₦${fee})`,
         }),
         // Net payout debit — PENDING until delivery confirmed
         em.getRepository(LedgerEntry).create({
           business_id: record.business_id,
           mode: record.mode,
+          asset: record.from_currency,
           tx_type: TxType.OFFRAMP,
           reference_type: 'payout',
           reference_id: payout.id,
