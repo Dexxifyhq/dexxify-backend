@@ -5,11 +5,18 @@ import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 import compression from 'compression';
-import type { RequestHandler } from 'express';
+import type { Request, RequestHandler, Response } from 'express';
 import { ConfigService } from '@nestjs/config';
 
-const createCompressionMiddleware =
-  compression as unknown as () => RequestHandler;
+const createCompressionMiddleware = compression as unknown as (options?: {
+  filter?: (req: Request, res: Response) => boolean;
+}) => RequestHandler;
+
+const defaultCompressionFilter = (
+  compression as unknown as {
+    filter: (req: Request, res: Response) => boolean;
+  }
+).filter;
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -22,8 +29,17 @@ async function bootstrap() {
   // Cookie parser — required for http-only cookie auth
   app.use(cookieParser());
 
-  // Performance: Compression
-  app.use(createCompressionMiddleware());
+  // Performance: Compression — excluding SSE. Compression buffers output
+  // (1KB threshold by default) before flushing, which would delay or
+  // swallow individual server-sent events.
+  app.use(
+    createCompressionMiddleware({
+      filter: (req, res) => {
+        if (req.path.includes('/realtime/events')) return false;
+        return defaultCompressionFilter(req, res);
+      },
+    }),
+  );
 
   // Global prefix
   const apiPrefix = configService.get<string>('app.apiPrefix') || 'api/v1';

@@ -7,6 +7,7 @@ import {
 import { WebhooksService } from './webhooks.service';
 import { CoincircuitWebhooksService } from './coincircuit-webhooks.service';
 import { CoincircuitModule } from '../../providers/coincircuit/coincircuit.module';
+import { RealtimeModule } from '../realtime/realtime.module';
 import {
   WebhookEndpoint,
   WebhookEvent,
@@ -22,6 +23,7 @@ import {
 @Module({
   imports: [
     CoincircuitModule,
+    RealtimeModule,
     TypeOrmModule.forFeature([
       WebhookEndpoint,
       WebhookEvent,

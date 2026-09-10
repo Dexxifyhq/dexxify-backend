@@ -19,6 +19,7 @@ import {
   WebhookEventType,
 } from './dto';
 import { buildPaginationMeta, signWebhookPayload } from '../../common/utils';
+import { RealtimeService } from '../realtime/realtime.service';
 
 @Injectable()
 export class WebhooksService {
@@ -32,6 +33,7 @@ export class WebhooksService {
     @InjectRepository(WebhookEvent)
     private readonly eventRepo: Repository<WebhookEvent>,
     private readonly config: ConfigService,
+    private readonly realtime: RealtimeService,
   ) {
     this.retryAttempts = this.config.get<number>('webhook.retryAttempts') || 3;
     this.retryDelay = this.config.get<number>('webhook.retryDelayMs') || 5000;
@@ -194,13 +196,19 @@ export class WebhooksService {
     return event;
   }
 
-  /** Dispatch an event to the business's webhook endpoint for the given mode */
+  /**
+   * Dispatch an event to the business's webhook endpoint for the given
+   * mode, and push it live to any connected dashboard SSE clients —
+   * independent of whether a webhook endpoint is even configured.
+   */
   async dispatch(
     businessId: string,
     mode: 'live' | 'test',
     eventType: WebhookEventType,
     payload: Record<string, any>,
   ) {
+    this.realtime.publish(businessId, mode, eventType, payload);
+
     const endpoints = await this.endpointRepo.find({
       where: {
         business_id: businessId,

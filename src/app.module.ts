@@ -39,6 +39,7 @@ import { AdminModule } from './modules/admin/admin.module';
 import { BusinessesModule } from './modules/businesses/businesses.module';
 import { TeamsModule } from './modules/teams/teams.module';
 import { DevelopersModule } from './modules/developers/developers.module';
+import { RealtimeModule } from './modules/realtime/realtime.module';
 import { CustomThrottlerGuard } from './common/guards/throttle.guards';
 import { ThrottlerRedisService } from './common/services/throttler-redis.service';
 
@@ -100,6 +101,7 @@ import { ThrottlerRedisService } from './common/services/throttler-redis.service
     BusinessesModule,
     TeamsModule,
     DevelopersModule,
+    RealtimeModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ApiKeyGuard },
