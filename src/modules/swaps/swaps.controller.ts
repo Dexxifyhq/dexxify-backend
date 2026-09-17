@@ -1,14 +1,26 @@
-import { Controller, Get, Post, Body, Param, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import {
   ApiTags,
   ApiBearerAuth,
   ApiOperation,
   ApiBody,
   ApiParam,
+  ApiOkResponse,
+  ApiCreatedResponse,
 } from '@nestjs/swagger';
 import { SwapsService } from './swaps.service';
 import { EstimateSwapDto, CreateSwapQuotationDto, SwapQueryDto } from './dto';
 import { DualAuth, GetBusinessId, GetMode } from '../../common/decorators';
+import { KycVerifiedGuard } from '../../common/guards/kyc-verified.guard';
+import { ApiErrorResponses } from '../../common/decorators/api-error-responses.decorator';
 
 @ApiTags('Swaps')
 @ApiBearerAuth('api-key')
@@ -21,6 +33,8 @@ export class SwapsController {
     summary: 'Estimate swap amount',
     description: 'Get a live rate estimate without locking the rate.',
   })
+  @ApiOkResponse({ description: 'Swap estimate retrieved successfully.' })
+  @ApiErrorResponses(400, 401)
   @Get('estimate')
   estimate(@GetMode() mode: 'live' | 'test', @Query() dto: EstimateSwapDto) {
     return this.swapsService.estimate(mode, dto);
@@ -32,6 +46,8 @@ export class SwapsController {
       'Lock the current rate for 15 seconds. Execute before it expires.',
   })
   @ApiBody({ type: CreateSwapQuotationDto })
+  @ApiCreatedResponse({ description: 'Swap quotation created successfully.' })
+  @ApiErrorResponses(400, 401)
   @Post('quotation')
   createQuotation(
     @GetMode() mode: 'live' | 'test',
@@ -42,6 +58,8 @@ export class SwapsController {
 
   @ApiOperation({ summary: 'Get swap quotation by ID' })
   @ApiParam({ name: 'quotationId', description: 'Quotation ID' })
+  @ApiOkResponse({ description: 'Swap quotation retrieved successfully.' })
+  @ApiErrorResponses(400, 401)
   @Get('quotation/:quotationId')
   getQuotation(
     @GetMode() mode: 'live' | 'test',
@@ -56,6 +74,9 @@ export class SwapsController {
       'Execute a locked quotation. Must be done within 15 seconds of creation.',
   })
   @ApiParam({ name: 'quotationId', description: 'Quotation ID to execute' })
+  @ApiCreatedResponse({ description: 'Swap executed successfully.' })
+  @ApiErrorResponses(400, 401, 403)
+  @UseGuards(KycVerifiedGuard)
   @Post('quotation/:quotationId/execute')
   executeQuotation(
     @GetBusinessId() businessId: string,
@@ -66,6 +87,8 @@ export class SwapsController {
   }
 
   @ApiOperation({ summary: 'List swap history' })
+  @ApiOkResponse({ description: 'Swap history retrieved successfully.' })
+  @ApiErrorResponses(401)
   @Get()
   list(
     @GetBusinessId() businessId: string,
@@ -77,6 +100,8 @@ export class SwapsController {
 
   @ApiOperation({ summary: 'Get swap details by ID' })
   @ApiParam({ name: 'id', description: 'Swap ID' })
+  @ApiOkResponse({ description: 'Swap retrieved successfully.' })
+  @ApiErrorResponses(401, 404)
   @Get(':id')
   findOne(
     @GetBusinessId() businessId: string,

@@ -8,7 +8,9 @@ import {
   ApiBearerAuth,
   ApiParam,
   ApiQuery,
+  ApiOkResponse,
 } from '@nestjs/swagger';
+import { ApiErrorResponses } from '../../common/decorators/api-error-responses.decorator';
 
 @ApiTags('Ledger')
 @ApiBearerAuth('api-key')
@@ -23,6 +25,8 @@ export class LedgerController {
       'Retrieve all ledger transactions with filtering and pagination',
   })
   @ApiQuery({ type: LedgerQueryDto })
+  @ApiOkResponse({ description: 'Transactions retrieved successfully.' })
+  @ApiErrorResponses(401)
   @Get('transactions')
   async findAll(
     @GetBusinessId() businessId: string,
@@ -41,6 +45,8 @@ export class LedgerController {
     description: 'Transaction unique identifier',
     example: '550e8400-e29b-41d4-a716-446655440000',
   })
+  @ApiOkResponse({ description: 'Transaction retrieved successfully.' })
+  @ApiErrorResponses(401, 404)
   @Get('transactions/:tx_id')
   async findOne(
     @GetBusinessId() businessId: string,
@@ -54,6 +60,8 @@ export class LedgerController {
     summary: 'Get balance',
     description: 'Get current balance across all wallets and currencies',
   })
+  @ApiOkResponse({ description: 'Balance retrieved successfully.' })
+  @ApiErrorResponses(401)
   @Get('balance')
   async getBalance(
     @GetBusinessId() businessId: string,
@@ -72,6 +80,8 @@ export class LedgerController {
     example: '2024-01-15',
     required: false,
   })
+  @ApiOkResponse({ description: 'Settlement report retrieved successfully.' })
+  @ApiErrorResponses(401)
   @Get('reports/settlement')
   async getSettlementReport(
     @GetBusinessId() businessId: string,

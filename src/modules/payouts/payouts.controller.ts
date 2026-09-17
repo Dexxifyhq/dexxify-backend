@@ -15,7 +15,10 @@ import {
   ApiBearerAuth,
   ApiParam,
   ApiBody,
+  ApiOkResponse,
+  ApiCreatedResponse,
 } from '@nestjs/swagger';
+import { ApiErrorResponses } from '../../common/decorators/api-error-responses.decorator';
 
 @ApiTags('Payouts')
 @ApiBearerAuth('api-key')
@@ -29,6 +32,8 @@ export class PayoutsController {
     description: 'Create a new fiat payout to a bank account',
   })
   @ApiBody({ type: CreatePayoutDto })
+  @ApiCreatedResponse({ description: 'Payout created successfully.' })
+  @ApiErrorResponses(400, 401)
   @Post()
   async create(
     @GetBusinessId() businessId: string,
@@ -43,6 +48,8 @@ export class PayoutsController {
     description: 'Create multiple payouts in a single batch request',
   })
   @ApiBody({ type: BatchPayoutDto })
+  @ApiCreatedResponse({ description: 'Batch payout request processed.' })
+  @ApiErrorResponses(400, 401)
   @Post('batch')
   async createBatch(
     @GetBusinessId() businessId: string,
@@ -57,6 +64,8 @@ export class PayoutsController {
     description: 'Verify and resolve bank account details to get account name',
   })
   @ApiBody({ type: ResolveAccountDto })
+  @ApiCreatedResponse({ description: 'Bank account resolved successfully.' })
+  @ApiErrorResponses(400, 401)
   @Post('resolve')
   async resolveAccount(
     @GetMode() mode: 'live' | 'test',
@@ -74,6 +83,8 @@ export class PayoutsController {
     description: 'Payout unique identifier',
     example: '550e8400-e29b-41d4-a716-446655440000',
   })
+  @ApiOkResponse({ description: 'Payout retrieved successfully.' })
+  @ApiErrorResponses(401, 404)
   @Get(':payout_id')
   async findOne(
     @GetBusinessId() businessId: string,

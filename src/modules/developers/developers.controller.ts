@@ -2,7 +2,14 @@ import { Controller, Get, Patch, Post, Body } from '@nestjs/common';
 import { DevelopersService } from './developers.service';
 import { UpdateProfileDto, ChangePasswordDto } from './dto';
 import { DualAuth, GetUser } from '../../common/decorators';
-import { ApiBearerAuth, ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiErrorResponses } from '../../common/decorators/api-error-responses.decorator';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
 
 @ApiTags('Developers/Merchants')
 @ApiBearerAuth('api-key')
@@ -12,6 +19,8 @@ export class DevelopersController {
   constructor(private readonly developersService: DevelopersService) {}
 
   @ApiOperation({ summary: 'Get current developer profile' })
+  @ApiOkResponse({ description: 'Developer profile retrieved successfully.' })
+  @ApiErrorResponses(401, 404)
   @Get('me')
   async getProfile(@GetUser('id') userId: string) {
     return this.developersService.getProfile(userId);
@@ -19,6 +28,8 @@ export class DevelopersController {
 
   @ApiOperation({ summary: 'Update personal profile (name, phone, theme)' })
   @ApiBody({ type: UpdateProfileDto })
+  @ApiOkResponse({ description: 'Profile updated successfully.' })
+  @ApiErrorResponses(400, 401, 404)
   @Patch('me')
   async updateProfile(
     @GetUser('id') userId: string,
@@ -29,6 +40,8 @@ export class DevelopersController {
 
   @ApiOperation({ summary: 'Change password' })
   @ApiBody({ type: ChangePasswordDto })
+  @ApiOkResponse({ description: 'Password changed successfully.' })
+  @ApiErrorResponses(400, 401, 404)
   @Post('me/change-password')
   async changePassword(
     @GetUser('id') userId: string,

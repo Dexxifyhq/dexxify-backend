@@ -15,6 +15,8 @@ import {
   ApiBearerAuth,
   ApiParam,
   ApiBody,
+  ApiOkResponse,
+  ApiCreatedResponse,
 } from '@nestjs/swagger';
 import { InvoicesService } from './invoices.service';
 import { CreateInvoiceDto, InvoicePaymentDto, InvoiceQueryDto } from './dto';
@@ -24,6 +26,7 @@ import {
   GetMode,
   Public,
 } from '../../common/decorators';
+import { ApiErrorResponses } from '../../common/decorators/api-error-responses.decorator';
 
 @ApiTags('Invoices')
 @ApiBearerAuth('api-key')
@@ -38,6 +41,8 @@ export class InvoicesController {
       'Creates an invoice via CoincircuitMCP and saves it to the database. Returns the invoice including a payment URL to share with your customer.',
   })
   @ApiBody({ type: CreateInvoiceDto })
+  @ApiCreatedResponse({ description: 'Invoice created successfully.' })
+  @ApiErrorResponses(400, 401)
   @Post()
   create(
     @GetBusinessId() businessId: string,
@@ -48,6 +53,8 @@ export class InvoicesController {
   }
 
   @ApiOperation({ summary: 'List invoices' })
+  @ApiOkResponse({ description: 'Invoices retrieved successfully.' })
+  @ApiErrorResponses(401)
   @Get()
   findAll(
     @GetBusinessId() businessId: string,
@@ -62,6 +69,8 @@ export class InvoicesController {
     description: 'Returns local invoice data enriched with live CC status.',
   })
   @ApiParam({ name: 'invoice_id', description: 'Invoice UUID' })
+  @ApiOkResponse({ description: 'Invoice retrieved successfully.' })
+  @ApiErrorResponses(401, 404)
   @Get(':invoice_id')
   findOne(
     @GetBusinessId() businessId: string,
@@ -81,6 +90,8 @@ export class InvoicesController {
     description: 'Invoice number e.g. INV-ABC123',
   })
   @Public()
+  @ApiOkResponse({ description: 'Invoice retrieved successfully.' })
+  @ApiErrorResponses(404)
   @Get('pay/:invoice_number')
   findByNumber(@Param('invoice_number') invoiceNumber: string) {
     return this.invoicesService.findByNumber(invoiceNumber);
@@ -97,6 +108,8 @@ export class InvoicesController {
   })
   @ApiBody({ type: InvoicePaymentDto })
   @Public()
+  @ApiCreatedResponse({ description: 'Payment session created successfully.' })
+  @ApiErrorResponses(400, 404)
   @HttpCode(HttpStatus.CREATED)
   @Post('pay/:invoice_number/session')
   createPaymentSession(
@@ -108,6 +121,8 @@ export class InvoicesController {
 
   @ApiOperation({ summary: 'Mark an invoice as paid' })
   @ApiParam({ name: 'invoice_id', description: 'Invoice UUID' })
+  @ApiOkResponse({ description: 'Invoice marked as paid successfully.' })
+  @ApiErrorResponses(400, 401, 404)
   @HttpCode(HttpStatus.OK)
   @Post(':invoice_id/mark-paid')
   markPaid(
@@ -120,6 +135,8 @@ export class InvoicesController {
 
   @ApiOperation({ summary: 'Cancel an invoice' })
   @ApiParam({ name: 'invoice_id', description: 'Invoice UUID' })
+  @ApiOkResponse({ description: 'Invoice cancelled successfully.' })
+  @ApiErrorResponses(400, 401, 404)
   @HttpCode(HttpStatus.OK)
   @Post(':invoice_id/cancel')
   cancel(
@@ -132,6 +149,8 @@ export class InvoicesController {
 
   @ApiOperation({ summary: 'Void a paid invoice' })
   @ApiParam({ name: 'invoice_id', description: 'Invoice UUID' })
+  @ApiOkResponse({ description: 'Invoice voided successfully.' })
+  @ApiErrorResponses(400, 401, 404)
   @HttpCode(HttpStatus.OK)
   @Post(':invoice_id/void')
   void(

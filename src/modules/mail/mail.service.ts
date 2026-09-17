@@ -11,17 +11,11 @@ interface BrevoEmailPayload {
 }
 
 interface EmailLayout {
-  /** Inbox preview line shown after the subject in most clients. */
   preheader: string;
-  /** Plain text; escaped here. */
   heading: string;
-  /** Already-escaped HTML — build it with escapeHtml() around user values. */
   introHtml: string;
-  /** Large code shown under the intro (OTP emails). */
   code?: string;
-  /** Primary button with a copy-paste fallback link (invite emails). */
   action?: { label: string; url: string };
-  /** Small print under the divider. Plain text; escaped here. */
   notes: string[];
 }
 
@@ -39,11 +33,6 @@ function escapeHtml(value: string): string {
     .replace(/'/g, '&#39;');
 }
 
-/**
- * Colours are the product's neutral ramp (dexxify-frontend globals.css), so
- * email matches the app. Hex literals because email clients don't support CSS
- * variables.
- */
 const C = {
   page: '#E9ECEF', // n-100
   card: '#FFFFFF', // n-0
@@ -78,13 +67,8 @@ export class MailService {
     this.apiKey = this.config.get<string>('smtp.apiKey') || '';
     this.replyToEmail = this.config.get<string>('smtp.replyToEmail') || '';
 
-    // Read from the same key AuthService uses to set the OTP's expires_at, so
-    // the minutes printed in the email can't drift from the real expiry.
     this.otpExpiryMinutes = this.config.get<number>('otp.expiryMinutes') || 10;
 
-    // The icon is served by the frontend. Email clients fetch images through
-    // their own proxies, so this only renders when FRONTEND_URL is a public
-    // URL — on localhost the tile falls back to its "D" monogram text.
     const frontendUrl = this.config.get<string>('frontend.url');
     this.logoUrl = frontendUrl
       ? `${frontendUrl.replace(/\/$/, '')}/dexxify_icon.jpg`
@@ -174,7 +158,6 @@ export class MailService {
       heading: `Join ${businessName} on Dexxify`,
       introHtml: `<span style="color: ${C.heading};">${escapeHtml(inviterName)}</span> invited you to join <span style="color: ${C.heading};">${escapeHtml(businessName)}</span> on Dexxify as ${escapeHtml(role)}. Accept the invitation to set up your account.`,
       action: { label: 'Accept invitation', url: acceptUrl },
-      // 7 days matches teams.service.ts, which sets invite_expires_at to now + 7d.
       notes: [
         'This invitation expires in 7 days.',
         "If you weren't expecting this invitation, you can safely ignore this email.",
@@ -193,15 +176,6 @@ export class MailService {
     return this.send(to, subject, html, text);
   }
 
-  /**
-   * Shared card layout, modelled on a single centred card: logo tile, heading,
-   * intro, then either a large code or a button, a divider and small print.
-   *
-   * Built with tables and inline styles because Gmail and Outlook strip most
-   * modern CSS. The <style> block only carries the dark-mode overrides, for the
-   * clients that honour prefers-color-scheme (Apple Mail, iOS Mail); Gmail
-   * applies its own automatic inversion instead.
-   */
   private renderEmail(layout: EmailLayout): string {
     const logo = this.logoUrl
       ? `<img src="${escapeHtml(this.logoUrl)}" width="36" height="36" alt="Dexxify" style="display: block; width: 36px; height: 36px; border: 0; border-radius: 8px;" />`
@@ -345,8 +319,6 @@ export class MailService {
         to: [{ email: to }],
         subject,
         htmlContent: html,
-        // Plain-text part for clients that don't render HTML. Previously built
-        // but never sent.
         textContent: text,
       };
 

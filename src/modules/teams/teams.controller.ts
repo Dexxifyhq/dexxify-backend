@@ -23,10 +23,13 @@ import { BusinessRole } from '../../database/entities';
 import {
   ApiBearerAuth,
   ApiBody,
+  ApiCreatedResponse,
+  ApiOkResponse,
   ApiOperation,
   ApiParam,
   ApiTags,
 } from '@nestjs/swagger';
+import { ApiErrorResponses } from '../../common/decorators/api-error-responses.decorator';
 
 @ApiTags('Teams')
 @ApiBearerAuth('api-key')
@@ -37,6 +40,8 @@ export class TeamsController {
 
   @ApiOperation({ summary: 'Invite a team member to your workspace' })
   @ApiBody({ type: InviteMemberDto })
+  @ApiCreatedResponse({ description: 'Team member invited successfully.' })
+  @ApiErrorResponses(400, 401, 403, 404, 409)
   @Roles(BusinessRole.OWNER, BusinessRole.ADMIN)
   @UseGuards(RolesGuard)
   @Post('invite')
@@ -49,12 +54,16 @@ export class TeamsController {
   }
 
   @ApiOperation({ summary: 'List active team members' })
+  @ApiOkResponse({ description: 'Active team members retrieved successfully.' })
+  @ApiErrorResponses(401)
   @Get('members')
   async listMembers(@GetBusinessId() businessId: string) {
     return this.teamsService.listMembers(businessId);
   }
 
   @ApiOperation({ summary: 'List pending invitations' })
+  @ApiOkResponse({ description: 'Pending invitations retrieved successfully.' })
+  @ApiErrorResponses(401)
   @Get('invitations')
   async listInvitations(@GetBusinessId() businessId: string) {
     return this.teamsService.listInvitations(businessId);
@@ -63,6 +72,8 @@ export class TeamsController {
   @ApiOperation({ summary: 'Update a team member (role, permissions, status)' })
   @ApiParam({ name: 'id', description: 'Business user member ID' })
   @ApiBody({ type: UpdateMemberDto })
+  @ApiOkResponse({ description: 'Team member updated successfully.' })
+  @ApiErrorResponses(400, 401, 403, 404)
   @Roles(BusinessRole.OWNER, BusinessRole.ADMIN)
   @UseGuards(RolesGuard)
   @Patch('members/:id')
@@ -76,6 +87,8 @@ export class TeamsController {
 
   @ApiOperation({ summary: 'Remove a team member from your workspace' })
   @ApiParam({ name: 'id', description: 'Business user member ID' })
+  @ApiOkResponse({ description: 'Team member removed successfully.' })
+  @ApiErrorResponses(400, 401, 403, 404)
   @Roles(BusinessRole.OWNER, BusinessRole.ADMIN)
   @UseGuards(RolesGuard)
   @Delete('members/:id')
@@ -89,6 +102,8 @@ export class TeamsController {
   @Public()
   @ApiOperation({ summary: 'Accept a team invitation and set up your account' })
   @ApiBody({ type: AcceptInviteDto })
+  @ApiOkResponse({ description: 'Invitation accepted successfully.' })
+  @ApiErrorResponses(400)
   @Post('accept')
   async acceptInvite(@Body() dto: AcceptInviteDto) {
     return this.teamsService.acceptInvite(dto);

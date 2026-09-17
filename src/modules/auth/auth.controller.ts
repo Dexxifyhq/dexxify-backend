@@ -26,7 +26,13 @@ import {
   SelectBusinessDto,
 } from './dto';
 import { Public, CookieAuth, GetUser } from '../../common/decorators';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  ApiOperation,
+  ApiTags,
+  ApiOkResponse,
+  ApiCreatedResponse,
+} from '@nestjs/swagger';
+import { ApiErrorResponses } from '../../common/decorators/api-error-responses.decorator';
 
 @ApiTags('Authentication')
 @CookieAuth()
@@ -39,6 +45,10 @@ export class AuthController {
     description: 'Register a new user account with email verification',
   })
   @Public()
+  @ApiCreatedResponse({
+    description: 'Registration successful, verification code sent.',
+  })
+  @ApiErrorResponses(400, 409)
   @Throttle({ global: { limit: 5, ttl: 60000 } })
   @Post('register')
   async register(@Body() dto: RegisterDto) {
@@ -51,6 +61,8 @@ export class AuthController {
       'Verify email using one-time password sent during registration',
   })
   @Public()
+  @ApiOkResponse({ description: 'Email verified successfully.' })
+  @ApiErrorResponses(400)
   @Throttle({ global: { limit: 10, ttl: 60000 } })
   @Post('verify-otp')
   @HttpCode(HttpStatus.OK)
@@ -67,6 +79,10 @@ export class AuthController {
     description: 'Resend one-time password for email verification',
   })
   @Public()
+  @ApiOkResponse({
+    description: 'Verification code resent (if the account exists).',
+  })
+  @ApiErrorResponses(400)
   @Throttle({ global: { limit: 3, ttl: 60000 } })
   @Post('resend-otp')
   @HttpCode(HttpStatus.OK)
@@ -79,6 +95,10 @@ export class AuthController {
     description: 'Request password reset link via email',
   })
   @Public()
+  @ApiOkResponse({
+    description: 'Password reset code sent (if the account exists).',
+  })
+  @ApiErrorResponses(400)
   @Throttle({ global: { limit: 5, ttl: 60000 } })
   @Post('forgot-password')
   @HttpCode(HttpStatus.OK)
@@ -91,6 +111,8 @@ export class AuthController {
     description: 'Reset password using token from forgot password email',
   })
   @Public()
+  @ApiOkResponse({ description: 'Password reset successfully.' })
+  @ApiErrorResponses(400)
   @Throttle({ global: { limit: 5, ttl: 60000 } })
   @Post('reset-password')
   @HttpCode(HttpStatus.OK)
@@ -103,6 +125,8 @@ export class AuthController {
     description: 'Authenticate user and set refresh token cookie',
   })
   @Public()
+  @ApiOkResponse({ description: 'Login successful.' })
+  @ApiErrorResponses(400, 401)
   @Throttle({ global: { limit: 5, ttl: 60000 } })
   @Post('login')
   @HttpCode(HttpStatus.OK)
@@ -119,6 +143,8 @@ export class AuthController {
     description: 'Get new access token using refresh token cookie',
   })
   @Public()
+  @ApiOkResponse({ description: 'Access token refreshed successfully.' })
+  @ApiErrorResponses(401)
   @UseGuards(AuthGuard('jwt-refresh'))
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
@@ -135,6 +161,8 @@ export class AuthController {
     description:
       'Activate a specific business workspace. Required after login when the user owns multiple businesses. Issues a new JWT with the selected business_id embedded.',
   })
+  @ApiOkResponse({ description: 'Business activated successfully.' })
+  @ApiErrorResponses(400, 401, 403)
   @UseGuards(AuthGuard('jwt'))
   @Post('select-business')
   @HttpCode(HttpStatus.OK)
@@ -152,6 +180,8 @@ export class AuthController {
     description:
       'Switch between live and test mode. Issues a new JWT with the updated mode claim and refreshes the cookie.',
   })
+  @ApiOkResponse({ description: 'Environment mode switched successfully.' })
+  @ApiErrorResponses(400, 401)
   @UseGuards(AuthGuard('jwt'))
   @Post('mode')
   @HttpCode(HttpStatus.OK)
@@ -168,6 +198,8 @@ export class AuthController {
     summary: 'Logout',
     description: 'Clear authentication cookies and logout user',
   })
+  @ApiOkResponse({ description: 'Logged out successfully.' })
+  @ApiErrorResponses(401)
   @UseGuards(AuthGuard('jwt'))
   @Post('logout')
   @HttpCode(HttpStatus.OK)
@@ -180,6 +212,8 @@ export class AuthController {
     description:
       'Revoke every active session for this account — every device, every browser, including this one.',
   })
+  @ApiOkResponse({ description: 'Logged out of all devices successfully.' })
+  @ApiErrorResponses(401)
   @UseGuards(AuthGuard('jwt'))
   @Post('logout-all')
   @HttpCode(HttpStatus.OK)
@@ -195,6 +229,8 @@ export class AuthController {
     description:
       'List every currently active session (login) for this account — device, IP, when it was issued, and which one is this request.',
   })
+  @ApiOkResponse({ description: 'Active sessions retrieved successfully.' })
+  @ApiErrorResponses(401)
   @UseGuards(AuthGuard('jwt'))
   @Get('sessions')
   async listSessions(@GetUser() user: AuthenticatedUser) {
@@ -206,6 +242,8 @@ export class AuthController {
     description:
       "Log out one specific device/session by the id returned from GET /auth/sessions, without affecting the account's other sessions.",
   })
+  @ApiOkResponse({ description: 'Session revoked successfully.' })
+  @ApiErrorResponses(400, 401)
   @UseGuards(AuthGuard('jwt'))
   @Delete('sessions/:sessionId')
   @HttpCode(HttpStatus.OK)
@@ -220,6 +258,8 @@ export class AuthController {
     summary: 'Get profile',
     description: 'Get authenticated user profile information',
   })
+  @ApiOkResponse({ description: 'Profile retrieved successfully.' })
+  @ApiErrorResponses(404)
   @UseGuards(AuthGuard('jwt'))
   @Get('profile')
   async getProfile(@GetUser() user: AuthenticatedUser) {

@@ -6,7 +6,9 @@ import {
   Param,
   Query,
   Delete,
+  UseGuards,
 } from '@nestjs/common';
+import { KycVerifiedGuard } from '../../common/guards/kyc-verified.guard';
 import { WalletsService } from './wallets.service';
 import {
   CreateWalletDto,
@@ -17,6 +19,7 @@ import {
   IssueDepositIdentityDto,
 } from './dto';
 import { GetBusinessId, GetMode, DualAuth } from '../../common/decorators';
+import { ApiErrorResponses } from '../../common/decorators/api-error-responses.decorator';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -24,10 +27,10 @@ import {
   ApiBody,
   ApiTags,
   ApiPropertyOptional,
-  ApiProperty,
   ApiCreatedResponse,
+  ApiOkResponse,
 } from '@nestjs/swagger';
-import { IsOptional, IsNumber, IsString, IsNotEmpty } from 'class-validator';
+import { IsOptional, IsNumber, IsString } from 'class-validator';
 import { DepositAccount } from '../../database/entities';
 
 export class CustomQueryDto {
@@ -40,31 +43,6 @@ export class CustomQueryDto {
   @IsOptional()
   @IsNumber()
   limit?: number;
-}
-
-export class UpdateWalletBankDetailsDto {
-  @ApiProperty({ description: 'Bank ID', example: '39' })
-  @IsString()
-  @IsNotEmpty()
-  bank_id: string;
-
-  @ApiProperty({ description: 'Account number', example: '2249098732' })
-  @IsString()
-  @IsNotEmpty()
-  account_number: string;
-
-  @ApiPropertyOptional({ description: 'Narration', example: 'Dexxify Payout' })
-  @IsString({
-    validateIf: (obj: UpdateWalletBankDetailsDto) =>
-      obj.narration !== undefined && obj.narration.length <= 32,
-  }) // Max 32 chars
-  @IsOptional()
-  narration?: string;
-
-  @ApiPropertyOptional({ description: 'Auto settlement', example: true })
-  @IsString()
-  @IsOptional()
-  auto_settlement?: boolean;
 }
 
 export class UpdateWalletAutoSettlementDto {
@@ -82,14 +60,16 @@ export class WalletsController {
   constructor(private readonly walletsService: WalletsService) {}
 
   @Post()
+  @UseGuards(KycVerifiedGuard)
   @ApiOperation({
-    summary: 'Create a new wallet',
-    description: 'Create a new crypto wallet for the authenticated developer',
+    summary: 'Create a new deposit account',
+    description: 'Create a new deposit account for the authenticated user',
   })
   @ApiCreatedResponse({
     description: 'Deposit account created successfully',
     type: DepositAccount,
   })
+  @ApiErrorResponses(400, 401)
   @ApiBody({ type: CreateWalletDto })
   async create(
     @GetBusinessId() businessId: string,
@@ -101,10 +81,12 @@ export class WalletsController {
 
   @Get()
   @ApiOperation({
-    summary: 'Get all wallets',
+    summary: 'Get all deposit accounts',
     description:
-      'Retrieve all wallets for the authenticated developer with optional filtering',
+      'Retrieve all deposit accounts for the authenticated user with optional filtering',
   })
+  @ApiOkResponse({ description: 'Deposit accounts retrieved successfully.' })
+  @ApiErrorResponses(401)
   async findAll(
     @GetBusinessId() businessId: string,
     @GetMode() mode: 'live' | 'test',
@@ -115,14 +97,16 @@ export class WalletsController {
 
   @Get(':wallet_id')
   @ApiOperation({
-    summary: 'Get wallet by ID',
-    description: 'Retrieve a specific wallet by its ID',
+    summary: 'Get deposit account by ID',
+    description: 'Retrieve a specific deposit account by its ID',
   })
   @ApiParam({
     name: 'wallet_id',
-    description: 'Wallet unique identifier',
+    description: 'Deposit account unique identifier',
     example: '67063f653b4a1f6c7a60ec57',
   })
+  @ApiOkResponse({ description: 'Wallet retrieved successfully.' })
+  @ApiErrorResponses(401, 404)
   async findOne(
     @GetBusinessId() businessId: string,
     @GetMode() mode: 'live' | 'test',
@@ -133,14 +117,17 @@ export class WalletsController {
 
   @Get(':wallet_id/details')
   @ApiOperation({
-    summary: 'Get detailed wallet info',
-    description: 'Get comprehensive wallet details from the crypto provider',
+    summary: 'Get detailed deposit account info',
+    description:
+      'Get comprehensive deposit account details from the crypto provider',
   })
   @ApiParam({
     name: 'wallet_id',
-    description: 'Wallet unique identifier',
+    description: 'Deposit account unique identifier',
     example: '67063f653b4a1f6c7a60ec57',
   })
+  @ApiOkResponse({ description: 'Wallet details retrieved successfully.' })
+  @ApiErrorResponses(400, 401)
   async getWalletDetails(
     @Param('wallet_id') walletId: string,
     @GetMode() mode: 'live' | 'test',
@@ -150,14 +137,19 @@ export class WalletsController {
 
   @Get('details/all')
   @ApiOperation({
-    summary: 'Get all wallet details',
-    description: 'Retrieve detailed information for all wallets',
+    summary: 'Get all deposit account details',
+    description: 'Retrieve detailed information for all deposit accounts',
   })
+  @ApiOkResponse({
+    description: 'Deposit account details retrieved successfully.',
+  })
+  @ApiErrorResponses(400, 401)
   async getAllWalletDetails(@GetMode() mode: 'live' | 'test') {
     return this.walletsService.getAllWalletDetails(mode);
   }
 
   @Post(':wallet_id/identities')
+  @UseGuards(KycVerifiedGuard)
   @ApiOperation({
     summary: 'Issue a deposit identity',
     description:
@@ -165,6 +157,8 @@ export class WalletsController {
   })
   @ApiParam({ name: 'wallet_id', description: 'Deposit account ID' })
   @ApiBody({ type: IssueDepositIdentityDto })
+  @ApiCreatedResponse({ description: 'Deposit identity issued successfully.' })
+  @ApiErrorResponses(400, 401, 403, 404)
   async issueIdentity(
     @GetBusinessId() businessId: string,
     @GetMode() mode: 'live' | 'test',
@@ -181,6 +175,8 @@ export class WalletsController {
     description: 'Add a withdrawal (payout) wallet address for stable coins',
   })
   @ApiBody({ type: AddWithdrawalAddressDto })
+  @ApiCreatedResponse({ description: 'Withdrawal address added successfully.' })
+  @ApiErrorResponses(400, 401)
   async addWithdrawalAddress(
     @Body() dto: AddWithdrawalAddressDto,
     @GetBusinessId() businessId: string,
@@ -194,6 +190,10 @@ export class WalletsController {
     summary: 'Get saved withdrawal addresses',
     description: 'Fetch all saved withdrawal (payout) wallet addresses',
   })
+  @ApiOkResponse({
+    description: 'Saved withdrawal addresses retrieved successfully.',
+  })
+  @ApiErrorResponses(401)
   async getSavedWithdrawalAddresses(
     @GetBusinessId() businessId: string,
     @GetMode() mode: 'live' | 'test',
@@ -206,6 +206,10 @@ export class WalletsController {
     summary: 'Get withdrawal addresses',
     description: 'Fetch all withdrawal (payout) wallet addresses',
   })
+  @ApiOkResponse({
+    description: 'Withdrawal addresses retrieved successfully.',
+  })
+  @ApiErrorResponses(401)
   async getWithdrawalAddresses() {
     return this.walletsService.getWithdrawalAddresses();
   }
@@ -219,6 +223,8 @@ export class WalletsController {
     name: 'withdrawalAddressId',
     description: 'Withdrawal address unique identifier',
   })
+  @ApiOkResponse({ description: 'Withdrawal address removed successfully.' })
+  @ApiErrorResponses(401, 404)
   async removeWithdrawalAddress(
     @Param('withdrawalAddressId') withdrawalAddressId: string,
   ) {
@@ -227,11 +233,16 @@ export class WalletsController {
 
   // Initiate withdrawals and fetch withdrawals
   @Post('withdrawals/stable-coins')
+  @UseGuards(KycVerifiedGuard)
   @ApiOperation({
     summary: 'Initiate stable coin withdrawal',
     description: 'Initiate a stable coin withdrawal from a wallet',
   })
   @ApiBody({ type: InitiateStableCoinWithdrawalDto })
+  @ApiCreatedResponse({
+    description: 'Stable coin withdrawal initiated successfully.',
+  })
+  @ApiErrorResponses(400, 401, 403)
   async initiateStableCoinWithdrawal(
     @Body() dto: InitiateStableCoinWithdrawalDto,
     @GetBusinessId() businessId: string,
@@ -245,11 +256,16 @@ export class WalletsController {
   }
 
   @Post('withdrawals/local-currencies')
+  @UseGuards(KycVerifiedGuard)
   @ApiOperation({
     summary: 'Initiate withdrawal for local currencies',
     description: 'Initiate a withdrawal for local currencies from a wallet',
   })
   @ApiBody({ type: InitiateFiatWithdrawalDto })
+  @ApiCreatedResponse({
+    description: 'Fiat withdrawal initiated successfully.',
+  })
+  @ApiErrorResponses(400, 401, 403)
   async initiateFiattWithdrawal(
     @Body() dto: InitiateFiatWithdrawalDto,
     @GetBusinessId() businessId: string,
@@ -263,6 +279,8 @@ export class WalletsController {
     summary: 'Get withdrawals',
     description: 'Fetch all payouts / withdrawals',
   })
+  @ApiOkResponse({ description: 'Withdrawals retrieved successfully.' })
+  @ApiErrorResponses(401)
   async listPayouts(
     @GetMode() mode: 'live' | 'test',
     @Query('page') page: string,

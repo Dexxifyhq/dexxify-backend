@@ -100,11 +100,8 @@ export class TeamsService {
       select: ['first_name', 'last_name'],
     });
 
-    // 'frontend.url' (FRONTEND_URL) is the key configuration.ts defines, and
-    // what payment-pages uses. This previously read 'app.frontendUrl', which
-    // doesn't exist, so every invite link fell back to localhost:3000.
     const appUrl =
-      this.config.get<string>('frontend.url') || 'http://localhost:3000';
+      this.config.get<string>('frontend.url') || 'https://www.dexxify.com';
     const acceptUrl = `${appUrl}/accept-invite?token=${token}`;
     const inviterName =
       `${inviter?.first_name ?? ''} ${inviter?.last_name ?? ''}`.trim();

@@ -17,10 +17,13 @@ import {
   ApiBearerAuth,
   ApiParam,
   ApiBody,
+  ApiOkResponse,
+  ApiCreatedResponse,
 } from '@nestjs/swagger';
 import { CustomersService } from './customers.service';
 import { CreateCustomerDto, CustomerQueryDto, UpdateCustomerDto } from './dto';
 import { DualAuth, GetBusinessId, GetMode } from '../../common/decorators';
+import { ApiErrorResponses } from '../../common/decorators/api-error-responses.decorator';
 
 @ApiTags('Customers')
 @ApiBearerAuth('api-key')
@@ -31,6 +34,8 @@ export class CustomersController {
 
   @ApiOperation({ summary: 'Create a customer' })
   @ApiBody({ type: CreateCustomerDto })
+  @ApiCreatedResponse({ description: 'Customer created successfully.' })
+  @ApiErrorResponses(400, 401, 409)
   @Post()
   create(
     @GetBusinessId() businessId: string,
@@ -41,6 +46,8 @@ export class CustomersController {
   }
 
   @ApiOperation({ summary: 'List all customers' })
+  @ApiOkResponse({ description: 'Customers retrieved successfully.' })
+  @ApiErrorResponses(401)
   @Get()
   findAll(
     @GetBusinessId() businessId: string,
@@ -52,6 +59,8 @@ export class CustomersController {
 
   @ApiOperation({ summary: 'Get a customer by ID' })
   @ApiParam({ name: 'customer_id', description: 'Customer UUID' })
+  @ApiOkResponse({ description: 'Customer retrieved successfully.' })
+  @ApiErrorResponses(401, 404)
   @Get(':customer_id')
   findOne(
     @GetBusinessId() businessId: string,
@@ -64,6 +73,8 @@ export class CustomersController {
   @ApiOperation({ summary: 'Update a customer' })
   @ApiParam({ name: 'customer_id', description: 'Customer UUID' })
   @ApiBody({ type: UpdateCustomerDto })
+  @ApiOkResponse({ description: 'Customer updated successfully.' })
+  @ApiErrorResponses(400, 401, 404)
   @Put(':customer_id')
   update(
     @GetBusinessId() businessId: string,
@@ -76,6 +87,8 @@ export class CustomersController {
 
   @ApiOperation({ summary: 'Delete a customer' })
   @ApiParam({ name: 'customer_id', description: 'Customer UUID' })
+  @ApiOkResponse({ description: 'Customer deleted successfully.' })
+  @ApiErrorResponses(401, 404)
   @HttpCode(HttpStatus.OK)
   @Delete(':customer_id')
   remove(
@@ -93,6 +106,8 @@ export class CustomersController {
       'Creates the deposit account if one does not exist yet.',
   })
   @ApiParam({ name: 'customer_id', description: 'Customer UUID' })
+  @ApiOkResponse({ description: 'Deposit account retrieved successfully.' })
+  @ApiErrorResponses(400, 401, 404)
   @Get(':customer_id/deposit-account')
   getDepositAccount(
     @GetBusinessId() businessId: string,

@@ -26,7 +26,10 @@ import {
   ApiParam,
   ApiBody,
   ApiQuery,
+  ApiOkResponse,
+  ApiCreatedResponse,
 } from '@nestjs/swagger';
+import { ApiErrorResponses } from '../../common/decorators/api-error-responses.decorator';
 
 @ApiTags('Dashboard')
 @ApiBearerAuth('api-key')
@@ -39,6 +42,8 @@ export class DashboardController {
 
   @ApiOperation({ summary: 'Create API key' })
   @ApiBody({ type: CreateApiKeyDto })
+  @ApiCreatedResponse({ description: 'API key created successfully.' })
+  @ApiErrorResponses(400, 401)
   @Post('api-keys')
   async createApiKey(
     @GetUser('id') userId: string,
@@ -50,6 +55,8 @@ export class DashboardController {
   }
 
   @ApiOperation({ summary: 'List API keys' })
+  @ApiOkResponse({ description: 'API keys retrieved successfully.' })
+  @ApiErrorResponses(401)
   @Get('api-keys')
   async listApiKeys(
     @GetUser('id') userId: string,
@@ -62,6 +69,8 @@ export class DashboardController {
   @ApiOperation({ summary: 'Update API key label or IP whitelist' })
   @ApiParam({ name: 'id', description: 'API key ID' })
   @ApiBody({ type: UpdateApiKeyDto })
+  @ApiOkResponse({ description: 'API key updated successfully.' })
+  @ApiErrorResponses(401, 404)
   @Patch('api-keys/:id')
   async updateApiKey(
     @GetUser('id') userId: string,
@@ -73,6 +82,8 @@ export class DashboardController {
 
   @ApiOperation({ summary: 'Revoke API key' })
   @ApiParam({ name: 'id', description: 'API key ID' })
+  @ApiOkResponse({ description: 'API key revoked successfully.' })
+  @ApiErrorResponses(401, 404)
   @Delete('api-keys/:id')
   async revokeApiKey(
     @GetUser('id') userId: string,
@@ -88,6 +99,8 @@ export class DashboardController {
     description:
       'Balances, total received, payment session breakdown, invoice stats, customer counts, deposit accounts, and pending payouts.',
   })
+  @ApiOkResponse({ description: 'Dashboard overview retrieved successfully.' })
+  @ApiErrorResponses(401)
   @Get('overview')
   async getOverview(
     @GetBusinessId() businessId: string,
@@ -107,6 +120,8 @@ export class DashboardController {
     example: 30,
     description: 'Number of days to include (1-365, default 30)',
   })
+  @ApiOkResponse({ description: 'Revenue chart retrieved successfully.' })
+  @ApiErrorResponses(401)
   @Get('revenue-chart')
   async getRevenueChart(
     @GetBusinessId() businessId: string,
@@ -121,6 +136,8 @@ export class DashboardController {
     description:
       'Payment sessions grouped by crypto asset — counts and volumes.',
   })
+  @ApiOkResponse({ description: 'Asset distribution retrieved successfully.' })
+  @ApiErrorResponses(401)
   @Get('asset-distribution')
   async getAssetDistribution(
     @GetBusinessId() businessId: string,
@@ -139,6 +156,8 @@ export class DashboardController {
     example: 10,
     description: 'Number of entries to return (1-50, default 10)',
   })
+  @ApiOkResponse({ description: 'Recent activity retrieved successfully.' })
+  @ApiErrorResponses(401)
   @Get('recent-activity')
   async getRecentActivity(
     @GetBusinessId() businessId: string,

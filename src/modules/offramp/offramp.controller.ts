@@ -15,7 +15,10 @@ import {
   ApiBearerAuth,
   ApiParam,
   ApiBody,
+  ApiOkResponse,
+  ApiCreatedResponse,
 } from '@nestjs/swagger';
+import { ApiErrorResponses } from '../../common/decorators/api-error-responses.decorator';
 
 @ApiTags('Off-Ramp')
 @ApiBearerAuth('api-key')
@@ -30,6 +33,10 @@ export class OfframpController {
       'Initiate a crypto off-ramp (sell crypto for fiat) transaction',
   })
   @ApiBody({ type: CreateOfframpDto })
+  @ApiCreatedResponse({
+    description: 'Off-ramp transaction created successfully.',
+  })
+  @ApiErrorResponses(400, 401)
   @Post('offramp')
   async create(
     @GetBusinessId() businessId: string,
@@ -50,6 +57,10 @@ export class OfframpController {
     description: 'The id returned by POST /offramp (a SwapRecord id)',
     example: '550e8400-e29b-41d4-a716-446655440000',
   })
+  @ApiOkResponse({
+    description: 'Off-ramp transaction retrieved successfully.',
+  })
+  @ApiErrorResponses(401, 404)
   @Get('offramp/:tx_id')
   async findOne(
     @GetBusinessId() businessId: string,

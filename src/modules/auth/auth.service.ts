@@ -5,6 +5,7 @@ import {
   BadRequestException,
   ForbiddenException,
   Logger,
+  NotFoundException,
 } from '@nestjs/common';
 import { JwtService, JwtSignOptions } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -604,7 +605,7 @@ export class AuthService {
 
   async getProfile(user: AuthenticatedUser) {
     const found = await this.userRepo.findOne({ where: { id: user.id } });
-    if (!found) throw new UnauthorizedException('User not found.');
+    if (!found) throw new NotFoundException('User not found.');
     return this.sanitizeUser({
       ...found,
       mode: user.mode,

@@ -15,6 +15,8 @@ import {
   ApiBearerAuth,
   ApiParam,
   ApiBody,
+  ApiCreatedResponse,
+  ApiOkResponse,
 } from '@nestjs/swagger';
 import { PaymentSessionsService } from './payment-sessions.service';
 import {
@@ -29,6 +31,7 @@ import {
   GetMode,
   Public,
 } from '../../common/decorators';
+import { ApiErrorResponses } from '../../common/decorators/api-error-responses.decorator';
 
 @ApiTags('Payment Sessions')
 @ApiBearerAuth('api-key')
@@ -43,6 +46,8 @@ export class PaymentSessionsController {
       'Initialise a payment session for onramp, offramp, or payout. Returns a reference the customer can use to complete payment.',
   })
   @ApiBody({ type: CreatePaymentSessionDto })
+  @ApiCreatedResponse({ description: 'Payment session created successfully.' })
+  @ApiErrorResponses(400, 401)
   @Post()
   create(
     @GetBusinessId() businessId: string,
@@ -53,6 +58,8 @@ export class PaymentSessionsController {
   }
 
   @ApiOperation({ summary: 'List payment sessions' })
+  @ApiOkResponse({ description: 'Payment sessions retrieved successfully.' })
+  @ApiErrorResponses(401)
   @Get()
   findAll(
     @GetBusinessId() businessId: string,
@@ -65,6 +72,8 @@ export class PaymentSessionsController {
   @Public()
   @ApiOperation({ summary: 'Get a payment session by ID' })
   @ApiParam({ name: 'session_id', description: 'Payment session UUID' })
+  @ApiOkResponse({ description: 'Payment session retrieved successfully.' })
+  @ApiErrorResponses(400, 404)
   @Get(':session_id')
   findOne(
     // @GetBusinessId() businessId: string,
@@ -75,6 +84,8 @@ export class PaymentSessionsController {
 
   @ApiOperation({ summary: 'Get a payment session by reference' })
   @ApiParam({ name: 'reference', description: 'Session reference (ps_...)' })
+  @ApiOkResponse({ description: 'Payment session retrieved successfully.' })
+  @ApiErrorResponses(401, 404)
   @Get('ref/:reference')
   findByReference(
     @GetBusinessId() businessId: string,
@@ -90,6 +101,10 @@ export class PaymentSessionsController {
   })
   @ApiParam({ name: 'session_id', description: 'Payment session UUID' })
   @ApiBody({ type: GenerateDepositAddressDto })
+  @ApiCreatedResponse({
+    description: 'Deposit address generated successfully.',
+  })
+  @ApiErrorResponses(400, 401, 404)
   @Post(':session_id/deposit-address')
   generateDepositAddress(
     @Param('session_id', ParseUUIDPipe) sessionId: string,
@@ -104,6 +119,8 @@ export class PaymentSessionsController {
       'Returns the crypto amount equivalent for a given fiat amount.',
   })
   @ApiBody({ type: EstimatePaymentDto })
+  @ApiOkResponse({ description: 'Payment estimate calculated successfully.' })
+  @ApiErrorResponses(400, 401)
   @Post('estimate')
   getEstimate(@Body() dto: EstimatePaymentDto) {
     return this.sessionsService.getEstimate(dto);
@@ -111,6 +128,8 @@ export class PaymentSessionsController {
 
   @ApiOperation({ summary: 'Cancel a pending payment session' })
   @ApiParam({ name: 'session_id', description: 'Payment session UUID' })
+  @ApiOkResponse({ description: 'Payment session cancelled successfully.' })
+  @ApiErrorResponses(400, 401, 404)
   @HttpCode(HttpStatus.OK)
   @Post(':session_id/cancel')
   cancel(@Param('session_id', ParseUUIDPipe) sessionId: string) {

@@ -7,10 +7,18 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { ApiOperation, ApiTags, ApiParam, ApiBody } from '@nestjs/swagger';
+import {
+  ApiOperation,
+  ApiTags,
+  ApiParam,
+  ApiBody,
+  ApiOkResponse,
+  ApiCreatedResponse,
+} from '@nestjs/swagger';
 import { PaymentPagesService } from './payment-pages.service';
 import { PublicPayDto } from './dto';
 import { Public } from '../../common/decorators';
+import { ApiErrorResponses } from '../../common/decorators/api-error-responses.decorator';
 
 @ApiTags('Public Payment Pages')
 @Controller('p')
@@ -23,6 +31,8 @@ export class PublicPaymentController {
       'Returns the page details a customer needs to complete payment. No auth required.',
   })
   @ApiParam({ name: 'slug', description: 'Page slug (e.g. summer-sale-x9k2)' })
+  @ApiOkResponse({ description: 'Public payment page retrieved successfully.' })
+  @ApiErrorResponses(404)
   @Public()
   @Get(':slug')
   getPage(@Param('slug') slug: string) {
@@ -36,6 +46,8 @@ export class PublicPaymentController {
   })
   @ApiParam({ name: 'slug', description: 'Page slug' })
   @ApiBody({ type: PublicPayDto })
+  @ApiCreatedResponse({ description: 'Payment session created successfully.' })
+  @ApiErrorResponses(400, 404)
   @Public()
   @HttpCode(HttpStatus.CREATED)
   @Post(':slug/pay')

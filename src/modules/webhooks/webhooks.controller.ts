@@ -29,8 +29,10 @@ import {
   ApiHeader,
   ApiParam,
   ApiBearerAuth,
+  ApiOkResponse,
 } from '@nestjs/swagger';
 import type { Request } from 'express';
+import { ApiErrorResponses } from '../../common/decorators/api-error-responses.decorator';
 
 @ApiTags('Webhooks')
 @ApiBearerAuth('api-key')
@@ -40,6 +42,8 @@ export class WebhooksController {
   constructor(private readonly webhooksService: WebhooksService) {}
 
   @ApiOperation({ summary: 'Get the webhook endpoint for the current mode' })
+  @ApiOkResponse({ description: 'Webhook endpoint retrieved successfully.' })
+  @ApiErrorResponses(401)
   @Get()
   async findOne(
     @GetBusinessId() businessId: string,
@@ -52,6 +56,8 @@ export class WebhooksController {
     summary: 'Create or update the webhook endpoint for the current mode',
   })
   @ApiBody({ type: SaveWebhookDto })
+  @ApiOkResponse({ description: 'Webhook endpoint saved successfully.' })
+  @ApiErrorResponses(400, 401)
   @Put()
   async upsert(
     @GetBusinessId() businessId: string,
@@ -62,6 +68,10 @@ export class WebhooksController {
   }
 
   @ApiOperation({ summary: 'Regenerate the webhook signing secret' })
+  @ApiOkResponse({
+    description: 'Webhook signing secret regenerated successfully.',
+  })
+  @ApiErrorResponses(401, 404)
   @Post('regenerate-secret')
   async regenerateSecret(
     @GetBusinessId() businessId: string,
@@ -71,6 +81,8 @@ export class WebhooksController {
   }
 
   @ApiOperation({ summary: 'Delete the webhook endpoint for the current mode' })
+  @ApiOkResponse({ description: 'Webhook endpoint deleted successfully.' })
+  @ApiErrorResponses(401, 404)
   @Delete()
   async remove(
     @GetBusinessId() businessId: string,
@@ -82,6 +94,8 @@ export class WebhooksController {
   @ApiOperation({
     summary: 'List webhook delivery events for the current mode',
   })
+  @ApiOkResponse({ description: 'Webhook events retrieved successfully.' })
+  @ApiErrorResponses(401)
   @Get('events')
   async findEvents(
     @GetBusinessId() businessId: string,
@@ -93,6 +107,8 @@ export class WebhooksController {
 
   @ApiOperation({ summary: 'Get a single webhook delivery event' })
   @ApiParam({ name: 'id', description: 'Webhook event ID' })
+  @ApiOkResponse({ description: 'Webhook event retrieved successfully.' })
+  @ApiErrorResponses(401, 404)
   @Get('events/:id')
   async findEvent(
     @GetBusinessId() businessId: string,
@@ -124,6 +140,10 @@ export class IncomingWebhooksController {
     name: 'x-coincircuit-timestamp',
     description: 'Unix timestamp used in signature construction',
     required: true,
+  })
+  @ApiOkResponse({
+    description:
+      'Webhook acknowledged. Always returns 200 — signature verification failures are reported in the response body (`received: false`) rather than as an HTTP error.',
   })
   @Public()
   @Post('coincircuit')

@@ -13,6 +13,8 @@ import {
 } from '../../database/entities';
 import { CoincircuitModule } from '../../providers/coincircuit/coincircuit.module';
 import { CustomersModule } from '../customers/customers.module';
+import { KycModule } from '../kyc/kyc.module';
+import { KycVerifiedGuard } from '../../common/guards/kyc-verified.guard';
 
 @Module({
   imports: [
@@ -27,9 +29,10 @@ import { CustomersModule } from '../customers/customers.module';
     ]),
     CoincircuitModule,
     CustomersModule,
+    KycModule,
   ],
   controllers: [WalletsController],
-  providers: [WalletsService],
+  providers: [WalletsService, KycVerifiedGuard],
   exports: [WalletsService],
 })
 export class WalletsModule {}

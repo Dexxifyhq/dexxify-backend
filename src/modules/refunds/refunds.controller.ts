@@ -15,6 +15,8 @@ import {
   ApiParam,
   ApiBody,
   ApiQuery,
+  ApiCreatedResponse,
+  ApiOkResponse,
 } from '@nestjs/swagger';
 import { RefundsService } from './refunds.service';
 import {
@@ -24,6 +26,7 @@ import {
   RefundEntityType,
 } from './dto';
 import { DualAuth, GetMode } from '../../common/decorators';
+import { ApiErrorResponses } from '../../common/decorators/api-error-responses.decorator';
 
 @ApiTags('Refunds')
 @ApiBearerAuth('api-key')
@@ -48,6 +51,8 @@ export class RefundsController {
     enum: ['merchant', 'customer'],
     required: false,
   })
+  @ApiOkResponse({ description: 'Refund estimate calculated successfully.' })
+  @ApiErrorResponses(401, 404)
   @Get('estimate/:reference')
   estimate(
     @GetMode() mode: 'live' | 'test',
@@ -62,6 +67,8 @@ export class RefundsController {
     description:
       'Returns all refunds. Filters by status, session/invoice reference, date range, or search.',
   })
+  @ApiOkResponse({ description: 'Refunds retrieved successfully.' })
+  @ApiErrorResponses(401)
   @Get()
   findAll(@GetMode() mode: 'live' | 'test', @Query() query: RefundQueryDto) {
     return this.refundsService.findAll(mode, query);
@@ -69,6 +76,8 @@ export class RefundsController {
 
   @ApiOperation({ summary: 'Get refund by ID' })
   @ApiParam({ name: 'id', description: 'Refund ID' })
+  @ApiOkResponse({ description: 'Refund retrieved successfully.' })
+  @ApiErrorResponses(401, 404)
   @Get(':id')
   findOne(@GetMode() mode: 'live' | 'test', @Param('id') id: string) {
     return this.refundsService.findOne(mode, id);
@@ -84,6 +93,8 @@ export class RefundsController {
     description: 'Session reference (e.g. CS_xxxxx)',
   })
   @ApiBody({ type: RefundDto })
+  @ApiCreatedResponse({ description: 'Refund initiated successfully.' })
+  @ApiErrorResponses(400, 401, 404)
   @HttpCode(HttpStatus.CREATED)
   @Post('session/:sessionReference')
   refundSession(
