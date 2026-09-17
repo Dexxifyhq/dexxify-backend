@@ -24,7 +24,6 @@ export class LedgerController {
     description:
       'Retrieve all ledger transactions with filtering and pagination',
   })
-  @ApiQuery({ type: LedgerQueryDto })
   @ApiOkResponse({ description: 'Transactions retrieved successfully.' })
   @ApiErrorResponses(401)
   @Get('transactions')

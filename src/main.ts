@@ -87,7 +87,7 @@ async function bootstrap() {
   const swaggerConfig = new DocumentBuilder()
     .setTitle('Dexxify API')
     .setDescription(
-      'Crypto Infrastructure API for Africa (Wallets, Payouts, Offramp, Onramp, KYC, KYB)',
+      'Crypto Infrastructure API for Africa (Deposit Accounts, Payouts, Offramp, Onramp, KYC, KYB)',
     )
     .setVersion('1.0')
     .setContact('Dexxify', 'https://www.dexxify.com', 'dexxifyhq@gmail.com')
@@ -96,9 +96,7 @@ async function bootstrap() {
         type: 'http',
         scheme: 'bearer',
         bearerFormat: 'JWT',
-        name: 'JWT',
-        in: 'header',
-        description: 'API key for /v1/* endpoints',
+        description: 'API key for /api/v1/* endpoints',
       },
       'api-key',
     )
