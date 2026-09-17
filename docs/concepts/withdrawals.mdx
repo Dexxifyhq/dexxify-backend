@@ -1,0 +1,35 @@
+---
+title: Withdrawals
+description: Sending stablecoins or Naira out of a deposit account.
+---
+
+Withdrawals move funds out of a Dexxify deposit account, either as a stablecoin transfer to an external crypto address or as a Naira payout to a bank account.
+
+## Withdrawal (payout) addresses
+
+Before withdrawing stablecoins, save the destination address:
+
+```bash
+POST   /deposit-accounts/withdrawal-addresses          # add one
+GET    /deposit-accounts/withdrawal-addresses/saved    # list saved addresses
+DELETE /deposit-accounts/withdrawal-addresses/{id}     # remove one
+```
+
+## Initiating a withdrawal
+
+```bash
+POST /deposit-accounts/withdrawals/stable-coins      # crypto payout to a saved address
+POST /deposit-accounts/withdrawals/local-currencies  # NGN payout to a bank account
+```
+
+Both check the deposit account's available balance first — a request for more than it holds returns `400` with an insufficient-balance message.
+
+## Checking withdrawal history
+
+```bash
+GET /deposit-accounts/withdrawals
+```
+
+## What happens next
+
+A withdrawal moves through a payout lifecycle and Dexxify fires `payout.created`, then `payout.success` or `payout.failed`, as webhook events — see [Webhooks](/concepts/webhooks).

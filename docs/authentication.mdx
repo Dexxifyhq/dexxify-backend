@@ -1,0 +1,42 @@
+---
+title: Authentication
+description: API keys, the dashboard session, and how Dexxify tells them apart.
+---
+
+Dexxify supports two ways of authenticating a request, and most endpoints accept either one.
+
+## API keys (for your backend integration)
+
+Every business has one API key per environment: `dex_test_...` and `dex_live_...`. Create and manage them from **Dashboard → Developers → API Keys** — key creation itself is a dashboard action, not an API call, so a key can't be used to mint other keys.
+
+Send it as a bearer token:
+
+```bash
+curl https://api.dexxify.com/api/v1/deposit-accounts \
+  -H "Authorization: Bearer dex_test_xxxxxxxxxxxx"
+```
+
+The key's prefix (`dex_test_` vs `dex_live_`) determines which environment the request runs against — see [Environments](/concepts/environments). Keys can optionally be restricted to an IP allowlist from the dashboard; a request from an unlisted IP is rejected even with a valid key.
+
+## Cookie session (for the Dexxify dashboard itself)
+
+The web dashboard authenticates via an HTTP-only session cookie issued at login, not an API key. This is only relevant if you're calling `/auth/*` endpoints directly (for a custom login flow) — most integrations never need this.
+
+## How endpoints declare which they accept
+
+In the [API Reference](/api-reference), most endpoints are marked to accept **either** an API key or a dashboard session — whichever is present is used. A few endpoints (like creating an API key itself, or team management) are dashboard-session-only, since they're account-administration actions rather than integration actions.
+
+## Errors
+
+An invalid, expired, or missing API key returns `401`:
+
+```json
+{
+  "success": false,
+  "status": 401,
+  "message": "Invalid or inactive API key.",
+  "timestamp": "2026-09-17T12:00:00.000Z"
+}
+```
+
+See [Errors](/errors) for the full response shape and status codes.

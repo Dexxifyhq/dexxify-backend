@@ -1,0 +1,33 @@
+---
+title: Errors
+description: The error response shape and status codes you'll see across the API.
+---
+
+Every error, from every endpoint, has the same shape:
+
+```json
+{
+  "success": false,
+  "status": 400,
+  "message": "Validation failed.",
+  "errors": ["amount must not be less than 0"],
+  "timestamp": "2026-09-17T12:00:00.000Z"
+}
+```
+
+`errors` is only present when there's structured detail beyond the message (typically validation failures).
+
+## Status codes
+
+| Status | Meaning |
+| --- | --- |
+| `400` | The request body/params were invalid, or the action can't complete as requested (e.g. insufficient balance). |
+| `401` | Missing, invalid, or expired authentication. |
+| `403` | Authenticated, but not permitted to perform this action. |
+| `404` | The requested resource doesn't exist. |
+| `409` | The resource already exists, or is in a conflicting state (e.g. a duplicate verification). |
+| `500` | Something failed on our end. If this persists, contact [dexxifyhq@gmail.com](mailto:dexxifyhq@gmail.com) with the `timestamp` from the response. |
+
+## A note on retries
+
+`400` and `409` responses are generally not worth retrying as-is — fix the request first. `401`/`403` mean your credentials or permissions need attention, not the request shape. Transient `500`s are safe to retry with backoff.

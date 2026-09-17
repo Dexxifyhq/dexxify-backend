@@ -1,0 +1,41 @@
+---
+title: Swaps
+description: Converting between crypto and fiat at a locked rate.
+---
+
+Swaps convert value between assets — for example, crypto held in a wallet into NGN, or between two stablecoins — at a rate you lock in advance.
+
+## 1. Estimate
+
+Get a live, non-binding rate:
+
+```bash
+GET /swaps/estimate
+```
+
+## 2. Create a quotation
+
+Locks the current rate for **15 seconds**:
+
+```bash
+POST /swaps/quotation
+```
+
+Returns a `quotationId`. Fetch it again anytime with `GET /swaps/quotation/{quotationId}` — useful to confirm you're still inside the lock window before executing.
+
+## 3. Execute
+
+```bash
+POST /swaps/quotation/{quotationId}/execute
+```
+
+Must be called within 15 seconds of creating the quotation, or the lock expires and you'll need a new one.
+
+## Swap history
+
+```bash
+GET /swaps           # list
+GET /swaps/{id}      # single swap
+```
+
+Executed swaps fire `swap.completed` or `swap.failed` webhook events.

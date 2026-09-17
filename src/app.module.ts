@@ -20,7 +20,7 @@ import { RedisModule } from './common/redis/redis.module';
 // Feature modules
 import { MailModule } from './modules/mail/mail.module';
 import { AuthModule } from './modules/auth/auth.module';
-import { WalletsModule } from './modules/wallets/wallets.module';
+import { DepositAccountsModule } from './modules/deposit-accounts/deposit-accounts.module';
 import { OfframpModule } from './modules/offramp/offramp.module';
 import { PayoutsModule } from './modules/payouts/payouts.module';
 import { KycModule } from './modules/kyc/kyc.module';
@@ -82,7 +82,7 @@ import { ThrottlerRedisService } from './common/services/throttler-redis.service
     // Feature modules
     MailModule,
     AuthModule,
-    WalletsModule,
+    DepositAccountsModule,
     OfframpModule,
     PayoutsModule,
     KycModule,

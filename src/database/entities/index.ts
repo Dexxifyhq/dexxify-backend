@@ -17,7 +17,7 @@ export {
   WalletAsset,
   WalletNetwork,
   DepositAccountStatus,
-} from './wallet.entity';
+} from './deposit-account';
 export { Payout, PayoutStatus } from './payout.entity';
 export { KycVerification, KycType, KycStatus } from './kyc-verification.entity';
 export {

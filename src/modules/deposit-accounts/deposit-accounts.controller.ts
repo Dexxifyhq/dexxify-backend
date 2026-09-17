@@ -9,10 +9,10 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { KycVerifiedGuard } from '../../common/guards/kyc-verified.guard';
-import { WalletsService } from './wallets.service';
+import { DepositAccountsService } from './deposit-accounts.service';
 import {
-  CreateWalletDto,
-  WalletQueryDto,
+  CreateDepositAccountDto,
+  DepositAccountQueryDto,
   AddWithdrawalAddressDto,
   InitiateStableCoinWithdrawalDto,
   InitiateFiatWithdrawalDto,
@@ -45,7 +45,7 @@ export class CustomQueryDto {
   limit?: number;
 }
 
-export class UpdateWalletAutoSettlementDto {
+export class UpdateDepositAccountAutoSettlementDto {
   @ApiPropertyOptional({ description: 'Auto settlement', example: true })
   @IsString()
   @IsOptional()
@@ -55,9 +55,11 @@ export class UpdateWalletAutoSettlementDto {
 @ApiTags('Deposit Account')
 @ApiBearerAuth('api-key')
 @DualAuth()
-@Controller('wallets')
-export class WalletsController {
-  constructor(private readonly walletsService: WalletsService) {}
+@Controller('deposit-accounts')
+export class DepositAccountsController {
+  constructor(
+    private readonly depositAccountsService: DepositAccountsService,
+  ) {}
 
   @Post()
   @UseGuards(KycVerifiedGuard)
@@ -70,13 +72,13 @@ export class WalletsController {
     type: DepositAccount,
   })
   @ApiErrorResponses(400, 401)
-  @ApiBody({ type: CreateWalletDto })
+  @ApiBody({ type: CreateDepositAccountDto })
   async create(
     @GetBusinessId() businessId: string,
     @GetMode() mode: 'live' | 'test',
-    @Body() dto: CreateWalletDto,
+    @Body() dto: CreateDepositAccountDto,
   ) {
-    return this.walletsService.create(businessId, mode, dto);
+    return this.depositAccountsService.create(businessId, mode, dto);
   }
 
   @Get()
@@ -90,49 +92,58 @@ export class WalletsController {
   async findAll(
     @GetBusinessId() businessId: string,
     @GetMode() mode: 'live' | 'test',
-    @Query() query: WalletQueryDto,
+    @Query() query: DepositAccountQueryDto,
   ) {
-    return this.walletsService.findAll(businessId, mode, query);
+    return this.depositAccountsService.findAll(businessId, mode, query);
   }
 
-  @Get(':wallet_id')
+  @Get(':deposit_account_id')
   @ApiOperation({
     summary: 'Get deposit account by ID',
     description: 'Retrieve a specific deposit account by its ID',
   })
   @ApiParam({
-    name: 'wallet_id',
+    name: 'deposit_account_id',
     description: 'Deposit account unique identifier',
     example: '67063f653b4a1f6c7a60ec57',
   })
-  @ApiOkResponse({ description: 'Wallet retrieved successfully.' })
+  @ApiOkResponse({ description: 'Deposit account retrieved successfully.' })
   @ApiErrorResponses(401, 404)
   async findOne(
     @GetBusinessId() businessId: string,
     @GetMode() mode: 'live' | 'test',
-    @Param('wallet_id') walletId: string,
+    @Param('deposit_account_id') depositAccountId: string,
   ) {
-    return this.walletsService.findOne(businessId, mode, walletId);
+    return this.depositAccountsService.findOne(
+      businessId,
+      mode,
+      depositAccountId,
+    );
   }
 
-  @Get(':wallet_id/details')
+  @Get(':deposit_account_id/details')
   @ApiOperation({
     summary: 'Get detailed deposit account info',
     description:
       'Get comprehensive deposit account details from the crypto provider',
   })
   @ApiParam({
-    name: 'wallet_id',
+    name: 'deposit_account_id',
     description: 'Deposit account unique identifier',
     example: '67063f653b4a1f6c7a60ec57',
   })
-  @ApiOkResponse({ description: 'Wallet details retrieved successfully.' })
+  @ApiOkResponse({
+    description: 'Deposit account details retrieved successfully.',
+  })
   @ApiErrorResponses(400, 401)
-  async getWalletDetails(
-    @Param('wallet_id') walletId: string,
+  async getDepositAccountDetails(
+    @Param('deposit_account_id') depositAccountId: string,
     @GetMode() mode: 'live' | 'test',
   ) {
-    return this.walletsService.getWalletDetails(walletId, mode);
+    return this.depositAccountsService.getDepositAccountDetails(
+      depositAccountId,
+      mode,
+    );
   }
 
   @Get('details/all')
@@ -144,28 +155,33 @@ export class WalletsController {
     description: 'Deposit account details retrieved successfully.',
   })
   @ApiErrorResponses(400, 401)
-  async getAllWalletDetails(@GetMode() mode: 'live' | 'test') {
-    return this.walletsService.getAllWalletDetails(mode);
+  async getAllDepositAccountDetails(@GetMode() mode: 'live' | 'test') {
+    return this.depositAccountsService.getAllDepositAccountDetails(mode);
   }
 
-  @Post(':wallet_id/identities')
+  @Post(':deposit_account_id/identities')
   @UseGuards(KycVerifiedGuard)
   @ApiOperation({
     summary: 'Issue a deposit identity',
     description:
       'Provisions a new static crypto deposit address (per chain) or an NGN virtual bank account onto an existing deposit account.',
   })
-  @ApiParam({ name: 'wallet_id', description: 'Deposit account ID' })
+  @ApiParam({ name: 'deposit_account_id', description: 'Deposit account ID' })
   @ApiBody({ type: IssueDepositIdentityDto })
   @ApiCreatedResponse({ description: 'Deposit identity issued successfully.' })
   @ApiErrorResponses(400, 401, 403, 404)
   async issueIdentity(
     @GetBusinessId() businessId: string,
     @GetMode() mode: 'live' | 'test',
-    @Param('wallet_id') walletId: string,
+    @Param('deposit_account_id') depositAccountId: string,
     @Body() dto: IssueDepositIdentityDto,
   ) {
-    return this.walletsService.issueIdentity(businessId, mode, walletId, dto);
+    return this.depositAccountsService.issueIdentity(
+      businessId,
+      mode,
+      depositAccountId,
+      dto,
+    );
   }
 
   // Withdrawal Address Endpoints
@@ -182,7 +198,11 @@ export class WalletsController {
     @GetBusinessId() businessId: string,
     @GetMode() mode: 'live' | 'test',
   ) {
-    return this.walletsService.addWithdrawalAddress(dto, businessId, mode);
+    return this.depositAccountsService.addWithdrawalAddress(
+      dto,
+      businessId,
+      mode,
+    );
   }
 
   @Get('withdrawal-addresses/saved')
@@ -198,7 +218,10 @@ export class WalletsController {
     @GetBusinessId() businessId: string,
     @GetMode() mode: 'live' | 'test',
   ) {
-    return this.walletsService.getSavedWithdrawalAddresses(businessId, mode);
+    return this.depositAccountsService.getSavedWithdrawalAddresses(
+      businessId,
+      mode,
+    );
   }
 
   @Get('withdrawal-addresses')
@@ -211,7 +234,7 @@ export class WalletsController {
   })
   @ApiErrorResponses(401)
   async getWithdrawalAddresses() {
-    return this.walletsService.getWithdrawalAddresses();
+    return this.depositAccountsService.getWithdrawalAddresses();
   }
 
   @Delete('withdrawal-addresses/:withdrawalAddressId')
@@ -228,7 +251,9 @@ export class WalletsController {
   async removeWithdrawalAddress(
     @Param('withdrawalAddressId') withdrawalAddressId: string,
   ) {
-    return this.walletsService.removeWithdrawalAddress(withdrawalAddressId);
+    return this.depositAccountsService.removeWithdrawalAddress(
+      withdrawalAddressId,
+    );
   }
 
   // Initiate withdrawals and fetch withdrawals
@@ -248,7 +273,7 @@ export class WalletsController {
     @GetBusinessId() businessId: string,
     @GetMode() mode: 'live' | 'test',
   ) {
-    return this.walletsService.initiateStableCoinWithdrawal(
+    return this.depositAccountsService.initiateStableCoinWithdrawal(
       dto,
       businessId,
       mode,
@@ -271,7 +296,11 @@ export class WalletsController {
     @GetBusinessId() businessId: string,
     @GetMode() mode: 'live' | 'test',
   ) {
-    return this.walletsService.initiateFiatWithdrawal(dto, businessId, mode);
+    return this.depositAccountsService.initiateFiatWithdrawal(
+      dto,
+      businessId,
+      mode,
+    );
   }
 
   @Get('withdrawals')
@@ -286,6 +315,6 @@ export class WalletsController {
     @Query('page') page: string,
     @Query('size') size: string,
   ) {
-    return this.walletsService.listPayouts(mode, { page, size });
+    return this.depositAccountsService.listPayouts(mode, { page, size });
   }
 }

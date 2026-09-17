@@ -1,0 +1,18 @@
+---
+title: Environments
+description: Live and test mode, and how a request ends up in one or the other.
+---
+
+Every business on Dexxify has two environments, `test` and `live`, that never share data: deposit accounts, balances, deposit addresses, withdrawal addresses, swaps, and webhook configuration are all environment-scoped.
+
+## How mode is determined
+
+- **API key requests**: the key itself carries the mode — `dex_test_...` keys always run in test mode, `dex_live_...` always in live. You can't switch mode with a header or parameter; use the matching key.
+- **Dashboard (cookie session) requests**: mode is whatever environment is currently selected in the dashboard UI, carried in the session.
+
+There's no request that reads from one mode and writes to another — a single request is fully scoped to one environment.
+
+## What's different about test mode
+
+- No real crypto or Naira moves. Deposits are simulated from the dashboard rather than arriving on-chain.
+- Test-mode webhook events don't count toward production delivery guarantees.

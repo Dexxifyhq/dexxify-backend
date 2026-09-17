@@ -1,0 +1,82 @@
+---
+title: Webhooks
+description: Receiving and verifying real-time event notifications.
+---
+
+Dexxify notifies your backend the moment something happens — a deposit lands, a payment completes, a payout succeeds or fails, a swap finishes, a refund processes.
+
+## Registering an endpoint
+
+```bash
+PUT /webhooks
+```
+
+```json
+{
+  "url": "https://yourapp.com/webhooks/dexxify"
+}
+```
+
+One endpoint per environment — registering again for the same mode replaces the existing URL. Fetch or remove it with:
+
+```bash
+GET    /webhooks
+DELETE /webhooks
+```
+
+## Verifying a webhook
+
+Every request Dexxify sends carries three headers:
+
+| Header | Meaning |
+| --- | --- |
+| `X-Dexxify-Signature` | HMAC-SHA256 of the raw request body, using your endpoint's signing secret |
+| `X-Dexxify-Event` | The event type, e.g. `deposit.completed` |
+| `X-Dexxify-Delivery` | A unique ID for this delivery attempt, for idempotency/dedup |
+
+Verify the signature before trusting the payload:
+
+```js
+const crypto = require('crypto');
+
+function isValidSignature(rawBody, signature, secret) {
+  const expected = crypto
+    .createHmac('sha256', secret)
+    .update(rawBody)
+    .digest('hex');
+  return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
+}
+```
+
+<Warning>
+  Compute the HMAC over the raw request body, not a re-serialized JSON object — re-serializing can change key order or whitespace and break the signature check.
+</Warning>
+
+Get or regenerate your signing secret:
+
+```bash
+POST /webhooks/regenerate-secret
+```
+
+<Warning>
+  Regenerating invalidates the old secret immediately. Any in-flight deliveries signed with the previous secret will fail verification on your end.
+</Warning>
+
+## Event types
+
+| Category | Events |
+| --- | --- |
+| Deposits | `deposit.processing`, `deposit.confirmed`, `deposit.completed`, `deposit.failed` |
+| Payments | `payment.completed`, `payment.partial`, `payment.expired`, `payment.underpaid`, `payment.failed` |
+| Payouts | `payout.created`, `payout.success`, `payout.failed` |
+| Refunds | `refund.created`, `refund.success`, `refund.failed` |
+| Swaps | `swap.completed`, `swap.failed` |
+
+## Delivery history
+
+```bash
+GET /webhooks/events
+GET /webhooks/events/{id}
+```
+
+Useful for debugging — shows what was sent and whether your endpoint acknowledged it.

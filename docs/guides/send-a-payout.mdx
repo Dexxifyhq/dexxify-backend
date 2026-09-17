@@ -1,0 +1,61 @@
+---
+title: Send a payout
+description: Withdraw stablecoins to an external address, or Naira to a bank account.
+---
+
+## Stablecoin payout
+
+### 1. Save the destination address (once per address)
+
+```bash
+curl -X POST https://api.dexxify.com/api/v1/deposit-accounts/withdrawal-addresses \
+  -H "Authorization: Bearer dex_live_xxxxxxxxxxxx" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "address": "UQCvj9LMypzHShhTvO1qSLE0XiWxopEMweLh8MFnY3mxzLvi",
+    "network": "bsc",
+    "token": "USDT",
+    "label": "Treasury wallet",
+    "isDefault": true
+  }'
+```
+
+### 2. Initiate the withdrawal
+
+```bash
+curl -X POST https://api.dexxify.com/api/v1/deposit-accounts/withdrawals/stable-coins \
+  -H "Authorization: Bearer dex_live_xxxxxxxxxxxx" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "address": "UQCvj9LMypzHShhTvO1qSLE0XiWxopEMweLh8MFnY3mxzLvi",
+    "amount": 100,
+    "network": "bsc",
+    "token": "USDT",
+    "externalId": "payout_ref_001"
+  }'
+```
+
+This debits your available balance immediately (pending confirmation) and returns the fee charged. A request for more than your balance holds returns `400`.
+
+## Naira payout
+
+```bash
+curl -X POST https://api.dexxify.com/api/v1/deposit-accounts/withdrawals/local-currencies \
+  -H "Authorization: Bearer dex_live_xxxxxxxxxxxx" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "bank_id": "6a0ce75269321c4cb5eafe7d",
+    "amount": 50000,
+    "narration": "Vendor payment"
+  }'
+```
+
+`bank_id` refers to a recipient already registered on your business via `POST /misc/banks` — not a raw account number.
+
+## Tracking the result
+
+Both payout types go through the same lifecycle: `payout.created` fires immediately, followed by `payout.success` or `payout.failed` once the provider confirms. Subscribe via [webhooks](/concepts/webhooks), or poll:
+
+```bash
+GET /deposit-accounts/withdrawals
+```

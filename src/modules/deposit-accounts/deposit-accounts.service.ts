@@ -20,12 +20,12 @@ import {
   Customer,
 } from '../../database/entities';
 import {
-  CreateWalletDto,
+  CreateDepositAccountDto,
   InitiateFiatWithdrawalDto,
   InitiateStableCoinWithdrawalDto,
   IssueDepositIdentityDto,
   DepositIdentityType,
-  WalletQueryDto,
+  DepositAccountQueryDto,
 } from './dto';
 import { parsePagination, buildPaginationMeta } from '../../common/utils';
 import {
@@ -92,13 +92,13 @@ function getErrorMessage(err: unknown): string {
 }
 
 @Injectable()
-export class WalletsService {
-  private readonly logger = new Logger(WalletsService.name);
+export class DepositAccountsService {
+  private readonly logger = new Logger(DepositAccountsService.name);
 
   constructor(
     private readonly dataSource: DataSource,
     @InjectRepository(DepositAccount)
-    private readonly walletRepo: Repository<DepositAccount>,
+    private readonly depositAccountRepo: Repository<DepositAccount>,
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
     @InjectRepository(Business)
@@ -117,7 +117,7 @@ export class WalletsService {
   async create(
     businessId: string,
     mode: 'live' | 'test',
-    dto: CreateWalletDto,
+    dto: CreateDepositAccountDto,
   ) {
     // mode = 'live';
     let ccCustomerId: string | null = null;
@@ -158,7 +158,7 @@ export class WalletsService {
         ccCustomerId = existingCustomer.cc_customer_id;
         // console.log('existingCustomer', existingCustomer);
         if (localCustomer.id) {
-          const existingWallet = await this.walletRepo
+          const existingWallet = await this.depositAccountRepo
             .createQueryBuilder('wallet')
             .innerJoin('wallet.customer', 'customer')
             .where('wallet.business_id = :businessId', { businessId })
@@ -194,7 +194,7 @@ export class WalletsService {
       const ccAccount = account.data as CCDepositAccountData;
       this.logger.log(`Created deposit account: ${ccAccount.id}`);
 
-      const wallet = Object.assign(this.walletRepo.create(), {
+      const wallet = Object.assign(this.depositAccountRepo.create(), {
         id: ccAccount.id,
         business_id: businessId,
         mode,
@@ -203,7 +203,7 @@ export class WalletsService {
         ngn_virtual_accounts: ccAccount.ngnVirtualAccounts || [],
       });
 
-      return this.walletRepo.save(wallet);
+      return this.depositAccountRepo.save(wallet);
     } catch (err: unknown) {
       this.logger.error(
         `Deposit account creation failed: ${getErrorMessage(err)}`,
@@ -214,22 +214,26 @@ export class WalletsService {
     }
   }
 
-  async findOne(businessId: string, mode: 'live' | 'test', walletId: string) {
-    const wallet = await this.walletRepo.findOne({
-      where: { id: walletId, business_id: businessId, mode },
+  async findOne(
+    businessId: string,
+    mode: 'live' | 'test',
+    depositAccountId: string,
+  ) {
+    const wallet = await this.depositAccountRepo.findOne({
+      where: { id: depositAccountId, business_id: businessId, mode },
     });
-    if (!wallet) throw new NotFoundException('Wallet not found.');
+    if (!wallet) throw new NotFoundException('Deposit account not found.');
     return wallet;
   }
 
   async findAll(
     businessId: string,
     mode: 'live' | 'test',
-    query: WalletQueryDto,
+    query: DepositAccountQueryDto,
   ) {
     const { offset, limit, page } = parsePagination(query);
 
-    const qb = this.walletRepo
+    const qb = this.depositAccountRepo
       .createQueryBuilder('w')
       .where('w.business_id = :businessId', { businessId })
       .andWhere('w.mode = :mode', { mode })
@@ -237,8 +241,8 @@ export class WalletsService {
       .skip(offset)
       .take(limit);
 
-    if (query.wallet_id) {
-      qb.andWhere('w.id = :uid', { uid: query.wallet_id });
+    if (query.deposit_account_id) {
+      qb.andWhere('w.id = :uid', { uid: query.deposit_account_id });
     }
 
     const [wallets, total] = await qb.getManyAndCount();
@@ -253,7 +257,7 @@ export class WalletsService {
         const addresses = data?.staticDepositAddresses || [];
         const ngnAccounts = data?.ngnVirtualAccounts || [];
         if (addresses.length !== 0) {
-          await this.walletRepo.update(wallet.id, {
+          await this.depositAccountRepo.update(wallet.id, {
             deposit_addresses: addresses,
             ngn_virtual_accounts: ngnAccounts,
           });
@@ -278,13 +282,13 @@ export class WalletsService {
   async issueIdentity(
     businessId: string,
     mode: 'live' | 'test',
-    walletId: string,
+    depositAccountId: string,
     dto: IssueDepositIdentityDto,
   ): Promise<CCDepositAccountData> {
     // mode = 'live';
-    await this.findOne(businessId, mode, walletId);
+    await this.findOne(businessId, mode, depositAccountId);
 
-    const result = await this.cc.issueDepositIdentity(mode, walletId, {
+    const result = await this.cc.issueDepositIdentity(mode, depositAccountId, {
       type: dto.type,
       chain: dto.chain ?? undefined,
       bvn: dto.bvn ?? undefined,
@@ -297,7 +301,7 @@ export class WalletsService {
     console.log('result', result);
     const account = result.data as CCDepositAccountData;
 
-    await this.walletRepo.update(walletId, {
+    await this.depositAccountRepo.update(depositAccountId, {
       deposit_addresses: account.staticDepositAddresses ?? [],
       ngn_virtual_accounts: account.ngnVirtualAccounts ?? [],
     });
@@ -305,31 +309,35 @@ export class WalletsService {
     return account;
   }
 
-  async getWalletDetails(
-    walletId: string,
+  async getDepositAccountDetails(
+    depositAccountId: string,
     mode: 'live' | 'test',
   ): Promise<CCDepositAccountData> {
     try {
-      const account = await this.cc.getDepositAccount(mode, walletId);
+      const account = await this.cc.getDepositAccount(mode, depositAccountId);
       return account.data as CCDepositAccountData;
     } catch (err: unknown) {
-      this.logger.error(`Wallet retrieval failed: ${getErrorMessage(err)}`);
+      this.logger.error(
+        `Deposit account retrieval failed: ${getErrorMessage(err)}`,
+      );
       throw new BadRequestException(
-        'Failed to retrieve wallet with crypto provider.',
+        'Failed to retrieve deposit account with crypto provider.',
       );
     }
   }
 
-  async getAllWalletDetails(
+  async getAllDepositAccountDetails(
     mode: 'live' | 'test',
   ): Promise<CCDepositAccountData[]> {
     try {
       const accounts = await this.cc.listDepositAccounts(mode);
       return accounts.data as CCDepositAccountData[];
     } catch (err: unknown) {
-      this.logger.error(`Wallet retrieval failed: ${getErrorMessage(err)}`);
+      this.logger.error(
+        `Deposit account retrieval failed: ${getErrorMessage(err)}`,
+      );
       throw new BadRequestException(
-        'Failed to retrieve wallets with crypto provider.',
+        'Failed to retrieve deposit accounts with crypto provider.',
       );
     }
   }

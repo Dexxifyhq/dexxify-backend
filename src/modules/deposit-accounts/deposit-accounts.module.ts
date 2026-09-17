@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { WalletsController } from './wallets.controller';
-import { WalletsService } from './wallets.service';
+import { DepositAccountsController } from './deposit-accounts.controller';
+import { DepositAccountsService } from './deposit-accounts.service';
 import {
   DepositAccount,
   LedgerEntry,
@@ -31,8 +31,8 @@ import { KycVerifiedGuard } from '../../common/guards/kyc-verified.guard';
     CustomersModule,
     KycModule,
   ],
-  controllers: [WalletsController],
-  providers: [WalletsService, KycVerifiedGuard],
-  exports: [WalletsService],
+  controllers: [DepositAccountsController],
+  providers: [DepositAccountsService, KycVerifiedGuard],
+  exports: [DepositAccountsService],
 })
-export class WalletsModule {}
+export class DepositAccountsModule {}

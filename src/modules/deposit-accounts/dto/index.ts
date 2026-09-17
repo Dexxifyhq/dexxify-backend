@@ -78,7 +78,7 @@ export class IssueDepositIdentityDto {
   bvn?: string;
 }
 
-export class CreateWalletDto {
+export class CreateDepositAccountDto {
   @ApiPropertyOptional({
     description: 'CC Customer ID',
     example: '123e4567-e89b-12d3-a456-426614174000',
@@ -121,19 +121,11 @@ export class TransferDto {
   narration?: string;
 }
 
-export class WalletQueryDto {
-  @ApiPropertyOptional({ description: 'Wallet ID' })
+export class DepositAccountQueryDto {
+  @ApiPropertyOptional({ description: 'Deposit account ID' })
   @IsOptional()
   @IsString()
-  wallet_id?: string;
-
-  @ApiPropertyOptional({
-    description: 'Asset ID',
-    // example: '6930298330b92dbdfc0267a4',
-  })
-  @IsOptional()
-  @IsString()
-  asset_id?: string;
+  deposit_account_id?: string;
 
   @ApiPropertyOptional({ description: 'Page number', example: 1 })
   @IsOptional()

@@ -9,7 +9,7 @@ import {
   Index,
 } from 'typeorm';
 import { Business } from './business.entity';
-import { WalletAsset, WalletNetwork } from './wallet.entity';
+import { WalletAsset, WalletNetwork } from './deposit-account';
 
 export enum CryptoTxDirection {
   INBOUND = 'inbound',

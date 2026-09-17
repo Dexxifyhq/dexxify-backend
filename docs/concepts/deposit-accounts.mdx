@@ -1,0 +1,39 @@
+---
+title: Deposit Accounts
+description: Deposit accounts, deposit identities, and how funds arrive.
+---
+
+## Deposit accounts
+
+A **deposit account** is a container you create per customer, or standalone. Creating one doesn't provision anywhere for funds to arrive yet — it's the record that deposit identities and balances attach to.
+
+```bash
+POST /deposit-accounts
+```
+
+Optionally pass `customer_id` to associate the deposit account with an existing customer record.
+
+## Deposit identities
+
+A **deposit identity** is a specific address or account a payer sends to. One deposit account can hold multiple identities — several crypto addresses across chains, and/or one NGN virtual account.
+
+```bash
+POST /deposit-accounts/{deposit_account_id}/identities
+```
+
+| `type`                   | Requires                          | Produces                          |
+| ------------------------ | ---------------------------------- | ---------------------------------- |
+| `static_deposit_address` | `chain` (bitcoin, ethereum, solana, bsc, tron, base, arbitrum) | A permanent crypto address on that chain |
+| `ngn_virtual_account`    | `bvn` (11 digits, account holder's BVN) | A dedicated NGN bank account number |
+
+## Fetching deposit accounts
+
+```bash
+GET /deposit-accounts                          # list, with optional query filters
+GET /deposit-accounts/{deposit_account_id}     # single deposit account
+GET /deposit-accounts/{deposit_account_id}/details  # live details from the crypto provider
+```
+
+## What happens on deposit
+
+When funds arrive at a deposit identity, Dexxify credits the deposit account and fires a `deposit.*` webhook event (`deposit.processing` → `deposit.confirmed`/`deposit.completed`, or `deposit.failed`). See [Webhooks](/concepts/webhooks).

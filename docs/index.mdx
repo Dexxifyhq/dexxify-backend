@@ -1,0 +1,44 @@
+---
+title: Introduction
+description: The single API for adding crypto deposit accounts, Naira settlement, and payouts to your product.
+---
+
+Dexxify is crypto infrastructure for Africa. Instead of integrating a blockchain node and a bank settlement partner separately, you call one API to:
+
+- Issue crypto deposit addresses and NGN virtual accounts for your users
+- Settle incoming crypto to Naira, or pay out in stablecoins and local currency
+- Swap between crypto and fiat at a locked rate
+- Get webhook notifications for every deposit, payment, and payout event
+
+## Base URL
+
+```
+https://api.dexxify.com/api/v1
+```
+
+Every request in this documentation is relative to that base URL.
+
+## Live and test mode
+
+Every business on Dexxify has two fully separate environments — `test` and `live` — with independent deposit accounts, balances, and webhook configuration. Your API key determines which mode a request runs in. See [Environments](/concepts/environments) for details.
+
+## Where to start
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Get an API key and issue your first deposit address in test mode.
+  </Card>
+  <Card title="Authentication" icon="key" href="/authentication">
+    How API keys and request signing work.
+  </Card>
+  <Card title="Core Concepts" icon="book" href="/concepts/environments">
+    Deposit accounts, withdrawals, swaps, and webhooks.
+  </Card>
+  <Card title="API Reference" icon="code" href="/api-reference">
+    Every endpoint, with request/response schemas.
+  </Card>
+</CardGroup>
+
+## Support
+
+Questions or issues integrating? Reach us at [dexxifyhq@gmail.com](mailto:dexxifyhq@gmail.com).

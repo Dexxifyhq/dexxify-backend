@@ -18,7 +18,7 @@ import {
   STABLECOIN_FEE,
 } from '../../common/constants/fees.constants';
 import { CreateOfframpDto } from './dto';
-import { WalletsService } from '../wallets/wallets.service';
+import { DepositAccountsService } from '../deposit-accounts/deposit-accounts.service';
 import { CoincircuitService } from '../../providers/coincircuit/coincircuit.service';
 
 interface SwapEstimateData {
@@ -43,7 +43,7 @@ export class OfframpService {
     private readonly txRepo: Repository<CryptoTransaction>,
     @InjectRepository(SwapRecord)
     private readonly swapRecordRepo: Repository<SwapRecord>,
-    private readonly walletsService: WalletsService,
+    private readonly depositAccountsService: DepositAccountsService,
     private readonly cc: CoincircuitService,
   ) {}
 

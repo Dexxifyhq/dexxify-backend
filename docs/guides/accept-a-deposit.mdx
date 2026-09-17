@@ -1,0 +1,82 @@
+---
+title: Accept a deposit
+description: End-to-end walkthrough of getting a customer's crypto or NGN deposit into your business.
+---
+
+This is the full flow for accepting a deposit from a customer, from creating their deposit account through to confirming funds landed.
+
+## 1. Create a deposit account for the customer
+
+If you already track customers in Dexxify, pass their `customer_id`:
+
+```bash
+curl -X POST https://api.dexxify.com/api/v1/deposit-accounts \
+  -H "Authorization: Bearer dex_live_xxxxxxxxxxxx" \
+  -H "Content-Type: application/json" \
+  -d '{ "customer_id": "cus_abc123" }'
+```
+
+If the customer doesn't have a Dexxify record yet, omit `customer_id` — a standalone deposit account is created instead.
+
+## 2. Issue a deposit identity
+
+Decide whether you want a crypto address or an NGN virtual account:
+
+<CodeGroup>
+
+```bash Crypto address
+curl -X POST https://api.dexxify.com/api/v1/deposit-accounts/{deposit_account_id}/identities \
+  -H "Authorization: Bearer dex_live_xxxxxxxxxxxx" \
+  -H "Content-Type: application/json" \
+  -d '{ "type": "static_deposit_address", "chain": "tron" }'
+```
+
+```bash NGN virtual account
+curl -X POST https://api.dexxify.com/api/v1/deposit-accounts/{deposit_account_id}/identities \
+  -H "Authorization: Bearer dex_live_xxxxxxxxxxxx" \
+  -H "Content-Type: application/json" \
+  -d '{ "type": "ngn_virtual_account", "bvn": "12345678901" }'
+```
+
+</CodeGroup>
+
+Show the returned address or account number to your customer — that's where they send funds.
+
+## 3. Register a webhook endpoint (once, per environment)
+
+```bash
+curl -X PUT https://api.dexxify.com/api/v1/webhooks \
+  -H "Authorization: Bearer dex_live_xxxxxxxxxxxx" \
+  -H "Content-Type: application/json" \
+  -d '{ "url": "https://yourapp.com/webhooks/dexxify" }'
+```
+
+## 4. Handle the deposit events
+
+When funds arrive, you'll receive (in order) `deposit.processing`, then `deposit.confirmed` or `deposit.completed` — or `deposit.failed` if something went wrong. Verify the signature on every request (see [Webhooks](/concepts/webhooks)) before crediting your own ledger.
+
+```js
+app.post('/webhooks/dexxify', express.raw({ type: '*/*' }), (req, res) => {
+  const signature = req.headers['x-dexxify-signature'];
+  if (!isValidSignature(req.body, signature, YOUR_WEBHOOK_SECRET)) {
+    return res.status(401).end();
+  }
+
+  const event = JSON.parse(req.body);
+  if (event.event === 'deposit.completed') {
+    // credit the customer in your own system
+  }
+
+  res.status(200).end();
+});
+```
+
+<Note>
+  Use the raw body for signature verification — a body-parsing middleware that re-serializes JSON will break the HMAC check.
+</Note>
+
+## 5. Confirm balance (optional)
+
+```bash
+GET /deposit-accounts/{deposit_account_id}/details
+```

@@ -10,7 +10,7 @@ import {
 } from 'typeorm';
 import { Business } from './business.entity';
 import { Customer } from './customer.entity';
-import { WalletAsset, WalletNetwork } from './wallet.entity';
+import { WalletAsset, WalletNetwork } from './deposit-account';
 import { PaymentPage } from './payment-page.entity';
 import { Invoice } from './invoice.entity';
 

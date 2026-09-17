@@ -1,0 +1,60 @@
+---
+title: Quickstart
+description: Get an API key and issue your first deposit address, in test mode.
+---
+
+This walks through the shortest path to seeing money flow through Dexxify: create a business, grab a test API key, create a deposit account, and issue a deposit address.
+
+## 1. Create your Dexxify account
+
+Sign up at [dexxify.com](https://www.dexxify.com) and create a business. Every business starts in **test mode** — no real funds move until you switch to live.
+
+## 2. Get a test API key
+
+From your dashboard, go to **Developers → API Keys** and create a key. Test keys are prefixed `dex_test_...`, live keys `dex_live_...`. Store it somewhere safe — the full key is only shown once.
+
+<Warning>
+  Never commit an API key to source control or expose it in client-side code. Keys should only be used from your backend.
+</Warning>
+
+## 3. Create a deposit account
+
+```bash
+curl -X POST https://api.dexxify.com/api/v1/deposit-accounts \
+  -H "Authorization: Bearer dex_test_xxxxxxxxxxxx" \
+  -H "Content-Type: application/json" \
+  -d '{}'
+```
+
+Pass a `customer_id` if you've already created the customer in Dexxify; otherwise omit it and the deposit account is created standalone.
+
+This returns a deposit account. Its `deposit_account_id` is what you'll use to issue addresses and query balances.
+
+## 4. Issue a deposit identity
+
+A deposit account on its own doesn't have anywhere for funds to arrive — you provision one or more **deposit identities** onto it: a static crypto address per chain, or an NGN virtual account.
+
+```bash
+curl -X POST https://api.dexxify.com/api/v1/deposit-accounts/{deposit_account_id}/identities \
+  -H "Authorization: Bearer dex_test_xxxxxxxxxxxx" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "static_deposit_address",
+    "chain": "base"
+  }'
+```
+
+## 5. Watch for the deposit
+
+Dexxify sends a webhook the moment funds land on a deposit identity — see [Webhooks](/concepts/webhooks) for how to receive and verify it.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Authentication" icon="key" href="/authentication">
+    API key format, request signing, and environments in depth.
+  </Card>
+  <Card title="Send a payout" icon="arrow-up-right" href="/guides/send-a-payout">
+    Move funds out — stablecoin or Naira.
+  </Card>
+</CardGroup>

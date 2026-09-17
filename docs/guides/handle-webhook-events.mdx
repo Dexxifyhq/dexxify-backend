@@ -1,0 +1,62 @@
+---
+title: Handle webhook events
+description: Set up a receiver, verify signatures, and stay idempotent.
+---
+
+## 1. Register your endpoint
+
+```bash
+curl -X PUT https://api.dexxify.com/api/v1/webhooks \
+  -H "Authorization: Bearer dex_live_xxxxxxxxxxxx" \
+  -H "Content-Type: application/json" \
+  -d '{ "url": "https://yourapp.com/webhooks/dexxify" }'
+```
+
+Do this once per environment — a test-mode key registers the test endpoint, a live-mode key the live one.
+
+## 2. Verify every request
+
+Never trust a webhook payload without checking `X-Dexxify-Signature`:
+
+```js
+const crypto = require('crypto');
+
+function isValidSignature(rawBody, signature, secret) {
+  const expected = crypto
+    .createHmac('sha256', secret)
+    .update(rawBody)
+    .digest('hex');
+  return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
+}
+```
+
+Use your framework's raw-body option (e.g. `express.raw()`) on this route specifically — a JSON-parsing middleware upstream will break the signature check.
+
+## 3. Respond fast, process async
+
+Return `200` as soon as you've verified the signature and queued the event — don't do slow work (database writes, external calls) before responding. A slow or non-`2xx` response looks like a failed delivery.
+
+```js
+app.post('/webhooks/dexxify', express.raw({ type: '*/*' }), (req, res) => {
+  const signature = req.headers['x-dexxify-signature'];
+  if (!isValidSignature(req.body, signature, YOUR_WEBHOOK_SECRET)) {
+    return res.status(401).end();
+  }
+
+  res.status(200).end(); // ack first
+  queue.add('dexxify-webhook', JSON.parse(req.body)); // process after
+});
+```
+
+## 4. Dedupe by delivery ID
+
+`X-Dexxify-Delivery` is unique per delivery attempt. Store processed IDs (even briefly, in Redis) and skip anything you've already handled — this protects you if a delivery is retried.
+
+## 5. Debug with delivery history
+
+```bash
+GET /webhooks/events
+GET /webhooks/events/{id}
+```
+
+Shows exactly what was sent for a given event, useful when your endpoint didn't behave as expected.

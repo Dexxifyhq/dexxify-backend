@@ -1,0 +1,71 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "Dexxify",
+  "description": "Crypto Infrastructure API for Africa — deposit accounts, Naira settlement, payouts, and swaps.",
+  "colors": {
+    "primary": "#212529",
+    "light": "#F8F9FA",
+    "dark": "#212529"
+  },
+  "favicon": "https://www.dexxify.com/dexxify_icon.jpg",
+  "logo": {
+    "light": "https://www.dexxify.com/dexxify_icon.jpg",
+    "dark": "https://www.dexxify.com/dexxify_icon.jpg"
+  },
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": ["index", "quickstart", "authentication"]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "concepts/environments",
+              "concepts/deposit-accounts",
+              "concepts/withdrawals",
+              "concepts/swaps",
+              "concepts/webhooks"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/accept-a-deposit",
+              "guides/send-a-payout",
+              "guides/handle-webhook-events"
+            ]
+          },
+          {
+            "group": "Reference",
+            "pages": ["errors", "changelog"]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "openapi": "openapi.json"
+      }
+    ]
+  },
+  "navbar": {
+    "links": [
+      {
+        "label": "Support",
+        "href": "mailto:dexxifyhq@gmail.com"
+      }
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Dashboard",
+      "href": "https://www.dexxify.com"
+    }
+  },
+  "footer": {
+    "socials": {}
+  }
+}
