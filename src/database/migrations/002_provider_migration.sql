@@ -1,13 +1,3 @@
--- ============================================================
--- Migration 002: Breet → CoincircuitMCP column renames
---
--- Run this BEFORE restarting the application.
--- TypeORM synchronize (dev) or a separate TypeORM migration (prod)
--- will handle:
---   • Adding payment_sessions.provider_session_reference
---   • Adding customer_wallets.provider_recipient_id
---   • Creating the crypto_transactions table
--- ============================================================
 
 BEGIN;
 
