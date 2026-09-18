@@ -22,12 +22,14 @@ import {
   ApiTags,
   ApiCreatedResponse,
   ApiOkResponse,
+  ApiExcludeController,
 } from '@nestjs/swagger';
 import { ApiErrorResponses } from '../../common/decorators/api-error-responses.decorator';
 
 @ApiTags('Businesses')
 @ApiBearerAuth('api-key')
 @DualAuth()
+@ApiExcludeController()
 @Controller('businesses')
 export class BusinessesController {
   constructor(private readonly businessesService: BusinessesService) {}

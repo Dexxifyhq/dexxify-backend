@@ -31,11 +31,13 @@ import {
   ApiTags,
   ApiOkResponse,
   ApiCreatedResponse,
+  ApiExcludeController,
 } from '@nestjs/swagger';
 import { ApiErrorResponses } from '../../common/decorators/api-error-responses.decorator';
 
 @ApiTags('Authentication')
 @CookieAuth()
+@ApiExcludeController()
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}

@@ -6,6 +6,7 @@ import {
   ApiQuery,
   ApiOkResponse,
   ApiCreatedResponse,
+  ApiExcludeController,
 } from '@nestjs/swagger';
 import { AdminService } from './admin.service';
 import { AdminGuard } from '../../common/guards/admin.guard';
@@ -15,6 +16,7 @@ import { ApiErrorResponses } from '../../common/decorators/api-error-responses.d
 @ApiTags('Admin')
 @ApiSecurity('admin-key')
 @UseGuards(AdminGuard)
+@ApiExcludeController()
 @Controller('admin/platform')
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}

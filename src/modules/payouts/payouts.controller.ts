@@ -17,6 +17,7 @@ import {
   ApiBody,
   ApiOkResponse,
   ApiCreatedResponse,
+  ApiExcludeEndpoint,
 } from '@nestjs/swagger';
 import { ApiErrorResponses } from '../../common/decorators/api-error-responses.decorator';
 
@@ -50,6 +51,7 @@ export class PayoutsController {
   @ApiBody({ type: BatchPayoutDto })
   @ApiCreatedResponse({ description: 'Batch payout request processed.' })
   @ApiErrorResponses(400, 401)
+  @ApiExcludeEndpoint()
   @Post('batch')
   async createBatch(
     @GetBusinessId() businessId: string,

@@ -28,6 +28,7 @@ import {
   ApiQuery,
   ApiOkResponse,
   ApiCreatedResponse,
+  ApiExcludeEndpoint,
 } from '@nestjs/swagger';
 import { ApiErrorResponses } from '../../common/decorators/api-error-responses.decorator';
 
@@ -101,6 +102,7 @@ export class DashboardController {
   })
   @ApiOkResponse({ description: 'Dashboard overview retrieved successfully.' })
   @ApiErrorResponses(401)
+  @ApiExcludeEndpoint()
   @Get('overview')
   async getOverview(
     @GetBusinessId() businessId: string,
@@ -122,6 +124,7 @@ export class DashboardController {
   })
   @ApiOkResponse({ description: 'Revenue chart retrieved successfully.' })
   @ApiErrorResponses(401)
+  @ApiExcludeEndpoint()
   @Get('revenue-chart')
   async getRevenueChart(
     @GetBusinessId() businessId: string,
@@ -138,6 +141,7 @@ export class DashboardController {
   })
   @ApiOkResponse({ description: 'Asset distribution retrieved successfully.' })
   @ApiErrorResponses(401)
+  @ApiExcludeEndpoint()
   @Get('asset-distribution')
   async getAssetDistribution(
     @GetBusinessId() businessId: string,
@@ -158,6 +162,7 @@ export class DashboardController {
   })
   @ApiOkResponse({ description: 'Recent activity retrieved successfully.' })
   @ApiErrorResponses(401)
+  @ApiExcludeEndpoint()
   @Get('recent-activity')
   async getRecentActivity(
     @GetBusinessId() businessId: string,

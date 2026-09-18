@@ -14,6 +14,7 @@ import {
   ApiTags,
   ApiOkResponse,
   ApiCreatedResponse,
+  ApiExcludeController,
 } from '@nestjs/swagger';
 import { ApiErrorResponses } from '../../common/decorators/api-error-responses.decorator';
 
@@ -135,6 +136,7 @@ export class MiscController {
 }
 
 @ApiTags('Health')
+@ApiExcludeController()
 @Controller('health')
 export class HealthController {
   constructor(private readonly miscService: MiscService) {}

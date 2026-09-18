@@ -14,6 +14,7 @@ import {
   ApiBody,
   ApiOkResponse,
   ApiCreatedResponse,
+  ApiExcludeController,
 } from '@nestjs/swagger';
 import { PaymentPagesService } from './payment-pages.service';
 import { PublicPayDto } from './dto';
@@ -21,6 +22,7 @@ import { Public } from '../../common/decorators';
 import { ApiErrorResponses } from '../../common/decorators/api-error-responses.decorator';
 
 @ApiTags('Public Payment Pages')
+@ApiExcludeController()
 @Controller('p')
 export class PublicPaymentController {
   constructor(private readonly pagesService: PaymentPagesService) {}

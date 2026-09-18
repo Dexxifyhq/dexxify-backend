@@ -30,6 +30,8 @@ import {
   ApiParam,
   ApiBearerAuth,
   ApiOkResponse,
+  ApiExcludeController,
+  ApiExcludeEndpoint,
 } from '@nestjs/swagger';
 import type { Request } from 'express';
 import { ApiErrorResponses } from '../../common/decorators/api-error-responses.decorator';
@@ -72,6 +74,7 @@ export class WebhooksController {
     description: 'Webhook signing secret regenerated successfully.',
   })
   @ApiErrorResponses(401, 404)
+  @ApiExcludeEndpoint()
   @Post('regenerate-secret')
   async regenerateSecret(
     @GetBusinessId() businessId: string,
@@ -120,6 +123,7 @@ export class WebhooksController {
 }
 
 @ApiTags('Incoming Webhooks')
+@ApiExcludeController()
 @Controller('webhooks/incoming')
 export class IncomingWebhooksController {
   private readonly logger = new Logger(IncomingWebhooksController.name);

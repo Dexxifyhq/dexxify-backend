@@ -9,11 +9,13 @@ import {
   ApiOkResponse,
   ApiOperation,
   ApiTags,
+  ApiExcludeController,
 } from '@nestjs/swagger';
 
 @ApiTags('Developers/Merchants')
 @ApiBearerAuth('api-key')
 @DualAuth()
+@ApiExcludeController()
 @Controller('developers')
 export class DevelopersController {
   constructor(private readonly developersService: DevelopersService) {}

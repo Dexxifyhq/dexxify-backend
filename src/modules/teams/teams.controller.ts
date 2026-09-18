@@ -28,12 +28,14 @@ import {
   ApiOperation,
   ApiParam,
   ApiTags,
+  ApiExcludeController,
 } from '@nestjs/swagger';
 import { ApiErrorResponses } from '../../common/decorators/api-error-responses.decorator';
 
 @ApiTags('Teams')
 @ApiBearerAuth('api-key')
 @DualAuth()
+@ApiExcludeController()
 @Controller('teams')
 export class TeamsController {
   constructor(private readonly teamsService: TeamsService) {}

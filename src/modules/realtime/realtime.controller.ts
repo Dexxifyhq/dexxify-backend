@@ -4,7 +4,7 @@ import {
   MessageEvent,
   Sse,
 } from '@nestjs/common';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiTags, ApiExcludeController } from '@nestjs/swagger';
 import { interval, map, merge, Observable } from 'rxjs';
 import { RealtimeService } from './realtime.service';
 import { DualAuth, GetBusinessId, GetMode } from '../../common/decorators';
@@ -13,6 +13,7 @@ const HEARTBEAT_INTERVAL_MS = 20000;
 
 @ApiTags('Realtime')
 @DualAuth()
+@ApiExcludeController()
 @Controller('realtime')
 export class RealtimeController {
   constructor(private readonly realtime: RealtimeService) {}

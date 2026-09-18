@@ -19,6 +19,7 @@ import {
   ApiBody,
   ApiCreatedResponse,
   ApiOkResponse,
+  ApiExcludeController,
 } from '@nestjs/swagger';
 import { PaymentPagesService } from './payment-pages.service';
 import {
@@ -32,6 +33,7 @@ import { ApiErrorResponses } from '../../common/decorators/api-error-responses.d
 @ApiTags('Payment Pages')
 @ApiBearerAuth('api-key')
 @DualAuth()
+@ApiExcludeController()
 @Controller('payment-pages')
 export class PaymentPagesController {
   constructor(private readonly pagesService: PaymentPagesService) {}

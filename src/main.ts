@@ -91,6 +91,7 @@ async function bootstrap() {
     )
     .setVersion('1.0')
     .setContact('Dexxify', 'https://www.dexxify.com', 'dexxifyhq@gmail.com')
+    .addServer('https://api.dexxify.com/api/v1', 'Production')
     .addBearerAuth(
       {
         type: 'http',

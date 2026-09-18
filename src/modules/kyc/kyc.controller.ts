@@ -11,6 +11,7 @@ import {
   ApiOperation,
   ApiParam,
   ApiTags,
+  ApiExcludeEndpoint,
 } from '@nestjs/swagger';
 
 @ApiTags('KYC Verification')
@@ -98,6 +99,7 @@ export class KycController {
     description: 'Individual KYC status retrieved successfully.',
   })
   @ApiErrorResponses(401)
+  @ApiExcludeEndpoint()
   @Get('individual/status')
   async getIndividualStatus(@GetUser('id') userId: string) {
     return this.kycService.getIndividualStatus(userId);
@@ -109,6 +111,7 @@ export class KycController {
   })
   @ApiOkResponse({ description: 'Business KYC status retrieved successfully.' })
   @ApiErrorResponses(401)
+  @ApiExcludeEndpoint()
   @Get('business/status')
   async getBusinessStatus(@GetBusinessId() businessId: string) {
     return this.kycService.getBusinessStatus(businessId);
