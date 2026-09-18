@@ -54,9 +54,7 @@
           }
         ],
         "summary": "Create a new deposit account",
-        "tags": [
-          "Deposit Account"
-        ]
+        "tags": ["Deposit Account"]
       },
       "get": {
         "description": "Retrieve all deposit accounts for the authenticated user with optional filtering",
@@ -113,9 +111,7 @@
           }
         ],
         "summary": "Get all deposit accounts",
-        "tags": [
-          "Deposit Account"
-        ]
+        "tags": ["Deposit Account"]
       }
     },
     "/api/v1/deposit-accounts/{deposit_account_id}": {
@@ -165,9 +161,7 @@
           }
         ],
         "summary": "Get deposit account by ID",
-        "tags": [
-          "Deposit Account"
-        ]
+        "tags": ["Deposit Account"]
       }
     },
     "/api/v1/deposit-accounts/{deposit_account_id}/details": {
@@ -217,9 +211,7 @@
           }
         ],
         "summary": "Get detailed deposit account info",
-        "tags": [
-          "Deposit Account"
-        ]
+        "tags": ["Deposit Account"]
       }
     },
     "/api/v1/deposit-accounts/details/all": {
@@ -258,9 +250,7 @@
           }
         ],
         "summary": "Get all deposit account details",
-        "tags": [
-          "Deposit Account"
-        ]
+        "tags": ["Deposit Account"]
       }
     },
     "/api/v1/deposit-accounts/{deposit_account_id}/identities": {
@@ -339,9 +329,7 @@
           }
         ],
         "summary": "Issue a deposit identity",
-        "tags": [
-          "Deposit Account"
-        ]
+        "tags": ["Deposit Account"]
       }
     },
     "/api/v1/deposit-accounts/withdrawal-addresses": {
@@ -390,9 +378,7 @@
           }
         ],
         "summary": "Add withdrawal address",
-        "tags": [
-          "Deposit Account"
-        ]
+        "tags": ["Deposit Account"]
       },
       "get": {
         "description": "Fetch all withdrawal (payout) wallet addresses",
@@ -419,9 +405,7 @@
           }
         ],
         "summary": "Get withdrawal addresses",
-        "tags": [
-          "Deposit Account"
-        ]
+        "tags": ["Deposit Account"]
       }
     },
     "/api/v1/deposit-accounts/withdrawal-addresses/saved": {
@@ -450,9 +434,7 @@
           }
         ],
         "summary": "Get saved withdrawal addresses",
-        "tags": [
-          "Deposit Account"
-        ]
+        "tags": ["Deposit Account"]
       }
     },
     "/api/v1/deposit-accounts/withdrawal-addresses/{withdrawalAddressId}": {
@@ -501,9 +483,7 @@
           }
         ],
         "summary": "Remove withdrawal address",
-        "tags": [
-          "Deposit Account"
-        ]
+        "tags": ["Deposit Account"]
       }
     },
     "/api/v1/deposit-accounts/withdrawals/stable-coins": {
@@ -562,9 +542,7 @@
           }
         ],
         "summary": "Initiate stable coin withdrawal",
-        "tags": [
-          "Deposit Account"
-        ]
+        "tags": ["Deposit Account"]
       }
     },
     "/api/v1/deposit-accounts/withdrawals/local-currencies": {
@@ -623,9 +601,7 @@
           }
         ],
         "summary": "Initiate withdrawal for local currencies",
-        "tags": [
-          "Deposit Account"
-        ]
+        "tags": ["Deposit Account"]
       }
     },
     "/api/v1/deposit-accounts/withdrawals": {
@@ -671,9 +647,7 @@
           }
         ],
         "summary": "Get withdrawals",
-        "tags": [
-          "Deposit Account"
-        ]
+        "tags": ["Deposit Account"]
       }
     },
     "/api/v1/customers": {
@@ -731,9 +705,7 @@
           }
         ],
         "summary": "Create a customer",
-        "tags": [
-          "Customers"
-        ]
+        "tags": ["Customers"]
       },
       "get": {
         "operationId": "CustomersController_findAll",
@@ -762,10 +734,7 @@
             "in": "query",
             "schema": {
               "type": "string",
-              "enum": [
-                "active",
-                "inactive"
-              ]
+              "enum": ["active", "inactive"]
             }
           }
         ],
@@ -790,9 +759,7 @@
           }
         ],
         "summary": "List all customers",
-        "tags": [
-          "Customers"
-        ]
+        "tags": ["Customers"]
       }
     },
     "/api/v1/customers/{customer_id}": {
@@ -840,9 +807,7 @@
           }
         ],
         "summary": "Get a customer by ID",
-        "tags": [
-          "Customers"
-        ]
+        "tags": ["Customers"]
       },
       "put": {
         "operationId": "CustomersController_update",
@@ -908,9 +873,7 @@
           }
         ],
         "summary": "Update a customer",
-        "tags": [
-          "Customers"
-        ]
+        "tags": ["Customers"]
       },
       "delete": {
         "operationId": "CustomersController_remove",
@@ -956,9 +919,7 @@
           }
         ],
         "summary": "Delete a customer",
-        "tags": [
-          "Customers"
-        ]
+        "tags": ["Customers"]
       }
     },
     "/api/v1/customers/{customer_id}/deposit-account": {
@@ -1017,9 +978,7 @@
           }
         ],
         "summary": "Get or provision a customer's deposit account",
-        "tags": [
-          "Customers"
-        ]
+        "tags": ["Customers"]
       }
     },
     "/api/v1/kyc/bvn": {
@@ -1088,9 +1047,7 @@
           }
         ],
         "summary": "Verify BVN",
-        "tags": [
-          "KYC Verification"
-        ]
+        "tags": ["KYC Verification"]
       }
     },
     "/api/v1/kyc/nin": {
@@ -1159,9 +1116,7 @@
           }
         ],
         "summary": "Verify NIN",
-        "tags": [
-          "KYC Verification"
-        ]
+        "tags": ["KYC Verification"]
       }
     },
     "/api/v1/kyc/vnin": {
@@ -1230,9 +1185,7 @@
           }
         ],
         "summary": "Verify virtual NIN (vNIN)",
-        "tags": [
-          "KYC Verification"
-        ]
+        "tags": ["KYC Verification"]
       }
     },
     "/api/v1/kyc/cac": {
@@ -1301,9 +1254,7 @@
           }
         ],
         "summary": "Verify CAC",
-        "tags": [
-          "KYC Verification"
-        ]
+        "tags": ["KYC Verification"]
       }
     },
     "/api/v1/kyc/verifications/{reference}": {
@@ -1352,9 +1303,7 @@
           }
         ],
         "summary": "Get verification by reference",
-        "tags": [
-          "KYC Verification"
-        ]
+        "tags": ["KYC Verification"]
       }
     },
     "/api/v1/offramp": {
@@ -1403,9 +1352,7 @@
           }
         ],
         "summary": "Create off-ramp transaction",
-        "tags": [
-          "Off-Ramp"
-        ]
+        "tags": ["Off-Ramp"]
       }
     },
     "/api/v1/offramp/{tx_id}": {
@@ -1455,9 +1402,7 @@
           }
         ],
         "summary": "Get off-ramp transaction",
-        "tags": [
-          "Off-Ramp"
-        ]
+        "tags": ["Off-Ramp"]
       }
     },
     "/api/v1/payouts": {
@@ -1506,9 +1451,7 @@
           }
         ],
         "summary": "Create payout",
-        "tags": [
-          "Payouts"
-        ]
+        "tags": ["Payouts"]
       }
     },
     "/api/v1/payouts/resolve": {
@@ -1557,9 +1500,7 @@
           }
         ],
         "summary": "Resolve bank account",
-        "tags": [
-          "Payouts"
-        ]
+        "tags": ["Payouts"]
       }
     },
     "/api/v1/payouts/{payout_id}": {
@@ -1609,9 +1550,7 @@
           }
         ],
         "summary": "Get payout by ID",
-        "tags": [
-          "Payouts"
-        ]
+        "tags": ["Payouts"]
       }
     },
     "/api/v1/webhooks": {
@@ -1639,9 +1578,7 @@
           }
         ],
         "summary": "Get the webhook endpoint for the current mode",
-        "tags": [
-          "Webhooks"
-        ]
+        "tags": ["Webhooks"]
       },
       "put": {
         "operationId": "WebhooksController_upsert",
@@ -1687,9 +1624,7 @@
           }
         ],
         "summary": "Create or update the webhook endpoint for the current mode",
-        "tags": [
-          "Webhooks"
-        ]
+        "tags": ["Webhooks"]
       },
       "delete": {
         "operationId": "WebhooksController_remove",
@@ -1725,9 +1660,7 @@
           }
         ],
         "summary": "Delete the webhook endpoint for the current mode",
-        "tags": [
-          "Webhooks"
-        ]
+        "tags": ["Webhooks"]
       }
     },
     "/api/v1/webhooks/events": {
@@ -1761,11 +1694,7 @@
             "description": "Filter by delivery status",
             "schema": {
               "type": "string",
-              "enum": [
-                "pending",
-                "delivered",
-                "failed"
-              ]
+              "enum": ["pending", "delivered", "failed"]
             }
           }
         ],
@@ -1790,9 +1719,7 @@
           }
         ],
         "summary": "List webhook delivery events for the current mode",
-        "tags": [
-          "Webhooks"
-        ]
+        "tags": ["Webhooks"]
       }
     },
     "/api/v1/webhooks/events/{id}": {
@@ -1840,225 +1767,7 @@
           }
         ],
         "summary": "Get a single webhook delivery event",
-        "tags": [
-          "Webhooks"
-        ]
-      }
-    },
-    "/api/v1/transactions": {
-      "get": {
-        "description": "Retrieve all ledger transactions with filtering and pagination",
-        "operationId": "LedgerController_findAll",
-        "parameters": [
-          {
-            "name": "tx_type",
-            "required": false,
-            "in": "query",
-            "description": "Transaction type filter",
-            "schema": {
-              "example": "deposit",
-              "type": "string"
-            }
-          },
-          {
-            "name": "reference_type",
-            "required": false,
-            "in": "query",
-            "description": "Reference type filter",
-            "schema": {
-              "example": "payment_session",
-              "type": "string"
-            }
-          },
-          {
-            "name": "from_date",
-            "required": false,
-            "in": "query",
-            "description": "From date (ISO format)",
-            "schema": {
-              "example": "2023-01-01",
-              "type": "string"
-            }
-          },
-          {
-            "name": "to_date",
-            "required": false,
-            "in": "query",
-            "description": "To date (ISO format)",
-            "schema": {
-              "example": "2023-12-31",
-              "type": "string"
-            }
-          },
-          {
-            "name": "page",
-            "required": false,
-            "in": "query",
-            "description": "Page number",
-            "schema": {
-              "example": 1,
-              "type": "number"
-            }
-          },
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "description": "Number of items per page",
-            "schema": {
-              "example": 10,
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Transactions retrieved successfully."
-          },
-          "401": {
-            "description": "Missing, invalid, or expired authentication.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "api-key": []
-          }
-        ],
-        "summary": "Get all transactions",
-        "tags": [
-          "Ledger"
-        ]
-      }
-    },
-    "/api/v1/transactions/{tx_id}": {
-      "get": {
-        "description": "Retrieve details of a specific ledger transaction",
-        "operationId": "LedgerController_findOne",
-        "parameters": [
-          {
-            "name": "tx_id",
-            "required": true,
-            "in": "path",
-            "description": "Transaction unique identifier",
-            "schema": {
-              "example": "550e8400-e29b-41d4-a716-446655440000",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Transaction retrieved successfully."
-          },
-          "401": {
-            "description": "Missing, invalid, or expired authentication.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "The requested resource could not be found.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "api-key": []
-          }
-        ],
-        "summary": "Get transaction by ID",
-        "tags": [
-          "Ledger"
-        ]
-      }
-    },
-    "/api/v1/balance": {
-      "get": {
-        "description": "Get current balance across all wallets and currencies",
-        "operationId": "LedgerController_getBalance",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "Balance retrieved successfully."
-          },
-          "401": {
-            "description": "Missing, invalid, or expired authentication.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "api-key": []
-          }
-        ],
-        "summary": "Get balance",
-        "tags": [
-          "Ledger"
-        ]
-      }
-    },
-    "/api/v1/reports/settlement": {
-      "get": {
-        "description": "Generate settlement report for a specific date",
-        "operationId": "LedgerController_getSettlementReport",
-        "parameters": [
-          {
-            "name": "date",
-            "required": false,
-            "in": "query",
-            "description": "Report date (YYYY-MM-DD)",
-            "schema": {
-              "example": "2024-01-15"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Settlement report retrieved successfully."
-          },
-          "401": {
-            "description": "Missing, invalid, or expired authentication.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "api-key": []
-          }
-        ],
-        "summary": "Get settlement report",
-        "tags": [
-          "Ledger"
-        ]
+        "tags": ["Webhooks"]
       }
     },
     "/api/v1/dashboard/api-keys": {
@@ -2106,9 +1815,7 @@
           }
         ],
         "summary": "Create API key",
-        "tags": [
-          "Dashboard"
-        ]
+        "tags": ["Dashboard"]
       },
       "get": {
         "operationId": "DashboardController_listApiKeys",
@@ -2134,9 +1841,7 @@
           }
         ],
         "summary": "List API keys",
-        "tags": [
-          "Dashboard"
-        ]
+        "tags": ["Dashboard"]
       }
     },
     "/api/v1/dashboard/api-keys/{id}": {
@@ -2194,9 +1899,7 @@
           }
         ],
         "summary": "Update API key label or IP whitelist",
-        "tags": [
-          "Dashboard"
-        ]
+        "tags": ["Dashboard"]
       },
       "delete": {
         "operationId": "DashboardController_revokeApiKey",
@@ -2242,9 +1945,7 @@
           }
         ],
         "summary": "Revoke API key",
-        "tags": [
-          "Dashboard"
-        ]
+        "tags": ["Dashboard"]
       }
     },
     "/api/v1/misc/banks": {
@@ -2267,9 +1968,7 @@
           }
         },
         "summary": "Get supported banks",
-        "tags": [
-          "Misc - Banks & Assets"
-        ]
+        "tags": ["Misc - Banks & Assets"]
       },
       "post": {
         "operationId": "MiscController_addBank",
@@ -2310,9 +2009,7 @@
           }
         },
         "summary": "Add bank account",
-        "tags": [
-          "Misc - Banks & Assets"
-        ]
+        "tags": ["Misc - Banks & Assets"]
       }
     },
     "/api/v1/misc/banks/saved": {
@@ -2335,9 +2032,7 @@
           }
         },
         "summary": "Get saved banks",
-        "tags": [
-          "Misc - Banks & Assets"
-        ]
+        "tags": ["Misc - Banks & Assets"]
       }
     },
     "/api/v1/misc/banks/saved/{accountNumber}": {
@@ -2370,9 +2065,7 @@
           }
         },
         "summary": "Get saved bank by account number",
-        "tags": [
-          "Misc - Banks & Assets"
-        ]
+        "tags": ["Misc - Banks & Assets"]
       }
     },
     "/api/v1/misc/banks/{bankId}": {
@@ -2415,9 +2108,7 @@
           }
         },
         "summary": "Delete bank account",
-        "tags": [
-          "Misc - Banks & Assets"
-        ]
+        "tags": ["Misc - Banks & Assets"]
       }
     },
     "/api/v1/misc/banks/verify": {
@@ -2450,9 +2141,7 @@
           }
         },
         "summary": "Verify bank account",
-        "tags": [
-          "Misc - Banks & Assets"
-        ]
+        "tags": ["Misc - Banks & Assets"]
       }
     },
     "/api/v1/misc/assets": {
@@ -2465,9 +2154,7 @@
           }
         },
         "summary": "Get supported blockchain and assets",
-        "tags": [
-          "Misc - Banks & Assets"
-        ]
+        "tags": ["Misc - Banks & Assets"]
       }
     },
     "/api/v1/misc/crypto-prices": {
@@ -2500,9 +2187,7 @@
           }
         },
         "summary": "Get crypto conversion rate",
-        "tags": [
-          "Misc - Banks & Assets"
-        ]
+        "tags": ["Misc - Banks & Assets"]
       }
     },
     "/api/v1/misc/rate-calculator": {
@@ -2529,11 +2214,7 @@
                     "example": "NGN"
                   }
                 },
-                "required": [
-                  "asset",
-                  "amount",
-                  "currency"
-                ]
+                "required": ["asset", "amount", "currency"]
               }
             }
           }
@@ -2554,9 +2235,7 @@
           }
         },
         "summary": "Estimate payment amount in crypto",
-        "tags": [
-          "Misc - Banks & Assets"
-        ]
+        "tags": ["Misc - Banks & Assets"]
       }
     },
     "/api/v1/payment-sessions": {
@@ -2605,9 +2284,7 @@
           }
         ],
         "summary": "Create a payment session",
-        "tags": [
-          "Payment Sessions"
-        ]
+        "tags": ["Payment Sessions"]
       },
       "get": {
         "operationId": "PaymentSessionsController_findAll",
@@ -2636,13 +2313,7 @@
             "in": "query",
             "schema": {
               "type": "string",
-              "enum": [
-                "pending",
-                "completed",
-                "failed",
-                "expired",
-                "partial"
-              ]
+              "enum": ["pending", "completed", "failed", "expired", "partial"]
             }
           },
           {
@@ -2677,9 +2348,7 @@
           }
         ],
         "summary": "List payment sessions",
-        "tags": [
-          "Payment Sessions"
-        ]
+        "tags": ["Payment Sessions"]
       }
     },
     "/api/v1/payment-sessions/{session_id}": {
@@ -2727,9 +2396,7 @@
           }
         ],
         "summary": "Get a payment session by ID",
-        "tags": [
-          "Payment Sessions"
-        ]
+        "tags": ["Payment Sessions"]
       }
     },
     "/api/v1/payment-sessions/ref/{reference}": {
@@ -2777,9 +2444,7 @@
           }
         ],
         "summary": "Get a payment session by reference",
-        "tags": [
-          "Payment Sessions"
-        ]
+        "tags": ["Payment Sessions"]
       }
     },
     "/api/v1/payment-sessions/{session_id}/deposit-address": {
@@ -2848,9 +2513,7 @@
           }
         ],
         "summary": "Generate deposit address for a session",
-        "tags": [
-          "Payment Sessions"
-        ]
+        "tags": ["Payment Sessions"]
       }
     },
     "/api/v1/payment-sessions/estimate": {
@@ -2902,9 +2565,7 @@
           }
         ],
         "summary": "Estimate crypto amount for a fiat payment",
-        "tags": [
-          "Payment Sessions"
-        ]
+        "tags": ["Payment Sessions"]
       }
     },
     "/api/v1/payment-sessions/{session_id}/cancel": {
@@ -2962,9 +2623,7 @@
           }
         ],
         "summary": "Cancel a pending payment session",
-        "tags": [
-          "Payment Sessions"
-        ]
+        "tags": ["Payment Sessions"]
       }
     },
     "/api/v1/invoices": {
@@ -3013,9 +2672,7 @@
           }
         ],
         "summary": "Create and send an invoice",
-        "tags": [
-          "Invoices"
-        ]
+        "tags": ["Invoices"]
       },
       "get": {
         "operationId": "InvoicesController_findAll",
@@ -3086,9 +2743,7 @@
           }
         ],
         "summary": "List invoices",
-        "tags": [
-          "Invoices"
-        ]
+        "tags": ["Invoices"]
       }
     },
     "/api/v1/invoices/{invoice_id}": {
@@ -3137,9 +2792,7 @@
           }
         ],
         "summary": "Get invoice by ID",
-        "tags": [
-          "Invoices"
-        ]
+        "tags": ["Invoices"]
       }
     },
     "/api/v1/invoices/pay/{invoice_number}": {
@@ -3178,9 +2831,7 @@
           }
         ],
         "summary": "Get invoice by number (public)",
-        "tags": [
-          "Invoices"
-        ]
+        "tags": ["Invoices"]
       }
     },
     "/api/v1/invoices/pay/{invoice_number}/session": {
@@ -3239,9 +2890,7 @@
           }
         ],
         "summary": "Create payment session for invoice (public)",
-        "tags": [
-          "Invoices"
-        ]
+        "tags": ["Invoices"]
       }
     },
     "/api/v1/invoices/{invoice_id}/mark-paid": {
@@ -3299,9 +2948,7 @@
           }
         ],
         "summary": "Mark an invoice as paid",
-        "tags": [
-          "Invoices"
-        ]
+        "tags": ["Invoices"]
       }
     },
     "/api/v1/invoices/{invoice_id}/cancel": {
@@ -3359,9 +3006,7 @@
           }
         ],
         "summary": "Cancel an invoice",
-        "tags": [
-          "Invoices"
-        ]
+        "tags": ["Invoices"]
       }
     },
     "/api/v1/invoices/{invoice_id}/void": {
@@ -3419,9 +3064,7 @@
           }
         ],
         "summary": "Void a paid invoice",
-        "tags": [
-          "Invoices"
-        ]
+        "tags": ["Invoices"]
       }
     },
     "/api/v1/swaps/estimate": {
@@ -3436,15 +3079,7 @@
             "description": "Currency to swap from",
             "schema": {
               "type": "string",
-              "enum": [
-                "NGN",
-                "USDT",
-                "USDC",
-                "ETH",
-                "BNB",
-                "SOL",
-                "TRX"
-              ]
+              "enum": ["NGN", "USDT", "USDC", "ETH", "BNB", "SOL", "TRX"]
             }
           },
           {
@@ -3454,11 +3089,7 @@
             "description": "Currency to swap to",
             "schema": {
               "type": "string",
-              "enum": [
-                "NGN",
-                "USDT",
-                "USDC"
-              ]
+              "enum": ["NGN", "USDT", "USDC"]
             }
           },
           {
@@ -3503,9 +3134,7 @@
           }
         ],
         "summary": "Estimate swap amount",
-        "tags": [
-          "Swaps"
-        ]
+        "tags": ["Swaps"]
       }
     },
     "/api/v1/swaps/quotation": {
@@ -3554,9 +3183,7 @@
           }
         ],
         "summary": "Create swap quotation",
-        "tags": [
-          "Swaps"
-        ]
+        "tags": ["Swaps"]
       }
     },
     "/api/v1/swaps/quotation/{quotationId}": {
@@ -3604,9 +3231,7 @@
           }
         ],
         "summary": "Get swap quotation by ID",
-        "tags": [
-          "Swaps"
-        ]
+        "tags": ["Swaps"]
       }
     },
     "/api/v1/swaps/quotation/{quotationId}/execute": {
@@ -3665,9 +3290,7 @@
           }
         ],
         "summary": "Execute swap quotation",
-        "tags": [
-          "Swaps"
-        ]
+        "tags": ["Swaps"]
       }
     },
     "/api/v1/swaps": {
@@ -3698,11 +3321,7 @@
             "in": "query",
             "schema": {
               "type": "string",
-              "enum": [
-                "NGN",
-                "USDT",
-                "USDC"
-              ]
+              "enum": ["NGN", "USDT", "USDC"]
             }
           },
           {
@@ -3711,11 +3330,7 @@
             "in": "query",
             "schema": {
               "type": "string",
-              "enum": [
-                "NGN",
-                "USDT",
-                "USDC"
-              ]
+              "enum": ["NGN", "USDT", "USDC"]
             }
           },
           {
@@ -3758,9 +3373,7 @@
           }
         ],
         "summary": "List swap history",
-        "tags": [
-          "Swaps"
-        ]
+        "tags": ["Swaps"]
       }
     },
     "/api/v1/swaps/{id}": {
@@ -3808,9 +3421,7 @@
           }
         ],
         "summary": "Get swap details by ID",
-        "tags": [
-          "Swaps"
-        ]
+        "tags": ["Swaps"]
       }
     },
     "/api/v1/refunds/estimate/{reference}": {
@@ -3833,9 +3444,7 @@
             "in": "query",
             "description": "Whether the reference is for a session or invoice",
             "schema": {
-              "enum": [
-                "session"
-              ],
+              "enum": ["session"],
               "type": "string"
             }
           },
@@ -3845,10 +3454,7 @@
             "in": "query",
             "description": "Who will pay the network fee",
             "schema": {
-              "enum": [
-                "merchant",
-                "customer"
-              ],
+              "enum": ["merchant", "customer"],
               "type": "string"
             }
           }
@@ -3884,9 +3490,7 @@
           }
         ],
         "summary": "Estimate refund",
-        "tags": [
-          "Refunds"
-        ]
+        "tags": ["Refunds"]
       }
     },
     "/api/v1/refunds": {
@@ -3918,12 +3522,7 @@
             "in": "query",
             "schema": {
               "type": "string",
-              "enum": [
-                "pending",
-                "processing",
-                "completed",
-                "failed"
-              ]
+              "enum": ["pending", "processing", "completed", "failed"]
             }
           },
           {
@@ -3995,9 +3594,7 @@
           }
         ],
         "summary": "List refunds",
-        "tags": [
-          "Refunds"
-        ]
+        "tags": ["Refunds"]
       }
     },
     "/api/v1/refunds/{id}": {
@@ -4045,9 +3642,7 @@
           }
         ],
         "summary": "Get refund by ID",
-        "tags": [
-          "Refunds"
-        ]
+        "tags": ["Refunds"]
       }
     },
     "/api/v1/refunds/session/{sessionReference}": {
@@ -4116,9 +3711,7 @@
           }
         ],
         "summary": "Refund a payment session",
-        "tags": [
-          "Refunds"
-        ]
+        "tags": ["Refunds"]
       }
     }
   },
@@ -4166,21 +3759,14 @@
           },
           "errors": {
             "type": "object",
-            "example": [
-              "amount must not be less than 0"
-            ]
+            "example": ["amount must not be less than 0"]
           },
           "timestamp": {
             "type": "string",
             "example": "2026-09-17T12:00:00.000Z"
           }
         },
-        "required": [
-          "success",
-          "status",
-          "message",
-          "timestamp"
-        ]
+        "required": ["success", "status", "message", "timestamp"]
       },
       "CreateDepositAccountDto": {
         "type": "object",
@@ -4201,10 +3787,7 @@
         "properties": {
           "type": {
             "type": "string",
-            "enum": [
-              "static_deposit_address",
-              "ngn_virtual_account"
-            ],
+            "enum": ["static_deposit_address", "ngn_virtual_account"],
             "example": "static_deposit_address",
             "description": "static_deposit_address issues a crypto address; ngn_virtual_account issues an NGN bank account"
           },
@@ -4228,9 +3811,7 @@
             "description": "BVN of the account holder (11 digits). Required when type is ngn_virtual_account"
           }
         },
-        "required": [
-          "type"
-        ]
+        "required": ["type"]
       },
       "AddWithdrawalAddressDto": {
         "type": "object",
@@ -4261,13 +3842,7 @@
             "example": true
           }
         },
-        "required": [
-          "address",
-          "network",
-          "token",
-          "label",
-          "isDefault"
-        ]
+        "required": ["address", "network", "token", "label", "isDefault"]
       },
       "InitiateStableCoinWithdrawalDto": {
         "type": "object",
@@ -4299,13 +3874,7 @@
             "example": "53439454689865453"
           }
         },
-        "required": [
-          "address",
-          "amount",
-          "network",
-          "token",
-          "externalId"
-        ]
+        "required": ["address", "amount", "network", "token", "externalId"]
       },
       "InitiateFiatWithdrawalDto": {
         "type": "object",
@@ -4332,10 +3901,7 @@
             "example": "3847"
           }
         },
-        "required": [
-          "bank_id",
-          "amount"
-        ]
+        "required": ["bank_id", "amount"]
       },
       "CreateCustomerDto": {
         "type": "object",
@@ -4432,9 +3998,7 @@
             ]
           }
         },
-        "required": [
-          "bvn"
-        ]
+        "required": ["bvn"]
       },
       "VerifyNinDto": {
         "type": "object",
@@ -4453,9 +4017,7 @@
             ]
           }
         },
-        "required": [
-          "nin"
-        ]
+        "required": ["nin"]
       },
       "VerifyVninDto": {
         "type": "object",
@@ -4474,9 +4036,7 @@
             ]
           }
         },
-        "required": [
-          "vnin"
-        ]
+        "required": ["vnin"]
       },
       "VerifyCacDto": {
         "type": "object",
@@ -4489,13 +4049,7 @@
           "registration_type": {
             "type": "string",
             "description": "Type of business registration",
-            "enum": [
-              "RC",
-              "BN",
-              "IT",
-              "LP",
-              "LLP"
-            ],
+            "enum": ["RC", "BN", "IT", "LP", "LLP"],
             "example": "RC"
           },
           "registration_name": {
@@ -4504,10 +4058,7 @@
             "example": "Acme Corp Ltd"
           }
         },
-        "required": [
-          "rc_number",
-          "registration_type"
-        ]
+        "required": ["rc_number", "registration_type"]
       },
       "CreateOfframpDto": {
         "type": "object",
@@ -4515,22 +4066,13 @@
           "crypto_asset": {
             "type": "string",
             "description": "Cryptocurrency asset to sell",
-            "enum": [
-              "BTC",
-              "TRX",
-              "BNB",
-              "TON",
-              "USDT",
-              "ETH",
-              "USDC",
-              "SOL"
-            ]
+            "enum": ["BTC", "TRX", "BNB", "TON", "USDT", "ETH", "USDC", "SOL"]
           },
           "crypto_amount": {
             "type": "number",
             "description": "Cryptocurrency amount to sell",
             "example": 10,
-            "minimum": 1e-08
+            "minimum": 1e-8
           },
           "recipient_id": {
             "type": "string",
@@ -4545,11 +4087,7 @@
             }
           }
         },
-        "required": [
-          "crypto_asset",
-          "crypto_amount",
-          "recipient_id"
-        ]
+        "required": ["crypto_asset", "crypto_amount", "recipient_id"]
       },
       "CreatePayoutDto": {
         "type": "object",
@@ -4588,11 +4126,7 @@
             }
           }
         },
-        "required": [
-          "amount",
-          "bank_code",
-          "account_number"
-        ]
+        "required": ["amount", "bank_code", "account_number"]
       },
       "ResolveAccountDto": {
         "type": "object",
@@ -4608,10 +4142,7 @@
             "example": "1234567890"
           }
         },
-        "required": [
-          "bank_code",
-          "account_number"
-        ]
+        "required": ["bank_code", "account_number"]
       },
       "SaveWebhookDto": {
         "type": "object",
@@ -4648,10 +4179,7 @@
           },
           "ip_whitelist": {
             "description": "IP whitelist",
-            "example": [
-              "192.168.1.1",
-              "10.0.0.1"
-            ],
+            "example": ["192.168.1.1", "10.0.0.1"],
             "type": "array",
             "items": {
               "type": "array"
@@ -4683,11 +4211,7 @@
             "example": false
           }
         },
-        "required": [
-          "accountNumber",
-          "bankCode",
-          "isDefault"
-        ]
+        "required": ["accountNumber", "bankCode", "isDefault"]
       },
       "VerifyBankAccountDto": {
         "type": "object",
@@ -4703,10 +4227,7 @@
             "example": "033"
           }
         },
-        "required": [
-          "accountNumber",
-          "bankCode"
-        ]
+        "required": ["accountNumber", "bankCode"]
       },
       "GetRateQueryDto": {
         "type": "object",
@@ -4722,10 +4243,7 @@
             "example": "NGN"
           }
         },
-        "required": [
-          "from",
-          "to"
-        ]
+        "required": ["from", "to"]
       },
       "CreatePaymentSessionDto": {
         "type": "object",
@@ -4753,16 +4271,7 @@
           "crypto_asset": {
             "type": "string",
             "description": "Crypto asset (locks asset for this session)",
-            "enum": [
-              "BTC",
-              "TRX",
-              "BNB",
-              "TON",
-              "USDT",
-              "ETH",
-              "USDC",
-              "SOL"
-            ]
+            "enum": ["BTC", "TRX", "BNB", "TON", "USDT", "ETH", "USDC", "SOL"]
           },
           "network": {
             "type": "string",
@@ -4814,10 +4323,7 @@
             }
           }
         },
-        "required": [
-          "amount",
-          "currency"
-        ]
+        "required": ["amount", "currency"]
       },
       "GenerateDepositAddressDto": {
         "type": "object",
@@ -4825,16 +4331,7 @@
           "crypto_asset": {
             "type": "string",
             "description": "Crypto asset to receive",
-            "enum": [
-              "BTC",
-              "TRX",
-              "BNB",
-              "TON",
-              "USDT",
-              "ETH",
-              "USDC",
-              "SOL"
-            ]
+            "enum": ["BTC", "TRX", "BNB", "TON", "USDT", "ETH", "USDC", "SOL"]
           },
           "network": {
             "type": "string",
@@ -4851,10 +4348,7 @@
             ]
           }
         },
-        "required": [
-          "crypto_asset",
-          "network"
-        ]
+        "required": ["crypto_asset", "network"]
       },
       "EstimatePaymentDto": {
         "type": "object",
@@ -4862,16 +4356,7 @@
           "crypto_asset": {
             "type": "string",
             "description": "Crypto asset",
-            "enum": [
-              "BTC",
-              "TRX",
-              "BNB",
-              "TON",
-              "USDT",
-              "ETH",
-              "USDC",
-              "SOL"
-            ]
+            "enum": ["BTC", "TRX", "BNB", "TON", "USDT", "ETH", "USDC", "SOL"]
           },
           "network": {
             "type": "string",
@@ -4931,11 +4416,7 @@
             "example": "08012345678"
           }
         },
-        "required": [
-          "email",
-          "first_name",
-          "last_name"
-        ]
+        "required": ["email", "first_name", "last_name"]
       },
       "InvoiceLineItemDto": {
         "type": "object",
@@ -4953,11 +4434,7 @@
             "example": 500
           }
         },
-        "required": [
-          "description",
-          "quantity",
-          "unit_price"
-        ]
+        "required": ["description", "quantity", "unit_price"]
       },
       "CreateInvoiceDto": {
         "type": "object",
@@ -5002,26 +4479,14 @@
             }
           }
         },
-        "required": [
-          "customer",
-          "line_items"
-        ]
+        "required": ["customer", "line_items"]
       },
       "InvoicePaymentDto": {
         "type": "object",
         "properties": {
           "crypto_asset": {
             "type": "string",
-            "enum": [
-              "BTC",
-              "TRX",
-              "BNB",
-              "TON",
-              "USDT",
-              "ETH",
-              "USDC",
-              "SOL"
-            ],
+            "enum": ["BTC", "TRX", "BNB", "TON", "USDT", "ETH", "USDC", "SOL"],
             "example": "USDT"
           },
           "network": {
@@ -5039,30 +4504,19 @@
             "example": "Tron"
           }
         },
-        "required": [
-          "crypto_asset",
-          "network"
-        ]
+        "required": ["crypto_asset", "network"]
       },
       "CreateSwapQuotationDto": {
         "type": "object",
         "properties": {
           "fromCurrency": {
             "type": "string",
-            "enum": [
-              "NGN",
-              "USDT",
-              "USDC"
-            ],
+            "enum": ["NGN", "USDT", "USDC"],
             "description": "Currency to swap from"
           },
           "toCurrency": {
             "type": "string",
-            "enum": [
-              "NGN",
-              "USDT",
-              "USDC"
-            ],
+            "enum": ["NGN", "USDT", "USDC"],
             "description": "Currency to swap to"
           },
           "amount": {
@@ -5071,11 +4525,7 @@
             "example": "100.00"
           }
         },
-        "required": [
-          "fromCurrency",
-          "toCurrency",
-          "amount"
-        ]
+        "required": ["fromCurrency", "toCurrency", "amount"]
       },
       "RefundDto": {
         "type": "object",
@@ -5092,35 +4542,23 @@
           },
           "feePaidBy": {
             "type": "string",
-            "enum": [
-              "merchant",
-              "customer"
-            ],
+            "enum": ["merchant", "customer"],
             "description": "Who pays the blockchain fee. Defaults to merchant settings."
           }
         },
-        "required": [
-          "refundAddress"
-        ]
+        "required": ["refundAddress"]
       },
       "UpdateSettlementsDto": {
         "type": "object",
         "properties": {
           "settlement_currency": {
             "type": "string",
-            "enum": [
-              "NGN",
-              "USDT",
-              "USDC"
-            ],
+            "enum": ["NGN", "USDT", "USDC"],
             "example": "USDT"
           },
           "default_payout_method": {
             "type": "string",
-            "enum": [
-              "crypto",
-              "bank"
-            ],
+            "enum": ["crypto", "bank"],
             "example": "crypto"
           },
           "instant_payouts_enabled": {

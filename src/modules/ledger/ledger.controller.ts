@@ -9,12 +9,14 @@ import {
   ApiParam,
   ApiQuery,
   ApiOkResponse,
+  ApiExcludeController,
 } from '@nestjs/swagger';
 import { ApiErrorResponses } from '../../common/decorators/api-error-responses.decorator';
 
 @ApiTags('Ledger')
 @ApiBearerAuth('api-key')
 @DualAuth()
+@ApiExcludeController()
 @Controller()
 export class LedgerController {
   constructor(private readonly ledgerService: LedgerService) {}
