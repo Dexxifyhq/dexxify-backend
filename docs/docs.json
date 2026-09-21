@@ -8,10 +8,10 @@
     "light": "#F8F9FA",
     "dark": "#212529"
   },
-  "favicon": "/dexxify_icon.jpg",
+  "favicon": "/favicon.ico",
   "logo": {
-    "light": "/dexxify_icon.jpg",
-    "dark": "/dexxify_icon.jpg"
+    "light": "/assets/dexxify-trans.png",
+    "dark": "/assets/dexxify-transparent.png"
   },
   "navigation": {
     "tabs": [
