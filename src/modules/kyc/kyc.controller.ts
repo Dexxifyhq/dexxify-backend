@@ -12,11 +12,13 @@ import {
   ApiParam,
   ApiTags,
   ApiExcludeEndpoint,
+  ApiExcludeController,
 } from '@nestjs/swagger';
 
 @ApiTags('KYC Verification')
 @ApiBearerAuth('api-key')
 @DualAuth()
+@ApiExcludeController()
 @Controller('kyc')
 export class KycController {
   constructor(private readonly kycService: KycService) {}
