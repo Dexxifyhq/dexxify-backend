@@ -1,21 +1,16 @@
 import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Payout, LedgerEntry } from '../../database/entities';
+import { Payout } from '../../database/entities';
 import { parsePagination, buildPaginationMeta } from '../../common/utils';
-import { CoincircuitService } from '../../providers/coincircuit/coincircuit.service';
 
 @Injectable()
 export class PayoutsService {
   private readonly logger = new Logger(PayoutsService.name);
-  private readonly PAYOUT_FEE = 150;
 
   constructor(
     @InjectRepository(Payout)
     private readonly payoutRepo: Repository<Payout>,
-    @InjectRepository(LedgerEntry)
-    private readonly ledgerRepo: Repository<LedgerEntry>,
-    private readonly cc: CoincircuitService,
   ) {}
 
   async findOne(businessId: string, mode: 'live' | 'test', payoutId: string) {

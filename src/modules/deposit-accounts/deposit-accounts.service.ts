@@ -18,6 +18,7 @@ import {
   User,
   Business,
   Customer,
+  Bank,
 } from '../../database/entities';
 import {
   CreateDepositAccountDto,
@@ -109,6 +110,8 @@ export class DepositAccountsService {
     private readonly ledgerRepo: Repository<LedgerEntry>,
     @InjectRepository(Customer)
     private readonly customerRepo: Repository<Customer>,
+    @InjectRepository(Bank)
+    private readonly bankRepo: Repository<Bank>,
     private readonly cc: CoincircuitService,
     private readonly customer: CustomersService,
     private readonly platformCtx: PlatformContextService,
@@ -465,6 +468,7 @@ export class DepositAccountsService {
           amount: dto.amount,
           fee: feeAmount,
           currency: withdrawalCurrency,
+          wallet_address: dto.address,
           status: PayoutStatus.PENDING,
           provider_payout_id: payoutId,
           metadata: { recipientId: saved.id },
@@ -537,9 +541,18 @@ export class DepositAccountsService {
       throw new BadRequestException('Insufficient balance');
     }
 
+    const bank = await this.bankRepo.findOne({
+      where: {
+        provider_recipient_id: dto.recipient_id,
+        business_id: businessId,
+        mode,
+      },
+    });
+    if (!bank) throw new NotFoundException('Bank account not found.');
+
     // CC call outside transaction — if it fails nothing is written
     const result = await this.cc.initiatePayout(mode, {
-      recipientId: dto.bank_id,
+      recipientId: bank.provider_recipient_id,
       amount: dto.amount.toString(),
       currency: 'NGN',
       narration: dto.narration,
@@ -554,11 +567,14 @@ export class DepositAccountsService {
           business_id: businessId,
           mode,
           amount: dto.amount,
+          currency: LedgerCurrency.NGN,
           fee: feeAmount,
+          account_number: bank.account_number,
+          account_name: bank.account_name,
           narration: dto.narration,
           status: PayoutStatus.PENDING,
           provider_payout_id: payoutId,
-          metadata: { recipientId: dto.bank_id },
+          metadata: { recipientId: dto.recipient_id },
         }),
       );
 

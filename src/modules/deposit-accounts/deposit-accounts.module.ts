@@ -9,6 +9,7 @@ import {
   Payout,
   Customer,
   User,
+  Bank,
   Business,
 } from '../../database/entities';
 import { CoincircuitModule } from '../../providers/coincircuit/coincircuit.module';
@@ -25,6 +26,7 @@ import { KycVerifiedGuard } from '../../common/guards/kyc-verified.guard';
       Payout,
       Customer,
       User,
+      Bank,
       Business,
     ]),
     CoincircuitModule,

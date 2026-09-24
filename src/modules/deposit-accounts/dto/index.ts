@@ -292,10 +292,14 @@ export class InitiateStableCoinWithdrawalDto {
 }
 
 export class InitiateFiatWithdrawalDto {
-  @ApiProperty({ description: 'Bank ID', example: '6a0ce75269321c4cb5eafe7d' })
+  @ApiProperty({
+    description:
+      'Provider recipient ID for the bank account, returned as `id` from POST /misc/banks',
+    example: '6a0ce75269321c4cb5eafe7d',
+  })
   @IsString()
   @IsNotEmpty()
-  bank_id: string;
+  recipient_id: string;
 
   @ApiProperty({
     description: 'Amount to withdraw in NGN/GHS',
@@ -314,12 +318,4 @@ export class InitiateFiatWithdrawalDto {
   @IsString()
   @IsOptional()
   narration?: string;
-
-  @ApiPropertyOptional({
-    description: 'Pin on the dashboard',
-    example: '3847',
-  })
-  @IsString()
-  @IsOptional()
-  pin?: string;
 }

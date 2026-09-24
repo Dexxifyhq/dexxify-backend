@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
@@ -24,6 +24,7 @@ import {
   CryptoTransaction,
   CryptoTxDirection,
   CryptoTxStatus,
+  Bank,
 } from '../../database/entities';
 import { CoincircuitService } from '../../providers/coincircuit/coincircuit.service';
 import { PlatformContextService } from '../platform/platform-context.service';
@@ -308,6 +309,8 @@ export class CoincircuitWebhooksService {
     private readonly walletRepo: Repository<DepositAccount>,
     @InjectRepository(SwapRecord)
     private readonly swapRecordRepo: Repository<SwapRecord>,
+    @InjectRepository(Bank)
+    private readonly bankRepo: Repository<Bank>,
     @InjectRepository(CryptoTransaction)
     private readonly cryptoTxRepo: Repository<CryptoTransaction>,
   ) {
@@ -1204,12 +1207,6 @@ export class CoincircuitWebhooksService {
 
   // ── Swap handlers ────────────────────────────────────
 
-  /**
-   * Coincircuit can fire a webhook for something we just created before our
-   * own INSERT for it has committed (we call their API, they execute and may
-   * dispatch the webhook immediately, then we save locally) — retry with
-   * backoff instead of dropping the event on the first miss.
-   */
   private async findSwapRecordWithRetry(
     ccSwapId: string,
     attempts = 4,
@@ -1322,6 +1319,15 @@ export class CoincircuitWebhooksService {
     const totalAmount = grossNgn + fee;
     const platformId = this.platformCtx.getBusinessId();
 
+    const bank = await this.bankRepo.findOne({
+      where: {
+        provider_recipient_id: meta.recipientId,
+        business_id: record.business_id,
+        mode: record.mode,
+      },
+    });
+    if (!bank) throw new NotFoundException('Bank account not found.');
+
     // CC call first — if it fails, nothing is written
     let payoutData: CCPayoutResult;
     try {
@@ -1348,8 +1354,10 @@ export class CoincircuitWebhooksService {
           mode: record.mode,
           amount: grossNgn,
           fee,
-          bank_code: null,
-          account_number: null,
+          currency: LedgerCurrency.NGN,
+          bank_code: bank.bank_code,
+          account_number: bank.account_number,
+          account_name: bank.account_name,
           narration: 'Offramp payout',
           status: PayoutStatus.PENDING,
           provider_payout_id: payoutData.id,

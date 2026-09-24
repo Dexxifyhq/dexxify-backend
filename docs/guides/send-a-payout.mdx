@@ -44,13 +44,13 @@ curl -X POST https://api.dexxify.com/api/v1/deposit-accounts/withdrawals/local-c
   -H "Authorization: Bearer dex_live_xxxxxxxxxxxx" \
   -H "Content-Type: application/json" \
   -d '{
-    "bank_id": "6a0ce75269321c4cb5eafe7d",
+    "recipient_id": "6a0ce75269321c4cb5eafe7d",
     "amount": 50000,
     "narration": "Vendor payment"
   }'
 ```
 
-`bank_id` refers to a recipient already registered on your business via `POST /misc/banks` — not a raw account number.
+`recipient_id` is the `id` field returned by `POST /misc/banks` when you registered the bank account.
 
 ## Tracking the result
 

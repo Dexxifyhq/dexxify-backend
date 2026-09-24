@@ -6,14 +6,14 @@ import {
   ManyToOne,
   JoinColumn,
   Index,
-  PrimaryColumn,
+  PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Business } from './business.entity';
 
 @Entity('banks')
 @Index(['business_id', 'account_number'])
 export class Bank {
-  @PrimaryColumn('text')
+  @PrimaryGeneratedColumn('uuid')
   id: string;
 
   @Index()

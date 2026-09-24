@@ -8,7 +8,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Bank } from '../../database/entities/bank.entity';
 import { CoincircuitService } from '../../providers/coincircuit/coincircuit.service';
-import { generateUniqueId } from '../../common/utils';
 
 export interface CCRecipientDetails {
   accountNumber?: string;
@@ -87,7 +86,6 @@ export class MiscService {
     const details = recipient.details ?? {};
 
     const bank = Object.assign(this.bankRepo.create(), {
-      id: generateUniqueId(),
       provider_recipient_id: recipient.id,
       label: recipient.label ?? '',
       business_id: businessId,

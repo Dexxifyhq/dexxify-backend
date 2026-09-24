@@ -49,15 +49,14 @@ export class Payout {
   account_name: string;
 
   @Column({ type: 'text', nullable: true })
+  wallet_address: string | null;
+
+  @Column({ type: 'text', nullable: true })
   narration: string;
 
   @Index()
   @Column({ type: 'enum', enum: PayoutStatus, default: PayoutStatus.PENDING })
   status: PayoutStatus;
-
-  @Index()
-  @Column({ type: 'uuid', nullable: true })
-  batch_id: string;
 
   @Column({ type: 'text', nullable: true })
   provider_reference: string;

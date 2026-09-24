@@ -8,7 +8,7 @@ import {
   Index,
 } from 'typeorm';
 import { Business } from './business.entity';
-import { DepositAccount } from './deposit-account';
+import { DepositAccount } from './deposit-account.entity';
 
 export enum TxType {
   DEPOSIT = 'deposit',

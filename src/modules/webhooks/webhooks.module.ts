@@ -18,6 +18,7 @@ import {
   DepositAccount,
   SwapRecord,
   CryptoTransaction,
+  Bank,
 } from '../../database/entities';
 
 @Module({
@@ -31,6 +32,7 @@ import {
       Payout,
       LedgerEntry,
       Invoice,
+      Bank,
       DepositAccount,
       SwapRecord,
       CryptoTransaction,
