@@ -28,6 +28,32 @@ import {
 import { DualAuth, GetMode } from '../../common/decorators';
 import { ApiErrorResponses } from '../../common/decorators/api-error-responses.decorator';
 
+const REFUND_EXAMPLE = {
+  id: 'ref_8f3c1a2b4d5e6f7a',
+  sessionReference: 'CS_9f8e7d6c5b4a',
+  amount: '50.00',
+  currency: 'USD',
+  asset: 'USDT',
+  chain: 'tron',
+  refundAddress: 'TXyz1234567890abcdef',
+  feePaidBy: 'merchant',
+  fee: '0.50',
+  reason: 'Customer requested refund',
+  status: 'pending',
+  createdAt: '2026-09-17T12:00:00.000Z',
+  updatedAt: '2026-09-17T12:00:00.000Z',
+};
+
+const REFUND_ESTIMATE_EXAMPLE = {
+  data: {
+    amount: '50.00',
+    fee: '0.50',
+    totalDeducted: '50.50',
+    currency: 'USD',
+    feePaidBy: 'merchant',
+  },
+};
+
 @ApiTags('Refunds')
 @ApiBearerAuth('api-key')
 @DualAuth()
@@ -51,8 +77,14 @@ export class RefundsController {
     enum: ['merchant', 'customer'],
     required: false,
   })
-  @ApiOkResponse({ description: 'Refund estimate calculated successfully.' })
-  @ApiErrorResponses(401, 404)
+  @ApiOkResponse({
+    description: 'Refund estimate calculated successfully.',
+    schema: { example: REFUND_ESTIMATE_EXAMPLE },
+  })
+  @ApiErrorResponses(401, {
+    status: 404,
+    message: 'Refund not found for the given reference.',
+  })
   @Get('estimate/:reference')
   estimate(
     @GetMode() mode: 'live' | 'test',
@@ -67,7 +99,10 @@ export class RefundsController {
     description:
       'Returns all refunds. Filters by status, session/invoice reference, date range, or search.',
   })
-  @ApiOkResponse({ description: 'Refunds retrieved successfully.' })
+  @ApiOkResponse({
+    description: 'Refunds retrieved successfully.',
+    schema: { example: { data: [REFUND_EXAMPLE] } },
+  })
   @ApiErrorResponses(401)
   @Get()
   findAll(@GetMode() mode: 'live' | 'test', @Query() query: RefundQueryDto) {
@@ -76,8 +111,11 @@ export class RefundsController {
 
   @ApiOperation({ summary: 'Get refund by ID' })
   @ApiParam({ name: 'id', description: 'Refund ID' })
-  @ApiOkResponse({ description: 'Refund retrieved successfully.' })
-  @ApiErrorResponses(401, 404)
+  @ApiOkResponse({
+    description: 'Refund retrieved successfully.',
+    schema: { example: { data: REFUND_EXAMPLE } },
+  })
+  @ApiErrorResponses(401, { status: 404, message: 'Refund not found.' })
   @Get(':id')
   findOne(@GetMode() mode: 'live' | 'test', @Param('id') id: string) {
     return this.refundsService.findOne(mode, id);
@@ -93,8 +131,15 @@ export class RefundsController {
     description: 'Session reference (e.g. CS_xxxxx)',
   })
   @ApiBody({ type: RefundDto })
-  @ApiCreatedResponse({ description: 'Refund initiated successfully.' })
-  @ApiErrorResponses(400, 401, 404)
+  @ApiCreatedResponse({
+    description: 'Refund initiated successfully.',
+    schema: { example: { data: REFUND_EXAMPLE } },
+  })
+  @ApiErrorResponses(
+    { status: 400, message: 'refundAddress should not be empty' },
+    401,
+    { status: 404, message: 'Payment session not found.' },
+  )
   @HttpCode(HttpStatus.CREATED)
   @Post('session/:sessionReference')
   refundSession(

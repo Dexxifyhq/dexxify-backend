@@ -52,6 +52,59 @@ export class UpdateDepositAccountAutoSettlementDto {
   auto_settlement: boolean;
 }
 
+const DEPOSIT_ACCOUNT_EXAMPLE = {
+  id: '67063f653b4a1f6c7a60ec57',
+  business_id: '8e2f6b2a-df9c-4c2a-9a0a-9e6a2a2b6a11',
+  mode: 'test',
+  customer_id: '3c1e6a2a-2b3c-4d5e-8f9a-1a2b3c4d5e6f',
+  status: 'active',
+  deposit_addresses: [
+    {
+      chain: 'tron',
+      address: 'TXkPqR7YbAaHqZ5t5fRZ9Zk3f2NcQvJ9f2A',
+      createdAt: '2026-09-01T10:15:00.000Z',
+    },
+  ],
+  ngn_virtual_accounts: [],
+  created_at: '2026-09-01T10:15:00.000Z',
+  updated_at: '2026-09-01T10:15:00.000Z',
+};
+
+const CC_DEPOSIT_ACCOUNT_DATA_EXAMPLE = {
+  id: '67063f653b4a1f6c7a60ec57',
+  staticDepositAddresses: [
+    {
+      chain: 'tron',
+      address: 'TXkPqR7YbAaHqZ5t5fRZ9Zk3f2NcQvJ9f2A',
+      createdAt: '2026-09-01T10:15:00.000Z',
+    },
+  ],
+  ngnVirtualAccounts: [
+    {
+      currency: 'NGN',
+      accountNumber: '0123456789',
+      accountName: 'Dexxify Test Business',
+      bankName: 'Wema Bank',
+      bankCode: '035',
+      accountReference: 'dex_ngn_67063f65',
+      createdAt: '2026-09-01T10:15:00.000Z',
+    },
+  ],
+};
+
+const WITHDRAWAL_WALLET_EXAMPLE = {
+  id: '6a0ce75269321c4cb5eafe7d',
+  business_id: '8e2f6b2a-df9c-4c2a-9a0a-9e6a2a2b6a11',
+  mode: 'test',
+  address: 'UQCvj9LMypzHShhTvO1qSLE0XiWxopEMweLh8MFnY3mxzLvi',
+  network: 'bsc',
+  token: 'USDT',
+  label: 'My USDT Wallet',
+  primary: true,
+  created_at: '2026-09-01T10:15:00.000Z',
+  updated_at: '2026-09-01T10:15:00.000Z',
+};
+
 @ApiTags('Deposit Account')
 @ApiBearerAuth('api-key')
 @DualAuth()
@@ -68,10 +121,22 @@ export class DepositAccountsController {
     description: 'Create a new deposit account for the authenticated user',
   })
   @ApiCreatedResponse({
-    description: 'Deposit account created successfully',
+    description: 'Deposit account created successfully.',
     type: DepositAccount,
+    example: DEPOSIT_ACCOUNT_EXAMPLE,
   })
-  @ApiErrorResponses(400, 401)
+  @ApiErrorResponses(
+    {
+      status: 400,
+      message: 'Failed to create deposit account.',
+    },
+    401,
+    {
+      status: 403,
+      message:
+        'This action requires a verified identity. Complete individual KYC verification first.',
+    },
+  )
   @ApiBody({ type: CreateDepositAccountDto })
   async create(
     @GetBusinessId() businessId: string,
@@ -87,7 +152,22 @@ export class DepositAccountsController {
     description:
       'Retrieve all deposit accounts for the authenticated user with optional filtering',
   })
-  @ApiOkResponse({ description: 'Deposit accounts retrieved successfully.' })
+  @ApiOkResponse({
+    description: 'Deposit accounts retrieved successfully.',
+    schema: {
+      example: {
+        data: [DEPOSIT_ACCOUNT_EXAMPLE],
+        meta: {
+          total: 1,
+          page: 1,
+          limit: 10,
+          total_pages: 1,
+          has_next: false,
+          has_prev: false,
+        },
+      },
+    },
+  })
   @ApiErrorResponses(401)
   async findAll(
     @GetBusinessId() businessId: string,
@@ -107,8 +187,15 @@ export class DepositAccountsController {
     description: 'Deposit account unique identifier',
     example: '67063f653b4a1f6c7a60ec57',
   })
-  @ApiOkResponse({ description: 'Deposit account retrieved successfully.' })
-  @ApiErrorResponses(401, 404)
+  @ApiOkResponse({
+    description: 'Deposit account retrieved successfully.',
+    type: DepositAccount,
+    example: DEPOSIT_ACCOUNT_EXAMPLE,
+  })
+  @ApiErrorResponses(401, {
+    status: 404,
+    message: 'Deposit account not found.',
+  })
   async findOne(
     @GetBusinessId() businessId: string,
     @GetMode() mode: 'live' | 'test',
@@ -134,8 +221,15 @@ export class DepositAccountsController {
   })
   @ApiOkResponse({
     description: 'Deposit account details retrieved successfully.',
+    schema: { example: CC_DEPOSIT_ACCOUNT_DATA_EXAMPLE },
   })
-  @ApiErrorResponses(400, 401)
+  @ApiErrorResponses(
+    {
+      status: 400,
+      message: 'Failed to retrieve deposit account with crypto provider.',
+    },
+    401,
+  )
   async getDepositAccountDetails(
     @Param('deposit_account_id') depositAccountId: string,
     @GetMode() mode: 'live' | 'test',
@@ -153,8 +247,15 @@ export class DepositAccountsController {
   })
   @ApiOkResponse({
     description: 'Deposit account details retrieved successfully.',
+    schema: { example: [CC_DEPOSIT_ACCOUNT_DATA_EXAMPLE] },
   })
-  @ApiErrorResponses(400, 401)
+  @ApiErrorResponses(
+    {
+      status: 400,
+      message: 'Failed to retrieve deposit accounts with crypto provider.',
+    },
+    401,
+  )
   async getAllDepositAccountDetails(@GetMode() mode: 'live' | 'test') {
     return this.depositAccountsService.getAllDepositAccountDetails(mode);
   }
@@ -168,8 +269,20 @@ export class DepositAccountsController {
   })
   @ApiParam({ name: 'deposit_account_id', description: 'Deposit account ID' })
   @ApiBody({ type: IssueDepositIdentityDto })
-  @ApiCreatedResponse({ description: 'Deposit identity issued successfully.' })
-  @ApiErrorResponses(400, 401, 403, 404)
+  @ApiCreatedResponse({
+    description: 'Deposit identity issued successfully.',
+    schema: { example: CC_DEPOSIT_ACCOUNT_DATA_EXAMPLE },
+  })
+  @ApiErrorResponses(
+    { status: 400, message: 'BVN must be exactly 11 digits.' },
+    401,
+    {
+      status: 403,
+      message:
+        'This action requires a verified identity. Complete individual KYC verification first.',
+    },
+    { status: 404, message: 'Deposit account not found.' },
+  )
   async issueIdentity(
     @GetBusinessId() businessId: string,
     @GetMode() mode: 'live' | 'test',
@@ -191,8 +304,18 @@ export class DepositAccountsController {
     description: 'Add a withdrawal (payout) wallet address for stable coins',
   })
   @ApiBody({ type: AddWithdrawalAddressDto })
-  @ApiCreatedResponse({ description: 'Withdrawal address added successfully.' })
-  @ApiErrorResponses(400, 401)
+  @ApiCreatedResponse({
+    description: 'Withdrawal address added successfully.',
+    schema: { example: { success: true, data: WITHDRAWAL_WALLET_EXAMPLE } },
+  })
+  @ApiErrorResponses(
+    {
+      status: 400,
+      message:
+        'network must be one of the following values: bsc, tron, solana, base, ethereum',
+    },
+    401,
+  )
   async addWithdrawalAddress(
     @Body() dto: AddWithdrawalAddressDto,
     @GetBusinessId() businessId: string,
@@ -212,6 +335,7 @@ export class DepositAccountsController {
   })
   @ApiOkResponse({
     description: 'Saved withdrawal addresses retrieved successfully.',
+    schema: { example: [WITHDRAWAL_WALLET_EXAMPLE] },
   })
   @ApiErrorResponses(401)
   async getSavedWithdrawalAddresses(
@@ -231,6 +355,7 @@ export class DepositAccountsController {
   })
   @ApiOkResponse({
     description: 'Withdrawal addresses retrieved successfully.',
+    schema: { example: [WITHDRAWAL_WALLET_EXAMPLE] },
   })
   @ApiErrorResponses(401)
   async getWithdrawalAddresses() {
@@ -246,8 +371,11 @@ export class DepositAccountsController {
     name: 'withdrawalAddressId',
     description: 'Withdrawal address unique identifier',
   })
-  @ApiOkResponse({ description: 'Withdrawal address removed successfully.' })
-  @ApiErrorResponses(401, 404)
+  @ApiOkResponse({
+    description: 'Request processed successfully',
+    schema: { example: { success: true } },
+  })
+  @ApiErrorResponses(401)
   async removeWithdrawalAddress(
     @Param('withdrawalAddressId') withdrawalAddressId: string,
   ) {
@@ -266,8 +394,13 @@ export class DepositAccountsController {
   @ApiBody({ type: InitiateStableCoinWithdrawalDto })
   @ApiCreatedResponse({
     description: 'Stable coin withdrawal initiated successfully.',
+    schema: { example: { fee: 1.5, amount: 5 } },
   })
-  @ApiErrorResponses(400, 401, 403)
+  @ApiErrorResponses({ status: 400, message: 'Insufficient balance' }, 401, {
+    status: 403,
+    message:
+      'This action requires a verified identity. Complete individual KYC verification first.',
+  })
   async initiateStableCoinWithdrawal(
     @Body() dto: InitiateStableCoinWithdrawalDto,
     @GetBusinessId() businessId: string,
@@ -289,8 +422,18 @@ export class DepositAccountsController {
   @ApiBody({ type: InitiateFiatWithdrawalDto })
   @ApiCreatedResponse({
     description: 'Fiat withdrawal initiated successfully.',
+    schema: { example: { fee: 50, amount: 2000 } },
   })
-  @ApiErrorResponses(400, 401, 403)
+  @ApiErrorResponses(
+    { status: 400, message: 'Insufficient balance' },
+    401,
+    {
+      status: 403,
+      message:
+        'This action requires a verified identity. Complete individual KYC verification first.',
+    },
+    { status: 404, message: 'Bank account not found.' },
+  )
   async initiateFiattWithdrawal(
     @Body() dto: InitiateFiatWithdrawalDto,
     @GetBusinessId() businessId: string,
@@ -308,7 +451,9 @@ export class DepositAccountsController {
     summary: 'Get withdrawals',
     description: 'Fetch all payouts / withdrawals',
   })
-  @ApiOkResponse({ description: 'Withdrawals retrieved successfully.' })
+  @ApiOkResponse({
+    description: 'Withdrawals retrieved successfully.',
+  })
   @ApiErrorResponses(401)
   async listPayouts(
     @GetMode() mode: 'live' | 'test',

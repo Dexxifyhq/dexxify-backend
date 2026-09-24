@@ -32,6 +32,42 @@ import {
 } from '@nestjs/swagger';
 import { ApiErrorResponses } from '../../common/decorators/api-error-responses.decorator';
 
+const API_KEY_CREATED_EXAMPLE = {
+  id: '6a0ce752-6932-4c1c-b5ea-fe7d12345678',
+  user_id: '3c1e6a2a-2b3c-4d5e-8f9a-1a2b3c4d5e6f',
+  business_id: '8e2f6b2a-df9c-4c2a-9a0a-9e6a2a2b6a11',
+  key_prefix: 'dex_test_Ab',
+  label: 'Mobile App Key',
+  mode: 'test',
+  is_active: true,
+  last_used_at: null,
+  ip_whitelist: null,
+  expires_at: null,
+  created_at: '2026-09-01T10:15:00.000Z',
+  key: 'dex_test_AbCdEfGhIjKlMnOpQrStUvWxYz0123456789',
+};
+
+const API_KEY_EXAMPLE = {
+  id: '6a0ce752-6932-4c1c-b5ea-fe7d12345678',
+  key_prefix: 'dex_test_Ab',
+  label: 'Mobile App Key',
+  mode: 'test',
+  is_active: true,
+  last_used_at: null,
+  ip_whitelist: null,
+  created_at: '2026-09-01T10:15:00.000Z',
+};
+
+const API_KEY_UPDATED_EXAMPLE = {
+  id: '6a0ce752-6932-4c1c-b5ea-fe7d12345678',
+  key_prefix: 'dex_test_Ab',
+  label: 'Updated Mobile App Key',
+  mode: 'test',
+  is_active: true,
+  ip_whitelist: ['192.168.1.1', '10.0.0.1'],
+  last_used_at: null,
+};
+
 @ApiTags('Dashboard')
 @ApiBearerAuth('api-key')
 @DualAuth()
@@ -43,8 +79,14 @@ export class DashboardController {
 
   @ApiOperation({ summary: 'Create API key' })
   @ApiBody({ type: CreateApiKeyDto })
-  @ApiCreatedResponse({ description: 'API key created successfully.' })
-  @ApiErrorResponses(400, 401)
+  @ApiCreatedResponse({
+    description: 'API key created successfully.',
+    schema: { example: API_KEY_CREATED_EXAMPLE },
+  })
+  @ApiErrorResponses(
+    { status: 400, message: 'Maximum 5 active test API keys allowed.' },
+    401,
+  )
   @Post('api-keys')
   async createApiKey(
     @GetUser('id') userId: string,
@@ -56,7 +98,10 @@ export class DashboardController {
   }
 
   @ApiOperation({ summary: 'List API keys' })
-  @ApiOkResponse({ description: 'API keys retrieved successfully.' })
+  @ApiOkResponse({
+    description: 'API keys retrieved successfully.',
+    schema: { example: [API_KEY_EXAMPLE] },
+  })
   @ApiErrorResponses(401)
   @Get('api-keys')
   async listApiKeys(
@@ -70,8 +115,11 @@ export class DashboardController {
   @ApiOperation({ summary: 'Update API key label or IP whitelist' })
   @ApiParam({ name: 'id', description: 'API key ID' })
   @ApiBody({ type: UpdateApiKeyDto })
-  @ApiOkResponse({ description: 'API key updated successfully.' })
-  @ApiErrorResponses(401, 404)
+  @ApiOkResponse({
+    description: 'API key updated successfully.',
+    schema: { example: API_KEY_UPDATED_EXAMPLE },
+  })
+  @ApiErrorResponses(401, { status: 404, message: 'API key not found.' })
   @Patch('api-keys/:id')
   async updateApiKey(
     @GetUser('id') userId: string,
@@ -83,8 +131,13 @@ export class DashboardController {
 
   @ApiOperation({ summary: 'Revoke API key' })
   @ApiParam({ name: 'id', description: 'API key ID' })
-  @ApiOkResponse({ description: 'API key revoked successfully.' })
-  @ApiErrorResponses(401, 404)
+  @ApiOkResponse({
+    description: 'API key revoked successfully.',
+    schema: {
+      example: { revoked: true, id: '6a0ce752-6932-4c1c-b5ea-fe7d12345678' },
+    },
+  })
+  @ApiErrorResponses(401, { status: 404, message: 'API key not found.' })
   @Delete('api-keys/:id')
   async revokeApiKey(
     @GetUser('id') userId: string,
