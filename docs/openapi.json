@@ -21,9 +21,7 @@
             "description": "Deposit account created successfully",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DepositAccount"
-                }
+                "schema": { "$ref": "#/components/schemas/DepositAccount" }
               }
             }
           },
@@ -31,9 +29,7 @@
             "description": "Validation failed or the request body/params were malformed.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           },
@@ -41,18 +37,12 @@
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           }
         },
-        "security": [
-          {
-            "api-key": []
-          }
-        ],
+        "security": [{ "api-key": [] }],
         "summary": "Create a new deposit account",
         "tags": ["Deposit Account"]
       },
@@ -65,51 +55,35 @@
             "required": false,
             "in": "query",
             "description": "Deposit account ID",
-            "schema": {
-              "type": "string"
-            }
+            "schema": { "type": "string" }
           },
           {
             "name": "page",
             "required": false,
             "in": "query",
             "description": "Page number",
-            "schema": {
-              "example": 1,
-              "type": "number"
-            }
+            "schema": { "example": 1, "type": "number" }
           },
           {
             "name": "limit",
             "required": false,
             "in": "query",
             "description": "Number of items per page",
-            "schema": {
-              "example": 10,
-              "type": "number"
-            }
+            "schema": { "example": 10, "type": "number" }
           }
         ],
         "responses": {
-          "200": {
-            "description": "Deposit accounts retrieved successfully."
-          },
+          "200": { "description": "Deposit accounts retrieved successfully." },
           "401": {
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           }
         },
-        "security": [
-          {
-            "api-key": []
-          }
-        ],
+        "security": [{ "api-key": [] }],
         "summary": "Get all deposit accounts",
         "tags": ["Deposit Account"]
       }
@@ -131,16 +105,12 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "Deposit account retrieved successfully."
-          },
+          "200": { "description": "Deposit account retrieved successfully." },
           "401": {
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           },
@@ -148,18 +118,12 @@
             "description": "The requested resource could not be found.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           }
         },
-        "security": [
-          {
-            "api-key": []
-          }
-        ],
+        "security": [{ "api-key": [] }],
         "summary": "Get deposit account by ID",
         "tags": ["Deposit Account"]
       }
@@ -188,9 +152,7 @@
             "description": "Validation failed or the request body/params were malformed.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           },
@@ -198,18 +160,12 @@
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           }
         },
-        "security": [
-          {
-            "api-key": []
-          }
-        ],
+        "security": [{ "api-key": [] }],
         "summary": "Get detailed deposit account info",
         "tags": ["Deposit Account"]
       }
@@ -227,9 +183,7 @@
             "description": "Validation failed or the request body/params were malformed.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           },
@@ -237,18 +191,12 @@
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           }
         },
-        "security": [
-          {
-            "api-key": []
-          }
-        ],
+        "security": [{ "api-key": [] }],
         "summary": "Get all deposit account details",
         "tags": ["Deposit Account"]
       }
@@ -263,9 +211,7 @@
             "required": true,
             "in": "path",
             "description": "Deposit account ID",
-            "schema": {
-              "type": "string"
-            }
+            "schema": { "type": "string" }
           }
         ],
         "requestBody": {
@@ -279,16 +225,12 @@
           }
         },
         "responses": {
-          "201": {
-            "description": "Deposit identity issued successfully."
-          },
+          "201": { "description": "Deposit identity issued successfully." },
           "400": {
             "description": "Validation failed or the request body/params were malformed.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           },
@@ -296,9 +238,7 @@
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           },
@@ -306,9 +246,7 @@
             "description": "Authenticated, but not permitted to perform this action.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           },
@@ -316,18 +254,12 @@
             "description": "The requested resource could not be found.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           }
         },
-        "security": [
-          {
-            "api-key": []
-          }
-        ],
+        "security": [{ "api-key": [] }],
         "summary": "Issue a deposit identity",
         "tags": ["Deposit Account"]
       }
@@ -348,16 +280,12 @@
           }
         },
         "responses": {
-          "201": {
-            "description": "Withdrawal address added successfully."
-          },
+          "201": { "description": "Withdrawal address added successfully." },
           "400": {
             "description": "Validation failed or the request body/params were malformed.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           },
@@ -365,18 +293,12 @@
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           }
         },
-        "security": [
-          {
-            "api-key": []
-          }
-        ],
+        "security": [{ "api-key": [] }],
         "summary": "Add withdrawal address",
         "tags": ["Deposit Account"]
       },
@@ -392,18 +314,12 @@
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           }
         },
-        "security": [
-          {
-            "api-key": []
-          }
-        ],
+        "security": [{ "api-key": [] }],
         "summary": "Get withdrawal addresses",
         "tags": ["Deposit Account"]
       }
@@ -421,18 +337,12 @@
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           }
         },
-        "security": [
-          {
-            "api-key": []
-          }
-        ],
+        "security": [{ "api-key": [] }],
         "summary": "Get saved withdrawal addresses",
         "tags": ["Deposit Account"]
       }
@@ -447,22 +357,16 @@
             "required": true,
             "in": "path",
             "description": "Withdrawal address unique identifier",
-            "schema": {
-              "type": "string"
-            }
+            "schema": { "type": "string" }
           }
         ],
         "responses": {
-          "200": {
-            "description": "Withdrawal address removed successfully."
-          },
+          "200": { "description": "Withdrawal address removed successfully." },
           "401": {
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           },
@@ -470,18 +374,12 @@
             "description": "The requested resource could not be found.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           }
         },
-        "security": [
-          {
-            "api-key": []
-          }
-        ],
+        "security": [{ "api-key": [] }],
         "summary": "Remove withdrawal address",
         "tags": ["Deposit Account"]
       }
@@ -509,9 +407,7 @@
             "description": "Validation failed or the request body/params were malformed.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           },
@@ -519,9 +415,7 @@
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           },
@@ -529,18 +423,12 @@
             "description": "Authenticated, but not permitted to perform this action.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           }
         },
-        "security": [
-          {
-            "api-key": []
-          }
-        ],
+        "security": [{ "api-key": [] }],
         "summary": "Initiate stable coin withdrawal",
         "tags": ["Deposit Account"]
       }
@@ -561,16 +449,12 @@
           }
         },
         "responses": {
-          "201": {
-            "description": "Fiat withdrawal initiated successfully."
-          },
+          "201": { "description": "Fiat withdrawal initiated successfully." },
           "400": {
             "description": "Validation failed or the request body/params were malformed.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           },
@@ -578,9 +462,7 @@
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           },
@@ -588,18 +470,12 @@
             "description": "Authenticated, but not permitted to perform this action.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           }
         },
-        "security": [
-          {
-            "api-key": []
-          }
-        ],
+        "security": [{ "api-key": [] }],
         "summary": "Initiate withdrawal for local currencies",
         "tags": ["Deposit Account"]
       }
@@ -613,39 +489,27 @@
             "name": "page",
             "required": true,
             "in": "query",
-            "schema": {
-              "type": "string"
-            }
+            "schema": { "type": "string" }
           },
           {
             "name": "size",
             "required": true,
             "in": "query",
-            "schema": {
-              "type": "string"
-            }
+            "schema": { "type": "string" }
           }
         ],
         "responses": {
-          "200": {
-            "description": "Withdrawals retrieved successfully."
-          },
+          "200": { "description": "Withdrawals retrieved successfully." },
           "401": {
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           }
         },
-        "security": [
-          {
-            "api-key": []
-          }
-        ],
+        "security": [{ "api-key": [] }],
         "summary": "Get withdrawals",
         "tags": ["Deposit Account"]
       }
@@ -658,23 +522,17 @@
           "required": true,
           "content": {
             "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateCustomerDto"
-              }
+              "schema": { "$ref": "#/components/schemas/CreateCustomerDto" }
             }
           }
         },
         "responses": {
-          "201": {
-            "description": "Customer created successfully."
-          },
+          "201": { "description": "Customer created successfully." },
           "400": {
             "description": "Validation failed or the request body/params were malformed.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           },
@@ -682,9 +540,7 @@
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           },
@@ -692,18 +548,12 @@
             "description": "The resource already exists or is in a conflicting state.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           }
         },
-        "security": [
-          {
-            "api-key": []
-          }
-        ],
+        "security": [{ "api-key": [] }],
         "summary": "Create a customer",
         "tags": ["Customers"]
       },
@@ -714,50 +564,33 @@
             "name": "page",
             "required": false,
             "in": "query",
-            "schema": {
-              "example": 1,
-              "type": "number"
-            }
+            "schema": { "example": 1, "type": "number" }
           },
           {
             "name": "limit",
             "required": false,
             "in": "query",
-            "schema": {
-              "example": 20,
-              "type": "number"
-            }
+            "schema": { "example": 20, "type": "number" }
           },
           {
             "name": "status",
             "required": false,
             "in": "query",
-            "schema": {
-              "type": "string",
-              "enum": ["active", "inactive"]
-            }
+            "schema": { "type": "string", "enum": ["active", "inactive"] }
           }
         ],
         "responses": {
-          "200": {
-            "description": "Customers retrieved successfully."
-          },
+          "200": { "description": "Customers retrieved successfully." },
           "401": {
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           }
         },
-        "security": [
-          {
-            "api-key": []
-          }
-        ],
+        "security": [{ "api-key": [] }],
         "summary": "List all customers",
         "tags": ["Customers"]
       }
@@ -771,22 +604,16 @@
             "required": true,
             "in": "path",
             "description": "Customer UUID",
-            "schema": {
-              "type": "string"
-            }
+            "schema": { "type": "string" }
           }
         ],
         "responses": {
-          "200": {
-            "description": "Customer retrieved successfully."
-          },
+          "200": { "description": "Customer retrieved successfully." },
           "401": {
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           },
@@ -794,18 +621,12 @@
             "description": "The requested resource could not be found.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           }
         },
-        "security": [
-          {
-            "api-key": []
-          }
-        ],
+        "security": [{ "api-key": [] }],
         "summary": "Get a customer by ID",
         "tags": ["Customers"]
       },
@@ -817,32 +638,24 @@
             "required": true,
             "in": "path",
             "description": "Customer UUID",
-            "schema": {
-              "type": "string"
-            }
+            "schema": { "type": "string" }
           }
         ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateCustomerDto"
-              }
+              "schema": { "$ref": "#/components/schemas/UpdateCustomerDto" }
             }
           }
         },
         "responses": {
-          "200": {
-            "description": "Customer updated successfully."
-          },
+          "200": { "description": "Customer updated successfully." },
           "400": {
             "description": "Validation failed or the request body/params were malformed.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           },
@@ -850,9 +663,7 @@
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           },
@@ -860,18 +671,12 @@
             "description": "The requested resource could not be found.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           }
         },
-        "security": [
-          {
-            "api-key": []
-          }
-        ],
+        "security": [{ "api-key": [] }],
         "summary": "Update a customer",
         "tags": ["Customers"]
       },
@@ -883,22 +688,16 @@
             "required": true,
             "in": "path",
             "description": "Customer UUID",
-            "schema": {
-              "type": "string"
-            }
+            "schema": { "type": "string" }
           }
         ],
         "responses": {
-          "200": {
-            "description": "Customer deleted successfully."
-          },
+          "200": { "description": "Customer deleted successfully." },
           "401": {
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           },
@@ -906,18 +705,12 @@
             "description": "The requested resource could not be found.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           }
         },
-        "security": [
-          {
-            "api-key": []
-          }
-        ],
+        "security": [{ "api-key": [] }],
         "summary": "Delete a customer",
         "tags": ["Customers"]
       }
@@ -932,22 +725,16 @@
             "required": true,
             "in": "path",
             "description": "Customer UUID",
-            "schema": {
-              "type": "string"
-            }
+            "schema": { "type": "string" }
           }
         ],
         "responses": {
-          "200": {
-            "description": "Deposit account retrieved successfully."
-          },
+          "200": { "description": "Deposit account retrieved successfully." },
           "400": {
             "description": "Validation failed or the request body/params were malformed.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           },
@@ -955,9 +742,7 @@
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           },
@@ -965,345 +750,14 @@
             "description": "The requested resource could not be found.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           }
         },
-        "security": [
-          {
-            "api-key": []
-          }
-        ],
+        "security": [{ "api-key": [] }],
         "summary": "Get or provision a customer's deposit account",
         "tags": ["Customers"]
-      }
-    },
-    "/api/v1/kyc/bvn": {
-      "post": {
-        "description": "Submit a BVN for identity verification. One per user across all businesses.",
-        "operationId": "KycController_verifyBvn",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/VerifyBvnDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "BVN verification submitted successfully."
-          },
-          "400": {
-            "description": "Validation failed or the request body/params were malformed.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Missing, invalid, or expired authentication.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "The requested resource could not be found.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "The resource already exists or is in a conflicting state.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "api-key": []
-          }
-        ],
-        "summary": "Verify BVN",
-        "tags": ["KYC Verification"]
-      }
-    },
-    "/api/v1/kyc/nin": {
-      "post": {
-        "description": "Submit a NIN for identity verification. One per user across all businesses.",
-        "operationId": "KycController_verifyNin",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/VerifyNinDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "NIN verification submitted successfully."
-          },
-          "400": {
-            "description": "Validation failed or the request body/params were malformed.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Missing, invalid, or expired authentication.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "The requested resource could not be found.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "The resource already exists or is in a conflicting state.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "api-key": []
-          }
-        ],
-        "summary": "Verify NIN",
-        "tags": ["KYC Verification"]
-      }
-    },
-    "/api/v1/kyc/vnin": {
-      "post": {
-        "description": "Submit a vNIN for identity verification. One per user across all businesses.",
-        "operationId": "KycController_verifyVnin",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/VerifyVninDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "vNIN verification submitted successfully."
-          },
-          "400": {
-            "description": "Validation failed or the request body/params were malformed.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Missing, invalid, or expired authentication.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "The requested resource could not be found.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "The resource already exists or is in a conflicting state.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "api-key": []
-          }
-        ],
-        "summary": "Verify virtual NIN (vNIN)",
-        "tags": ["KYC Verification"]
-      }
-    },
-    "/api/v1/kyc/cac": {
-      "post": {
-        "description": "Submit a CAC RC number for business verification. One per business.",
-        "operationId": "KycController_verifyCac",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/VerifyCacDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "CAC verification submitted successfully."
-          },
-          "400": {
-            "description": "Validation failed or the request body/params were malformed.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Missing, invalid, or expired authentication.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "The requested resource could not be found.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "The resource already exists or is in a conflicting state.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "api-key": []
-          }
-        ],
-        "summary": "Verify CAC",
-        "tags": ["KYC Verification"]
-      }
-    },
-    "/api/v1/kyc/verifications/{reference}": {
-      "get": {
-        "description": "Fetches a verification record by its provider reference.",
-        "operationId": "KycController_getVerification",
-        "parameters": [
-          {
-            "name": "reference",
-            "required": true,
-            "in": "path",
-            "description": "Provider reference ID",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Verification record retrieved successfully."
-          },
-          "401": {
-            "description": "Missing, invalid, or expired authentication.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "The requested resource could not be found.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "api-key": []
-          }
-        ],
-        "summary": "Get verification by reference",
-        "tags": ["KYC Verification"]
       }
     },
     "/api/v1/offramp": {
@@ -1315,9 +769,7 @@
           "required": true,
           "content": {
             "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateOfframpDto"
-              }
+              "schema": { "$ref": "#/components/schemas/CreateOfframpDto" }
             }
           }
         },
@@ -1329,9 +781,7 @@
             "description": "Validation failed or the request body/params were malformed.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           },
@@ -1339,25 +789,19 @@
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           }
         },
-        "security": [
-          {
-            "api-key": []
-          }
-        ],
+        "security": [{ "api-key": [] }],
         "summary": "Create off-ramp transaction",
         "tags": ["Off-Ramp"]
       }
     },
     "/api/v1/offramp/{tx_id}": {
       "get": {
-        "description": "Retrieve the status of an off-ramp, keyed by the id returned from POST /offramp. Tracks the full lifecycle \u2014 before the swap settles, only swap status is available;",
+        "description": "Retrieve the status of an off-ramp, keyed by the id returned from POST /offramp. Tracks the full lifecycle — before the swap settles, only swap status is available;",
         "operationId": "OfframpController_findOne",
         "parameters": [
           {
@@ -1379,9 +823,7 @@
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           },
@@ -1389,168 +831,14 @@
             "description": "The requested resource could not be found.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           }
         },
-        "security": [
-          {
-            "api-key": []
-          }
-        ],
+        "security": [{ "api-key": [] }],
         "summary": "Get off-ramp transaction",
         "tags": ["Off-Ramp"]
-      }
-    },
-    "/api/v1/payouts": {
-      "post": {
-        "description": "Create a new fiat payout to a bank account",
-        "operationId": "PayoutsController_create",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreatePayoutDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Payout created successfully."
-          },
-          "400": {
-            "description": "Validation failed or the request body/params were malformed.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Missing, invalid, or expired authentication.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "api-key": []
-          }
-        ],
-        "summary": "Create payout",
-        "tags": ["Payouts"]
-      }
-    },
-    "/api/v1/payouts/resolve": {
-      "post": {
-        "description": "Verify and resolve bank account details to get account name",
-        "operationId": "PayoutsController_resolveAccount",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ResolveAccountDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Bank account resolved successfully."
-          },
-          "400": {
-            "description": "Validation failed or the request body/params were malformed.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Missing, invalid, or expired authentication.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "api-key": []
-          }
-        ],
-        "summary": "Resolve bank account",
-        "tags": ["Payouts"]
-      }
-    },
-    "/api/v1/payouts/{payout_id}": {
-      "get": {
-        "description": "Retrieve details of a specific payout by its ID",
-        "operationId": "PayoutsController_findOne",
-        "parameters": [
-          {
-            "name": "payout_id",
-            "required": true,
-            "in": "path",
-            "description": "Payout unique identifier",
-            "schema": {
-              "example": "550e8400-e29b-41d4-a716-446655440000",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Payout retrieved successfully."
-          },
-          "401": {
-            "description": "Missing, invalid, or expired authentication.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "The requested resource could not be found.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "api-key": []
-          }
-        ],
-        "summary": "Get payout by ID",
-        "tags": ["Payouts"]
       }
     },
     "/api/v1/webhooks": {
@@ -1558,25 +846,17 @@
         "operationId": "WebhooksController_findOne",
         "parameters": [],
         "responses": {
-          "200": {
-            "description": "Webhook endpoint retrieved successfully."
-          },
+          "200": { "description": "Webhook endpoint retrieved successfully." },
           "401": {
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           }
         },
-        "security": [
-          {
-            "api-key": []
-          }
-        ],
+        "security": [{ "api-key": [] }],
         "summary": "Get the webhook endpoint for the current mode",
         "tags": ["Webhooks"]
       },
@@ -1587,23 +867,17 @@
           "required": true,
           "content": {
             "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SaveWebhookDto"
-              }
+              "schema": { "$ref": "#/components/schemas/SaveWebhookDto" }
             }
           }
         },
         "responses": {
-          "200": {
-            "description": "Webhook endpoint saved successfully."
-          },
+          "200": { "description": "Webhook endpoint saved successfully." },
           "400": {
             "description": "Validation failed or the request body/params were malformed.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           },
@@ -1611,18 +885,12 @@
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           }
         },
-        "security": [
-          {
-            "api-key": []
-          }
-        ],
+        "security": [{ "api-key": [] }],
         "summary": "Create or update the webhook endpoint for the current mode",
         "tags": ["Webhooks"]
       },
@@ -1630,16 +898,12 @@
         "operationId": "WebhooksController_remove",
         "parameters": [],
         "responses": {
-          "200": {
-            "description": "Webhook endpoint deleted successfully."
-          },
+          "200": { "description": "Webhook endpoint deleted successfully." },
           "401": {
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           },
@@ -1647,18 +911,12 @@
             "description": "The requested resource could not be found.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           }
         },
-        "security": [
-          {
-            "api-key": []
-          }
-        ],
+        "security": [{ "api-key": [] }],
         "summary": "Delete the webhook endpoint for the current mode",
         "tags": ["Webhooks"]
       }
@@ -1672,20 +930,14 @@
             "required": false,
             "in": "query",
             "description": "Page number (1-indexed)",
-            "schema": {
-              "default": 1,
-              "type": "number"
-            }
+            "schema": { "default": 1, "type": "number" }
           },
           {
             "name": "limit",
             "required": false,
             "in": "query",
             "description": "Results per page",
-            "schema": {
-              "default": 20,
-              "type": "number"
-            }
+            "schema": { "default": 20, "type": "number" }
           },
           {
             "name": "status",
@@ -1699,25 +951,17 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "Webhook events retrieved successfully."
-          },
+          "200": { "description": "Webhook events retrieved successfully." },
           "401": {
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           }
         },
-        "security": [
-          {
-            "api-key": []
-          }
-        ],
+        "security": [{ "api-key": [] }],
         "summary": "List webhook delivery events for the current mode",
         "tags": ["Webhooks"]
       }
@@ -1731,22 +975,16 @@
             "required": true,
             "in": "path",
             "description": "Webhook event ID",
-            "schema": {
-              "type": "string"
-            }
+            "schema": { "type": "string" }
           }
         ],
         "responses": {
-          "200": {
-            "description": "Webhook event retrieved successfully."
-          },
+          "200": { "description": "Webhook event retrieved successfully." },
           "401": {
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           },
@@ -1754,18 +992,12 @@
             "description": "The requested resource could not be found.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           }
         },
-        "security": [
-          {
-            "api-key": []
-          }
-        ],
+        "security": [{ "api-key": [] }],
         "summary": "Get a single webhook delivery event",
         "tags": ["Webhooks"]
       }
@@ -1778,23 +1010,17 @@
           "required": true,
           "content": {
             "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateApiKeyDto"
-              }
+              "schema": { "$ref": "#/components/schemas/CreateApiKeyDto" }
             }
           }
         },
         "responses": {
-          "201": {
-            "description": "API key created successfully."
-          },
+          "201": { "description": "API key created successfully." },
           "400": {
             "description": "Validation failed or the request body/params were malformed.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           },
@@ -1802,18 +1028,12 @@
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           }
         },
-        "security": [
-          {
-            "api-key": []
-          }
-        ],
+        "security": [{ "api-key": [] }],
         "summary": "Create API key",
         "tags": ["Dashboard"]
       },
@@ -1821,25 +1041,17 @@
         "operationId": "DashboardController_listApiKeys",
         "parameters": [],
         "responses": {
-          "200": {
-            "description": "API keys retrieved successfully."
-          },
+          "200": { "description": "API keys retrieved successfully." },
           "401": {
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           }
         },
-        "security": [
-          {
-            "api-key": []
-          }
-        ],
+        "security": [{ "api-key": [] }],
         "summary": "List API keys",
         "tags": ["Dashboard"]
       }
@@ -1853,32 +1065,24 @@
             "required": true,
             "in": "path",
             "description": "API key ID",
-            "schema": {
-              "type": "string"
-            }
+            "schema": { "type": "string" }
           }
         ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateApiKeyDto"
-              }
+              "schema": { "$ref": "#/components/schemas/UpdateApiKeyDto" }
             }
           }
         },
         "responses": {
-          "200": {
-            "description": "API key updated successfully."
-          },
+          "200": { "description": "API key updated successfully." },
           "401": {
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           },
@@ -1886,18 +1090,12 @@
             "description": "The requested resource could not be found.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           }
         },
-        "security": [
-          {
-            "api-key": []
-          }
-        ],
+        "security": [{ "api-key": [] }],
         "summary": "Update API key label or IP whitelist",
         "tags": ["Dashboard"]
       },
@@ -1909,22 +1107,16 @@
             "required": true,
             "in": "path",
             "description": "API key ID",
-            "schema": {
-              "type": "string"
-            }
+            "schema": { "type": "string" }
           }
         ],
         "responses": {
-          "200": {
-            "description": "API key revoked successfully."
-          },
+          "200": { "description": "API key revoked successfully." },
           "401": {
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           },
@@ -1932,18 +1124,12 @@
             "description": "The requested resource could not be found.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           }
         },
-        "security": [
-          {
-            "api-key": []
-          }
-        ],
+        "security": [{ "api-key": [] }],
         "summary": "Revoke API key",
         "tags": ["Dashboard"]
       }
@@ -1953,16 +1139,12 @@
         "operationId": "MiscController_getBanks",
         "parameters": [],
         "responses": {
-          "200": {
-            "description": "Supported banks retrieved successfully."
-          },
+          "200": { "description": "Supported banks retrieved successfully." },
           "401": {
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           }
@@ -1977,23 +1159,17 @@
           "required": true,
           "content": {
             "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AddBankDto"
-              }
+              "schema": { "$ref": "#/components/schemas/AddBankDto" }
             }
           }
         },
         "responses": {
-          "201": {
-            "description": "Bank account added successfully."
-          },
+          "201": { "description": "Bank account added successfully." },
           "401": {
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           },
@@ -2001,9 +1177,7 @@
             "description": "The resource already exists or is in a conflicting state.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           }
@@ -2017,16 +1191,12 @@
         "operationId": "MiscController_getSavedBanks",
         "parameters": [],
         "responses": {
-          "200": {
-            "description": "Saved banks retrieved successfully."
-          },
+          "200": { "description": "Saved banks retrieved successfully." },
           "401": {
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           }
@@ -2043,23 +1213,16 @@
             "name": "accountNumber",
             "required": true,
             "in": "path",
-            "schema": {
-              "example": "3154021148",
-              "type": "string"
-            }
+            "schema": { "example": "3154021148", "type": "string" }
           }
         ],
         "responses": {
-          "200": {
-            "description": "Saved bank retrieved successfully."
-          },
+          "200": { "description": "Saved bank retrieved successfully." },
           "401": {
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           }
@@ -2077,22 +1240,16 @@
             "required": true,
             "in": "path",
             "description": "Local bank record ID",
-            "schema": {
-              "type": "string"
-            }
+            "schema": { "type": "string" }
           }
         ],
         "responses": {
-          "200": {
-            "description": "Bank account deleted successfully."
-          },
+          "200": { "description": "Bank account deleted successfully." },
           "401": {
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           },
@@ -2100,9 +1257,7 @@
             "description": "The requested resource could not be found.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           }
@@ -2119,23 +1274,17 @@
           "required": true,
           "content": {
             "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/VerifyBankAccountDto"
-              }
+              "schema": { "$ref": "#/components/schemas/VerifyBankAccountDto" }
             }
           }
         },
         "responses": {
-          "201": {
-            "description": "Bank account verified successfully."
-          },
+          "201": { "description": "Bank account verified successfully." },
           "401": {
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           }
@@ -2149,9 +1298,7 @@
         "operationId": "MiscController_getSupportedDepositAssets",
         "parameters": [],
         "responses": {
-          "200": {
-            "description": "Supported assets retrieved successfully."
-          }
+          "200": { "description": "Supported assets retrieved successfully." }
         },
         "summary": "Get supported blockchain and assets",
         "tags": ["Misc - Banks & Assets"]
@@ -2165,9 +1312,7 @@
           "required": true,
           "content": {
             "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/GetRateQueryDto"
-              }
+              "schema": { "$ref": "#/components/schemas/GetRateQueryDto" }
             }
           }
         },
@@ -2179,9 +1324,7 @@
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           }
@@ -2201,18 +1344,9 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "asset": {
-                    "type": "string",
-                    "example": "USDT"
-                  },
-                  "amount": {
-                    "type": "number",
-                    "example": 100
-                  },
-                  "currency": {
-                    "type": "string",
-                    "example": "NGN"
-                  }
+                  "asset": { "type": "string", "example": "USDT" },
+                  "amount": { "type": "number", "example": 100 },
+                  "currency": { "type": "string", "example": "NGN" }
                 },
                 "required": ["asset", "amount", "currency"]
               }
@@ -2227,9 +1361,7 @@
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           }
@@ -2254,16 +1386,12 @@
           }
         },
         "responses": {
-          "201": {
-            "description": "Payment session created successfully."
-          },
+          "201": { "description": "Payment session created successfully." },
           "400": {
             "description": "Validation failed or the request body/params were malformed.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           },
@@ -2271,18 +1399,12 @@
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           }
         },
-        "security": [
-          {
-            "api-key": []
-          }
-        ],
+        "security": [{ "api-key": [] }],
         "summary": "Create a payment session",
         "tags": ["Payment Sessions"]
       },
@@ -2293,19 +1415,13 @@
             "name": "page",
             "required": false,
             "in": "query",
-            "schema": {
-              "example": 1,
-              "type": "number"
-            }
+            "schema": { "example": 1, "type": "number" }
           },
           {
             "name": "limit",
             "required": false,
             "in": "query",
-            "schema": {
-              "example": 20,
-              "type": "number"
-            }
+            "schema": { "example": 20, "type": "number" }
           },
           {
             "name": "status",
@@ -2328,25 +1444,17 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "Payment sessions retrieved successfully."
-          },
+          "200": { "description": "Payment sessions retrieved successfully." },
           "401": {
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           }
         },
-        "security": [
-          {
-            "api-key": []
-          }
-        ],
+        "security": [{ "api-key": [] }],
         "summary": "List payment sessions",
         "tags": ["Payment Sessions"]
       }
@@ -2360,22 +1468,16 @@
             "required": true,
             "in": "path",
             "description": "Payment session UUID",
-            "schema": {
-              "type": "string"
-            }
+            "schema": { "type": "string" }
           }
         ],
         "responses": {
-          "200": {
-            "description": "Payment session retrieved successfully."
-          },
+          "200": { "description": "Payment session retrieved successfully." },
           "400": {
             "description": "Validation failed or the request body/params were malformed.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           },
@@ -2383,18 +1485,12 @@
             "description": "The requested resource could not be found.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           }
         },
-        "security": [
-          {
-            "api-key": []
-          }
-        ],
+        "security": [{ "api-key": [] }],
         "summary": "Get a payment session by ID",
         "tags": ["Payment Sessions"]
       }
@@ -2408,22 +1504,16 @@
             "required": true,
             "in": "path",
             "description": "Session reference (ps_...)",
-            "schema": {
-              "type": "string"
-            }
+            "schema": { "type": "string" }
           }
         ],
         "responses": {
-          "200": {
-            "description": "Payment session retrieved successfully."
-          },
+          "200": { "description": "Payment session retrieved successfully." },
           "401": {
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           },
@@ -2431,18 +1521,12 @@
             "description": "The requested resource could not be found.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           }
         },
-        "security": [
-          {
-            "api-key": []
-          }
-        ],
+        "security": [{ "api-key": [] }],
         "summary": "Get a payment session by reference",
         "tags": ["Payment Sessions"]
       }
@@ -2457,9 +1541,7 @@
             "required": true,
             "in": "path",
             "description": "Payment session UUID",
-            "schema": {
-              "type": "string"
-            }
+            "schema": { "type": "string" }
           }
         ],
         "requestBody": {
@@ -2473,16 +1555,12 @@
           }
         },
         "responses": {
-          "201": {
-            "description": "Deposit address generated successfully."
-          },
+          "201": { "description": "Deposit address generated successfully." },
           "400": {
             "description": "Validation failed or the request body/params were malformed.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           },
@@ -2490,9 +1568,7 @@
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           },
@@ -2500,18 +1576,12 @@
             "description": "The requested resource could not be found.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           }
         },
-        "security": [
-          {
-            "api-key": []
-          }
-        ],
+        "security": [{ "api-key": [] }],
         "summary": "Generate deposit address for a session",
         "tags": ["Payment Sessions"]
       }
@@ -2525,26 +1595,18 @@
           "required": true,
           "content": {
             "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/EstimatePaymentDto"
-              }
+              "schema": { "$ref": "#/components/schemas/EstimatePaymentDto" }
             }
           }
         },
         "responses": {
-          "200": {
-            "description": "Payment estimate calculated successfully."
-          },
-          "201": {
-            "description": ""
-          },
+          "200": { "description": "Payment estimate calculated successfully." },
+          "201": { "description": "" },
           "400": {
             "description": "Validation failed or the request body/params were malformed.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           },
@@ -2552,18 +1614,12 @@
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           }
         },
-        "security": [
-          {
-            "api-key": []
-          }
-        ],
+        "security": [{ "api-key": [] }],
         "summary": "Estimate crypto amount for a fiat payment",
         "tags": ["Payment Sessions"]
       }
@@ -2577,22 +1633,16 @@
             "required": true,
             "in": "path",
             "description": "Payment session UUID",
-            "schema": {
-              "type": "string"
-            }
+            "schema": { "type": "string" }
           }
         ],
         "responses": {
-          "200": {
-            "description": "Payment session cancelled successfully."
-          },
+          "200": { "description": "Payment session cancelled successfully." },
           "400": {
             "description": "Validation failed or the request body/params were malformed.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           },
@@ -2600,9 +1650,7 @@
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           },
@@ -2610,18 +1658,12 @@
             "description": "The requested resource could not be found.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           }
         },
-        "security": [
-          {
-            "api-key": []
-          }
-        ],
+        "security": [{ "api-key": [] }],
         "summary": "Cancel a pending payment session",
         "tags": ["Payment Sessions"]
       }
@@ -2635,23 +1677,17 @@
           "required": true,
           "content": {
             "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateInvoiceDto"
-              }
+              "schema": { "$ref": "#/components/schemas/CreateInvoiceDto" }
             }
           }
         },
         "responses": {
-          "201": {
-            "description": "Invoice created successfully."
-          },
+          "201": { "description": "Invoice created successfully." },
           "400": {
             "description": "Validation failed or the request body/params were malformed.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           },
@@ -2659,18 +1695,12 @@
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           }
         },
-        "security": [
-          {
-            "api-key": []
-          }
-        ],
+        "security": [{ "api-key": [] }],
         "summary": "Create and send an invoice",
         "tags": ["Invoices"]
       },
@@ -2681,19 +1711,13 @@
             "name": "page",
             "required": false,
             "in": "query",
-            "schema": {
-              "example": 1,
-              "type": "number"
-            }
+            "schema": { "example": 1, "type": "number" }
           },
           {
             "name": "limit",
             "required": false,
             "in": "query",
-            "schema": {
-              "example": 20,
-              "type": "number"
-            }
+            "schema": { "example": 20, "type": "number" }
           },
           {
             "name": "status",
@@ -2717,31 +1741,21 @@
             "required": false,
             "in": "query",
             "description": "Filter by customer ID",
-            "schema": {
-              "type": "string"
-            }
+            "schema": { "type": "string" }
           }
         ],
         "responses": {
-          "200": {
-            "description": "Invoices retrieved successfully."
-          },
+          "200": { "description": "Invoices retrieved successfully." },
           "401": {
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           }
         },
-        "security": [
-          {
-            "api-key": []
-          }
-        ],
+        "security": [{ "api-key": [] }],
         "summary": "List invoices",
         "tags": ["Invoices"]
       }
@@ -2756,22 +1770,16 @@
             "required": true,
             "in": "path",
             "description": "Invoice UUID",
-            "schema": {
-              "type": "string"
-            }
+            "schema": { "type": "string" }
           }
         ],
         "responses": {
-          "200": {
-            "description": "Invoice retrieved successfully."
-          },
+          "200": { "description": "Invoice retrieved successfully." },
           "401": {
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           },
@@ -2779,25 +1787,19 @@
             "description": "The requested resource could not be found.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           }
         },
-        "security": [
-          {
-            "api-key": []
-          }
-        ],
+        "security": [{ "api-key": [] }],
         "summary": "Get invoice by ID",
         "tags": ["Invoices"]
       }
     },
     "/api/v1/invoices/pay/{invoice_number}": {
       "get": {
-        "description": "Public endpoint \u2014 no auth required. Used by the customer-facing pay page to display invoice details.",
+        "description": "Public endpoint — no auth required. Used by the customer-facing pay page to display invoice details.",
         "operationId": "InvoicesController_findByNumber",
         "parameters": [
           {
@@ -2805,38 +1807,28 @@
             "required": true,
             "in": "path",
             "description": "Invoice number e.g. INV-ABC123",
-            "schema": {
-              "type": "string"
-            }
+            "schema": { "type": "string" }
           }
         ],
         "responses": {
-          "200": {
-            "description": "Invoice retrieved successfully."
-          },
+          "200": { "description": "Invoice retrieved successfully." },
           "404": {
             "description": "The requested resource could not be found.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           }
         },
-        "security": [
-          {
-            "api-key": []
-          }
-        ],
+        "security": [{ "api-key": [] }],
         "summary": "Get invoice by number (public)",
         "tags": ["Invoices"]
       }
     },
     "/api/v1/invoices/pay/{invoice_number}/session": {
       "post": {
-        "description": "Public endpoint \u2014 customer selects which crypto asset and network to pay with. Returns a payment session with a deposit address. The invoice is marked PAID automatically when payment.completed webhook fires.",
+        "description": "Public endpoint — customer selects which crypto asset and network to pay with. Returns a payment session with a deposit address. The invoice is marked PAID automatically when payment.completed webhook fires.",
         "operationId": "InvoicesController_createPaymentSession",
         "parameters": [
           {
@@ -2844,32 +1836,24 @@
             "required": true,
             "in": "path",
             "description": "Invoice number e.g. INV-ABC123",
-            "schema": {
-              "type": "string"
-            }
+            "schema": { "type": "string" }
           }
         ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/InvoicePaymentDto"
-              }
+              "schema": { "$ref": "#/components/schemas/InvoicePaymentDto" }
             }
           }
         },
         "responses": {
-          "201": {
-            "description": "Payment session created successfully."
-          },
+          "201": { "description": "Payment session created successfully." },
           "400": {
             "description": "Validation failed or the request body/params were malformed.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           },
@@ -2877,18 +1861,12 @@
             "description": "The requested resource could not be found.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           }
         },
-        "security": [
-          {
-            "api-key": []
-          }
-        ],
+        "security": [{ "api-key": [] }],
         "summary": "Create payment session for invoice (public)",
         "tags": ["Invoices"]
       }
@@ -2902,22 +1880,16 @@
             "required": true,
             "in": "path",
             "description": "Invoice UUID",
-            "schema": {
-              "type": "string"
-            }
+            "schema": { "type": "string" }
           }
         ],
         "responses": {
-          "200": {
-            "description": "Invoice marked as paid successfully."
-          },
+          "200": { "description": "Invoice marked as paid successfully." },
           "400": {
             "description": "Validation failed or the request body/params were malformed.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           },
@@ -2925,9 +1897,7 @@
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           },
@@ -2935,18 +1905,12 @@
             "description": "The requested resource could not be found.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           }
         },
-        "security": [
-          {
-            "api-key": []
-          }
-        ],
+        "security": [{ "api-key": [] }],
         "summary": "Mark an invoice as paid",
         "tags": ["Invoices"]
       }
@@ -2960,22 +1924,16 @@
             "required": true,
             "in": "path",
             "description": "Invoice UUID",
-            "schema": {
-              "type": "string"
-            }
+            "schema": { "type": "string" }
           }
         ],
         "responses": {
-          "200": {
-            "description": "Invoice cancelled successfully."
-          },
+          "200": { "description": "Invoice cancelled successfully." },
           "400": {
             "description": "Validation failed or the request body/params were malformed.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           },
@@ -2983,9 +1941,7 @@
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           },
@@ -2993,18 +1949,12 @@
             "description": "The requested resource could not be found.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           }
         },
-        "security": [
-          {
-            "api-key": []
-          }
-        ],
+        "security": [{ "api-key": [] }],
         "summary": "Cancel an invoice",
         "tags": ["Invoices"]
       }
@@ -3018,22 +1968,16 @@
             "required": true,
             "in": "path",
             "description": "Invoice UUID",
-            "schema": {
-              "type": "string"
-            }
+            "schema": { "type": "string" }
           }
         ],
         "responses": {
-          "200": {
-            "description": "Invoice voided successfully."
-          },
+          "200": { "description": "Invoice voided successfully." },
           "400": {
             "description": "Validation failed or the request body/params were malformed.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           },
@@ -3041,9 +1985,7 @@
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           },
@@ -3051,18 +1993,12 @@
             "description": "The requested resource could not be found.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           }
         },
-        "security": [
-          {
-            "api-key": []
-          }
-        ],
+        "security": [{ "api-key": [] }],
         "summary": "Void a paid invoice",
         "tags": ["Invoices"]
       }
@@ -3087,33 +2023,23 @@
             "required": true,
             "in": "query",
             "description": "Currency to swap to",
-            "schema": {
-              "type": "string",
-              "enum": ["NGN", "USDT", "USDC"]
-            }
+            "schema": { "type": "string", "enum": ["NGN", "USDT", "USDC"] }
           },
           {
             "name": "amount",
             "required": true,
             "in": "query",
             "description": "Amount to swap",
-            "schema": {
-              "example": "100.00",
-              "type": "string"
-            }
+            "schema": { "example": "100.00", "type": "string" }
           }
         ],
         "responses": {
-          "200": {
-            "description": "Swap estimate retrieved successfully."
-          },
+          "200": { "description": "Swap estimate retrieved successfully." },
           "400": {
             "description": "Validation failed or the request body/params were malformed.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           },
@@ -3121,18 +2047,12 @@
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           }
         },
-        "security": [
-          {
-            "api-key": []
-          }
-        ],
+        "security": [{ "api-key": [] }],
         "summary": "Estimate swap amount",
         "tags": ["Swaps"]
       }
@@ -3153,16 +2073,12 @@
           }
         },
         "responses": {
-          "201": {
-            "description": "Swap quotation created successfully."
-          },
+          "201": { "description": "Swap quotation created successfully." },
           "400": {
             "description": "Validation failed or the request body/params were malformed.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           },
@@ -3170,18 +2086,12 @@
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           }
         },
-        "security": [
-          {
-            "api-key": []
-          }
-        ],
+        "security": [{ "api-key": [] }],
         "summary": "Create swap quotation",
         "tags": ["Swaps"]
       }
@@ -3195,22 +2105,16 @@
             "required": true,
             "in": "path",
             "description": "Quotation ID",
-            "schema": {
-              "type": "string"
-            }
+            "schema": { "type": "string" }
           }
         ],
         "responses": {
-          "200": {
-            "description": "Swap quotation retrieved successfully."
-          },
+          "200": { "description": "Swap quotation retrieved successfully." },
           "400": {
             "description": "Validation failed or the request body/params were malformed.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           },
@@ -3218,18 +2122,12 @@
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           }
         },
-        "security": [
-          {
-            "api-key": []
-          }
-        ],
+        "security": [{ "api-key": [] }],
         "summary": "Get swap quotation by ID",
         "tags": ["Swaps"]
       }
@@ -3244,22 +2142,16 @@
             "required": true,
             "in": "path",
             "description": "Quotation ID to execute",
-            "schema": {
-              "type": "string"
-            }
+            "schema": { "type": "string" }
           }
         ],
         "responses": {
-          "201": {
-            "description": "Swap executed successfully."
-          },
+          "201": { "description": "Swap executed successfully." },
           "400": {
             "description": "Validation failed or the request body/params were malformed.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           },
@@ -3267,9 +2159,7 @@
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           },
@@ -3277,18 +2167,12 @@
             "description": "Authenticated, but not permitted to perform this action.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           }
         },
-        "security": [
-          {
-            "api-key": []
-          }
-        ],
+        "security": [{ "api-key": [] }],
         "summary": "Execute swap quotation",
         "tags": ["Swaps"]
       }
@@ -3301,77 +2185,51 @@
             "name": "page",
             "required": false,
             "in": "query",
-            "schema": {
-              "example": 1,
-              "type": "number"
-            }
+            "schema": { "example": 1, "type": "number" }
           },
           {
             "name": "size",
             "required": false,
             "in": "query",
-            "schema": {
-              "example": 10,
-              "type": "number"
-            }
+            "schema": { "example": 10, "type": "number" }
           },
           {
             "name": "fromCurrency",
             "required": false,
             "in": "query",
-            "schema": {
-              "type": "string",
-              "enum": ["NGN", "USDT", "USDC"]
-            }
+            "schema": { "type": "string", "enum": ["NGN", "USDT", "USDC"] }
           },
           {
             "name": "toCurrency",
             "required": false,
             "in": "query",
-            "schema": {
-              "type": "string",
-              "enum": ["NGN", "USDT", "USDC"]
-            }
+            "schema": { "type": "string", "enum": ["NGN", "USDT", "USDC"] }
           },
           {
             "name": "startDate",
             "required": false,
             "in": "query",
-            "schema": {
-              "example": "2024-01-01T00:00:00Z",
-              "type": "string"
-            }
+            "schema": { "example": "2024-01-01T00:00:00Z", "type": "string" }
           },
           {
             "name": "endDate",
             "required": false,
             "in": "query",
-            "schema": {
-              "example": "2024-12-31T23:59:59Z",
-              "type": "string"
-            }
+            "schema": { "example": "2024-12-31T23:59:59Z", "type": "string" }
           }
         ],
         "responses": {
-          "200": {
-            "description": "Swap history retrieved successfully."
-          },
+          "200": { "description": "Swap history retrieved successfully." },
           "401": {
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           }
         },
-        "security": [
-          {
-            "api-key": []
-          }
-        ],
+        "security": [{ "api-key": [] }],
         "summary": "List swap history",
         "tags": ["Swaps"]
       }
@@ -3385,22 +2243,16 @@
             "required": true,
             "in": "path",
             "description": "Swap ID",
-            "schema": {
-              "type": "string"
-            }
+            "schema": { "type": "string" }
           }
         ],
         "responses": {
-          "200": {
-            "description": "Swap retrieved successfully."
-          },
+          "200": { "description": "Swap retrieved successfully." },
           "401": {
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           },
@@ -3408,18 +2260,12 @@
             "description": "The requested resource could not be found.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           }
         },
-        "security": [
-          {
-            "api-key": []
-          }
-        ],
+        "security": [{ "api-key": [] }],
         "summary": "Get swap details by ID",
         "tags": ["Swaps"]
       }
@@ -3434,42 +2280,30 @@
             "required": true,
             "in": "path",
             "description": "Session reference (CS_xxxxx) or invoice reference (INV_xxxxx)",
-            "schema": {
-              "type": "string"
-            }
+            "schema": { "type": "string" }
           },
           {
             "name": "entity",
             "required": true,
             "in": "query",
             "description": "Whether the reference is for a session or invoice",
-            "schema": {
-              "enum": ["session"],
-              "type": "string"
-            }
+            "schema": { "enum": ["session"], "type": "string" }
           },
           {
             "name": "feePaidBy",
             "required": false,
             "in": "query",
             "description": "Who will pay the network fee",
-            "schema": {
-              "enum": ["merchant", "customer"],
-              "type": "string"
-            }
+            "schema": { "enum": ["merchant", "customer"], "type": "string" }
           }
         ],
         "responses": {
-          "200": {
-            "description": "Refund estimate calculated successfully."
-          },
+          "200": { "description": "Refund estimate calculated successfully." },
           "401": {
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           },
@@ -3477,18 +2311,12 @@
             "description": "The requested resource could not be found.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           }
         },
-        "security": [
-          {
-            "api-key": []
-          }
-        ],
+        "security": [{ "api-key": [] }],
         "summary": "Estimate refund",
         "tags": ["Refunds"]
       }
@@ -3502,19 +2330,13 @@
             "name": "page",
             "required": false,
             "in": "query",
-            "schema": {
-              "default": 1,
-              "type": "number"
-            }
+            "schema": { "default": 1, "type": "number" }
           },
           {
             "name": "size",
             "required": false,
             "in": "query",
-            "schema": {
-              "default": 10,
-              "type": "number"
-            }
+            "schema": { "default": 10, "type": "number" }
           },
           {
             "name": "status",
@@ -3530,69 +2352,49 @@
             "required": false,
             "in": "query",
             "description": "Filter by payment session reference",
-            "schema": {
-              "type": "string"
-            }
+            "schema": { "type": "string" }
           },
           {
             "name": "invoiceReference",
             "required": false,
             "in": "query",
             "description": "Filter by invoice reference",
-            "schema": {
-              "type": "string"
-            }
+            "schema": { "type": "string" }
           },
           {
             "name": "startDate",
             "required": false,
             "in": "query",
             "description": "Start date filter (ISO 8601)",
-            "schema": {
-              "example": "2026-01-01T00:00:00Z",
-              "type": "string"
-            }
+            "schema": { "example": "2026-01-01T00:00:00Z", "type": "string" }
           },
           {
             "name": "endDate",
             "required": false,
             "in": "query",
             "description": "End date filter (ISO 8601)",
-            "schema": {
-              "example": "2026-12-31T23:59:59Z",
-              "type": "string"
-            }
+            "schema": { "example": "2026-12-31T23:59:59Z", "type": "string" }
           },
           {
             "name": "search",
             "required": false,
             "in": "query",
             "description": "Search by session or invoice reference",
-            "schema": {
-              "type": "string"
-            }
+            "schema": { "type": "string" }
           }
         ],
         "responses": {
-          "200": {
-            "description": "Refunds retrieved successfully."
-          },
+          "200": { "description": "Refunds retrieved successfully." },
           "401": {
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           }
         },
-        "security": [
-          {
-            "api-key": []
-          }
-        ],
+        "security": [{ "api-key": [] }],
         "summary": "List refunds",
         "tags": ["Refunds"]
       }
@@ -3606,22 +2408,16 @@
             "required": true,
             "in": "path",
             "description": "Refund ID",
-            "schema": {
-              "type": "string"
-            }
+            "schema": { "type": "string" }
           }
         ],
         "responses": {
-          "200": {
-            "description": "Refund retrieved successfully."
-          },
+          "200": { "description": "Refund retrieved successfully." },
           "401": {
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           },
@@ -3629,18 +2425,12 @@
             "description": "The requested resource could not be found.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           }
         },
-        "security": [
-          {
-            "api-key": []
-          }
-        ],
+        "security": [{ "api-key": [] }],
         "summary": "Get refund by ID",
         "tags": ["Refunds"]
       }
@@ -3655,32 +2445,24 @@
             "required": true,
             "in": "path",
             "description": "Session reference (e.g. CS_xxxxx)",
-            "schema": {
-              "type": "string"
-            }
+            "schema": { "type": "string" }
           }
         ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RefundDto"
-              }
+              "schema": { "$ref": "#/components/schemas/RefundDto" }
             }
           }
         },
         "responses": {
-          "201": {
-            "description": "Refund initiated successfully."
-          },
+          "201": { "description": "Refund initiated successfully." },
           "400": {
             "description": "Validation failed or the request body/params were malformed.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           },
@@ -3688,9 +2470,7 @@
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           },
@@ -3698,18 +2478,12 @@
             "description": "The requested resource could not be found.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
               }
             }
           }
         },
-        "security": [
-          {
-            "api-key": []
-          }
-        ],
+        "security": [{ "api-key": [] }],
         "summary": "Refund a payment session",
         "tags": ["Refunds"]
       }
@@ -3717,7 +2491,7 @@
   },
   "info": {
     "title": "Dexxify API",
-    "description": "Crypto Infrastructure API for Africa (Wallets, Payouts, Offramp, Onramp, KYC, KYB)",
+    "description": "Crypto Infrastructure API for Africa (Deposit Accounts, Payouts, Offramp, Onramp, KYC, KYB)",
     "version": "1.0",
     "contact": {
       "name": "Dexxify",
@@ -3727,10 +2501,7 @@
   },
   "tags": [],
   "servers": [
-    {
-      "url": "https://api.dexxify.com/api/v1",
-      "description": "Production"
-    }
+    { "url": "https://api.dexxify.com/api/v1", "description": "Production" }
   ],
   "components": {
     "securitySchemes": {
@@ -3742,32 +2513,6 @@
       }
     },
     "schemas": {
-      "ErrorResponseDto": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "example": false
-          },
-          "status": {
-            "type": "number",
-            "example": 400
-          },
-          "message": {
-            "type": "string",
-            "example": "Validation failed."
-          },
-          "errors": {
-            "type": "object",
-            "example": ["amount must not be less than 0"]
-          },
-          "timestamp": {
-            "type": "string",
-            "example": "2026-09-17T12:00:00.000Z"
-          }
-        },
-        "required": ["success", "status", "message", "timestamp"]
-      },
       "CreateDepositAccountDto": {
         "type": "object",
         "properties": {
@@ -3778,9 +2523,23 @@
           }
         }
       },
-      "DepositAccount": {
+      "DepositAccount": { "type": "object", "properties": {} },
+      "ErrorResponseDto": {
         "type": "object",
-        "properties": {}
+        "properties": {
+          "success": { "type": "boolean", "example": false },
+          "status": { "type": "number", "example": 400 },
+          "message": { "type": "string", "example": "Validation failed." },
+          "errors": {
+            "type": "object",
+            "example": ["amount must not be less than 0"]
+          },
+          "timestamp": {
+            "type": "string",
+            "example": "2026-09-17T12:00:00.000Z"
+          }
+        },
+        "required": ["success", "status", "message", "timestamp"]
       },
       "IssueDepositIdentityDto": {
         "type": "object",
@@ -3906,159 +2665,26 @@
       "CreateCustomerDto": {
         "type": "object",
         "properties": {
-          "email": {
-            "type": "string",
-            "example": "john@example.com"
-          },
-          "phone": {
-            "type": "string",
-            "example": "+2348012345678"
-          },
-          "first_name": {
-            "type": "string",
-            "example": "John"
-          },
-          "last_name": {
-            "type": "string",
-            "example": "Doe"
-          },
+          "email": { "type": "string", "example": "john@example.com" },
+          "phone": { "type": "string", "example": "+2348012345678" },
+          "first_name": { "type": "string", "example": "John" },
+          "last_name": { "type": "string", "example": "Doe" },
           "metadata": {
             "type": "object",
             "description": "Arbitrary key-value data to attach to the customer",
-            "example": {
-              "plan": "premium",
-              "region": "NG"
-            }
+            "example": { "plan": "premium", "region": "NG" }
           }
         }
       },
       "UpdateCustomerDto": {
         "type": "object",
         "properties": {
-          "email": {
-            "type": "string",
-            "example": "john@example.com"
-          },
-          "phone": {
-            "type": "string",
-            "example": "+2348012345678"
-          },
-          "first_name": {
-            "type": "string",
-            "example": "John"
-          },
-          "last_name": {
-            "type": "string",
-            "example": "Doe"
-          },
-          "metadata": {
-            "type": "object"
-          }
+          "email": { "type": "string", "example": "john@example.com" },
+          "phone": { "type": "string", "example": "+2348012345678" },
+          "first_name": { "type": "string", "example": "John" },
+          "last_name": { "type": "string", "example": "Doe" },
+          "metadata": { "type": "object" }
         }
-      },
-      "KycValidationDto": {
-        "type": "object",
-        "properties": {
-          "first_name": {
-            "type": "string",
-            "description": "First name to match against record",
-            "example": "John"
-          },
-          "last_name": {
-            "type": "string",
-            "description": "Last name to match against record",
-            "example": "Doe"
-          },
-          "date_of_birth": {
-            "type": "string",
-            "description": "Date of birth (YYYY-MM-DD)",
-            "example": "1990-01-15"
-          },
-          "selfie": {
-            "type": "string",
-            "description": "Base64-encoded selfie image for facial match",
-            "example": "data:image/jpeg;base64,..."
-          }
-        }
-      },
-      "VerifyBvnDto": {
-        "type": "object",
-        "properties": {
-          "bvn": {
-            "type": "string",
-            "description": "11-digit Bank Verification Number",
-            "example": "12345678901"
-          },
-          "validation": {
-            "description": "Optional fields to validate against the BVN record",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/KycValidationDto"
-              }
-            ]
-          }
-        },
-        "required": ["bvn"]
-      },
-      "VerifyNinDto": {
-        "type": "object",
-        "properties": {
-          "nin": {
-            "type": "string",
-            "description": "11-digit National Identification Number",
-            "example": "12345678901"
-          },
-          "validation": {
-            "description": "Optional fields to validate against the NIN record",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/KycValidationDto"
-              }
-            ]
-          }
-        },
-        "required": ["nin"]
-      },
-      "VerifyVninDto": {
-        "type": "object",
-        "properties": {
-          "vnin": {
-            "type": "string",
-            "description": "Virtual NIN (16-character alphanumeric)",
-            "example": "AB1234567890CDEF"
-          },
-          "validation": {
-            "description": "Optional fields to validate against the vNIN record",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/KycValidationDto"
-              }
-            ]
-          }
-        },
-        "required": ["vnin"]
-      },
-      "VerifyCacDto": {
-        "type": "object",
-        "properties": {
-          "rc_number": {
-            "type": "string",
-            "description": "CAC Registration Number",
-            "example": "RC123456"
-          },
-          "registration_type": {
-            "type": "string",
-            "description": "Type of business registration",
-            "enum": ["RC", "BN", "IT", "LP", "LLP"],
-            "example": "RC"
-          },
-          "registration_name": {
-            "type": "string",
-            "description": "Registered business name for additional matching",
-            "example": "Acme Corp Ltd"
-          }
-        },
-        "required": ["rc_number", "registration_type"]
       },
       "CreateOfframpDto": {
         "type": "object",
@@ -4082,67 +2708,10 @@
           "metadata": {
             "type": "object",
             "description": "Additional metadata",
-            "example": {
-              "source": "mobile_app"
-            }
+            "example": { "source": "mobile_app" }
           }
         },
         "required": ["crypto_asset", "crypto_amount", "recipient_id"]
-      },
-      "CreatePayoutDto": {
-        "type": "object",
-        "properties": {
-          "amount": {
-            "type": "number",
-            "description": "Payout amount in NGN",
-            "example": 5000,
-            "minimum": 100
-          },
-          "bank_code": {
-            "type": "string",
-            "description": "Bank code",
-            "example": "057"
-          },
-          "account_number": {
-            "type": "string",
-            "description": "Account number",
-            "example": "1234567890"
-          },
-          "account_name": {
-            "type": "string",
-            "description": "Account name",
-            "example": "John Doe"
-          },
-          "narration": {
-            "type": "string",
-            "description": "Payment narration",
-            "example": "Salary payment"
-          },
-          "metadata": {
-            "type": "object",
-            "description": "Additional metadata",
-            "example": {
-              "source": "payroll"
-            }
-          }
-        },
-        "required": ["amount", "bank_code", "account_number"]
-      },
-      "ResolveAccountDto": {
-        "type": "object",
-        "properties": {
-          "bank_code": {
-            "type": "string",
-            "description": "Bank code",
-            "example": "057"
-          },
-          "account_number": {
-            "type": "string",
-            "description": "Account number",
-            "example": "1234567890"
-          }
-        },
-        "required": ["bank_code", "account_number"]
       },
       "SaveWebhookDto": {
         "type": "object",
@@ -4181,9 +2750,7 @@
             "description": "IP whitelist",
             "example": ["192.168.1.1", "10.0.0.1"],
             "type": "array",
-            "items": {
-              "type": "array"
-            }
+            "items": { "type": "array" }
           }
         }
       },
@@ -4318,9 +2885,7 @@
           "metadata": {
             "type": "object",
             "description": "Arbitrary key-value data",
-            "example": {
-              "order_id": "ord_xyz"
-            }
+            "example": { "order_id": "ord_xyz" }
           }
         },
         "required": ["amount", "currency"]
@@ -4399,40 +2964,19 @@
       "CreateInvoiceCustomerDto": {
         "type": "object",
         "properties": {
-          "email": {
-            "type": "string",
-            "example": "john@example.com"
-          },
-          "first_name": {
-            "type": "string",
-            "example": "John"
-          },
-          "last_name": {
-            "type": "string",
-            "example": "Doe"
-          },
-          "phone": {
-            "type": "string",
-            "example": "08012345678"
-          }
+          "email": { "type": "string", "example": "john@example.com" },
+          "first_name": { "type": "string", "example": "John" },
+          "last_name": { "type": "string", "example": "Doe" },
+          "phone": { "type": "string", "example": "08012345678" }
         },
         "required": ["email", "first_name", "last_name"]
       },
       "InvoiceLineItemDto": {
         "type": "object",
         "properties": {
-          "description": {
-            "type": "string",
-            "example": "Consulting services"
-          },
-          "quantity": {
-            "type": "number",
-            "example": 2
-          },
-          "unit_price": {
-            "type": "number",
-            "example": 500
-          }
+          "description": { "type": "string", "example": "Consulting services" },
+          "quantity": { "type": "number", "example": 2 },
+          "unit_price": { "type": "number", "example": 500 }
         },
         "required": ["description", "quantity", "unit_price"]
       },
@@ -4449,9 +2993,7 @@
           },
           "line_items": {
             "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/InvoiceLineItemDto"
-            }
+            "items": { "$ref": "#/components/schemas/InvoiceLineItemDto" }
           },
           "tax_rate": {
             "type": "number",
@@ -4474,9 +3016,7 @@
           },
           "metadata": {
             "type": "object",
-            "example": {
-              "order_ref": "ord_123"
-            }
+            "example": { "order_ref": "ord_123" }
           }
         },
         "required": ["customer", "line_items"]
@@ -4547,26 +3087,6 @@
           }
         },
         "required": ["refundAddress"]
-      },
-      "UpdateSettlementsDto": {
-        "type": "object",
-        "properties": {
-          "settlement_currency": {
-            "type": "string",
-            "enum": ["NGN", "USDT", "USDC"],
-            "example": "USDT"
-          },
-          "default_payout_method": {
-            "type": "string",
-            "enum": ["crypto", "bank"],
-            "example": "crypto"
-          },
-          "instant_payouts_enabled": {
-            "type": "boolean",
-            "description": "Enable instant payouts",
-            "example": false
-          }
-        }
       }
     }
   }
