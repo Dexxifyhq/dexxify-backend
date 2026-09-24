@@ -18,10 +18,27 @@
         },
         "responses": {
           "201": {
-            "description": "Deposit account created successfully",
+            "description": "Deposit account created successfully.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/DepositAccount" }
+                "schema": { "$ref": "#/components/schemas/DepositAccount" },
+                "example": {
+                  "id": "67063f653b4a1f6c7a60ec57",
+                  "business_id": "8e2f6b2a-df9c-4c2a-9a0a-9e6a2a2b6a11",
+                  "mode": "test",
+                  "customer_id": "3c1e6a2a-2b3c-4d5e-8f9a-1a2b3c4d5e6f",
+                  "status": "active",
+                  "deposit_addresses": [
+                    {
+                      "chain": "tron",
+                      "address": "TXkPqR7YbAaHqZ5t5fRZ9Zk3f2NcQvJ9f2A",
+                      "createdAt": "2026-09-01T10:15:00.000Z"
+                    }
+                  ],
+                  "ngn_virtual_accounts": [],
+                  "created_at": "2026-09-01T10:15:00.000Z",
+                  "updated_at": "2026-09-01T10:15:00.000Z"
+                }
               }
             }
           },
@@ -29,7 +46,13 @@
             "description": "Validation failed or the request body/params were malformed.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 400,
+                  "message": "Failed to create deposit account.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           },
@@ -37,7 +60,27 @@
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "Invalid or inactive API key.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated, but not permitted to perform this action.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 403,
+                  "message": "This action requires a verified identity. Complete individual KYC verification first.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           }
@@ -73,12 +116,55 @@
           }
         ],
         "responses": {
-          "200": { "description": "Deposit accounts retrieved successfully." },
+          "200": {
+            "description": "Deposit accounts retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "data": [
+                      {
+                        "id": "67063f653b4a1f6c7a60ec57",
+                        "business_id": "8e2f6b2a-df9c-4c2a-9a0a-9e6a2a2b6a11",
+                        "mode": "test",
+                        "customer_id": "3c1e6a2a-2b3c-4d5e-8f9a-1a2b3c4d5e6f",
+                        "status": "active",
+                        "deposit_addresses": [
+                          {
+                            "chain": "tron",
+                            "address": "TXkPqR7YbAaHqZ5t5fRZ9Zk3f2NcQvJ9f2A",
+                            "createdAt": "2026-09-01T10:15:00.000Z"
+                          }
+                        ],
+                        "ngn_virtual_accounts": [],
+                        "created_at": "2026-09-01T10:15:00.000Z",
+                        "updated_at": "2026-09-01T10:15:00.000Z"
+                      }
+                    ],
+                    "meta": {
+                      "total": 1,
+                      "page": 1,
+                      "limit": 10,
+                      "total_pages": 1,
+                      "has_next": false,
+                      "has_prev": false
+                    }
+                  }
+                }
+              }
+            }
+          },
           "401": {
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "Invalid or inactive API key.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           }
@@ -105,12 +191,42 @@
           }
         ],
         "responses": {
-          "200": { "description": "Deposit account retrieved successfully." },
+          "200": {
+            "description": "Deposit account retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DepositAccount" },
+                "example": {
+                  "id": "67063f653b4a1f6c7a60ec57",
+                  "business_id": "8e2f6b2a-df9c-4c2a-9a0a-9e6a2a2b6a11",
+                  "mode": "test",
+                  "customer_id": "3c1e6a2a-2b3c-4d5e-8f9a-1a2b3c4d5e6f",
+                  "status": "active",
+                  "deposit_addresses": [
+                    {
+                      "chain": "tron",
+                      "address": "TXkPqR7YbAaHqZ5t5fRZ9Zk3f2NcQvJ9f2A",
+                      "createdAt": "2026-09-01T10:15:00.000Z"
+                    }
+                  ],
+                  "ngn_virtual_accounts": [],
+                  "created_at": "2026-09-01T10:15:00.000Z",
+                  "updated_at": "2026-09-01T10:15:00.000Z"
+                }
+              }
+            }
+          },
           "401": {
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "Invalid or inactive API key.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           },
@@ -118,7 +234,13 @@
             "description": "The requested resource could not be found.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 404,
+                  "message": "Deposit account not found.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           }
@@ -146,13 +268,46 @@
         ],
         "responses": {
           "200": {
-            "description": "Deposit account details retrieved successfully."
+            "description": "Deposit account details retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "id": "67063f653b4a1f6c7a60ec57",
+                    "staticDepositAddresses": [
+                      {
+                        "chain": "tron",
+                        "address": "TXkPqR7YbAaHqZ5t5fRZ9Zk3f2NcQvJ9f2A",
+                        "createdAt": "2026-09-01T10:15:00.000Z"
+                      }
+                    ],
+                    "ngnVirtualAccounts": [
+                      {
+                        "currency": "NGN",
+                        "accountNumber": "0123456789",
+                        "accountName": "Dexxify Test Business",
+                        "bankName": "Wema Bank",
+                        "bankCode": "035",
+                        "accountReference": "dex_ngn_67063f65",
+                        "createdAt": "2026-09-01T10:15:00.000Z"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
           },
           "400": {
             "description": "Validation failed or the request body/params were malformed.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 400,
+                  "message": "Failed to retrieve deposit account with crypto provider.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           },
@@ -160,7 +315,13 @@
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "Invalid or inactive API key.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           }
@@ -177,13 +338,48 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": "Deposit account details retrieved successfully."
+            "description": "Deposit account details retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": [
+                    {
+                      "id": "67063f653b4a1f6c7a60ec57",
+                      "staticDepositAddresses": [
+                        {
+                          "chain": "tron",
+                          "address": "TXkPqR7YbAaHqZ5t5fRZ9Zk3f2NcQvJ9f2A",
+                          "createdAt": "2026-09-01T10:15:00.000Z"
+                        }
+                      ],
+                      "ngnVirtualAccounts": [
+                        {
+                          "currency": "NGN",
+                          "accountNumber": "0123456789",
+                          "accountName": "Dexxify Test Business",
+                          "bankName": "Wema Bank",
+                          "bankCode": "035",
+                          "accountReference": "dex_ngn_67063f65",
+                          "createdAt": "2026-09-01T10:15:00.000Z"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
           },
           "400": {
             "description": "Validation failed or the request body/params were malformed.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 400,
+                  "message": "Failed to retrieve deposit accounts with crypto provider.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           },
@@ -191,7 +387,13 @@
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "Invalid or inactive API key.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           }
@@ -225,12 +427,47 @@
           }
         },
         "responses": {
-          "201": { "description": "Deposit identity issued successfully." },
+          "201": {
+            "description": "Deposit identity issued successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "id": "67063f653b4a1f6c7a60ec57",
+                    "staticDepositAddresses": [
+                      {
+                        "chain": "tron",
+                        "address": "TXkPqR7YbAaHqZ5t5fRZ9Zk3f2NcQvJ9f2A",
+                        "createdAt": "2026-09-01T10:15:00.000Z"
+                      }
+                    ],
+                    "ngnVirtualAccounts": [
+                      {
+                        "currency": "NGN",
+                        "accountNumber": "0123456789",
+                        "accountName": "Dexxify Test Business",
+                        "bankName": "Wema Bank",
+                        "bankCode": "035",
+                        "accountReference": "dex_ngn_67063f65",
+                        "createdAt": "2026-09-01T10:15:00.000Z"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
           "400": {
             "description": "Validation failed or the request body/params were malformed.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 400,
+                  "message": "BVN must be exactly 11 digits.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           },
@@ -238,7 +475,13 @@
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "Invalid or inactive API key.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           },
@@ -246,7 +489,13 @@
             "description": "Authenticated, but not permitted to perform this action.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 403,
+                  "message": "This action requires a verified identity. Complete individual KYC verification first.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           },
@@ -254,7 +503,13 @@
             "description": "The requested resource could not be found.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 404,
+                  "message": "Deposit account not found.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           }
@@ -280,12 +535,41 @@
           }
         },
         "responses": {
-          "201": { "description": "Withdrawal address added successfully." },
+          "201": {
+            "description": "Withdrawal address added successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "success": true,
+                    "data": {
+                      "id": "6a0ce75269321c4cb5eafe7d",
+                      "business_id": "8e2f6b2a-df9c-4c2a-9a0a-9e6a2a2b6a11",
+                      "mode": "test",
+                      "address": "UQCvj9LMypzHShhTvO1qSLE0XiWxopEMweLh8MFnY3mxzLvi",
+                      "network": "bsc",
+                      "token": "USDT",
+                      "label": "My USDT Wallet",
+                      "primary": true,
+                      "created_at": "2026-09-01T10:15:00.000Z",
+                      "updated_at": "2026-09-01T10:15:00.000Z"
+                    }
+                  }
+                }
+              }
+            }
+          },
           "400": {
             "description": "Validation failed or the request body/params were malformed.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 400,
+                  "message": "network must be one of the following values: bsc, tron, solana, base, ethereum",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           },
@@ -293,7 +577,13 @@
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "Invalid or inactive API key.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           }
@@ -308,13 +598,39 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": "Withdrawal addresses retrieved successfully."
+            "description": "Withdrawal addresses retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": [
+                    {
+                      "id": "6a0ce75269321c4cb5eafe7d",
+                      "business_id": "8e2f6b2a-df9c-4c2a-9a0a-9e6a2a2b6a11",
+                      "mode": "test",
+                      "address": "UQCvj9LMypzHShhTvO1qSLE0XiWxopEMweLh8MFnY3mxzLvi",
+                      "network": "bsc",
+                      "token": "USDT",
+                      "label": "My USDT Wallet",
+                      "primary": true,
+                      "created_at": "2026-09-01T10:15:00.000Z",
+                      "updated_at": "2026-09-01T10:15:00.000Z"
+                    }
+                  ]
+                }
+              }
+            }
           },
           "401": {
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "Invalid or inactive API key.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           }
@@ -331,13 +647,39 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": "Saved withdrawal addresses retrieved successfully."
+            "description": "Saved withdrawal addresses retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": [
+                    {
+                      "id": "6a0ce75269321c4cb5eafe7d",
+                      "business_id": "8e2f6b2a-df9c-4c2a-9a0a-9e6a2a2b6a11",
+                      "mode": "test",
+                      "address": "UQCvj9LMypzHShhTvO1qSLE0XiWxopEMweLh8MFnY3mxzLvi",
+                      "network": "bsc",
+                      "token": "USDT",
+                      "label": "My USDT Wallet",
+                      "primary": true,
+                      "created_at": "2026-09-01T10:15:00.000Z",
+                      "updated_at": "2026-09-01T10:15:00.000Z"
+                    }
+                  ]
+                }
+              }
+            }
           },
           "401": {
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "Invalid or inactive API key.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           }
@@ -361,20 +703,25 @@
           }
         ],
         "responses": {
-          "200": { "description": "Withdrawal address removed successfully." },
+          "200": {
+            "description": "Request processed successfully",
+            "content": {
+              "application/json": {
+                "schema": { "example": { "success": true } }
+              }
+            }
+          },
           "401": {
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
-              }
-            }
-          },
-          "404": {
-            "description": "The requested resource could not be found.",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "Invalid or inactive API key.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           }
@@ -401,13 +748,24 @@
         },
         "responses": {
           "201": {
-            "description": "Stable coin withdrawal initiated successfully."
+            "description": "Stable coin withdrawal initiated successfully.",
+            "content": {
+              "application/json": {
+                "schema": { "example": { "fee": 1.5, "amount": 5 } }
+              }
+            }
           },
           "400": {
             "description": "Validation failed or the request body/params were malformed.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 400,
+                  "message": "Insufficient balance",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           },
@@ -415,7 +773,13 @@
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "Invalid or inactive API key.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           },
@@ -423,7 +787,13 @@
             "description": "Authenticated, but not permitted to perform this action.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 403,
+                  "message": "This action requires a verified identity. Complete individual KYC verification first.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           }
@@ -449,12 +819,25 @@
           }
         },
         "responses": {
-          "201": { "description": "Fiat withdrawal initiated successfully." },
+          "201": {
+            "description": "Fiat withdrawal initiated successfully.",
+            "content": {
+              "application/json": {
+                "schema": { "example": { "fee": 50, "amount": 2000 } }
+              }
+            }
+          },
           "400": {
             "description": "Validation failed or the request body/params were malformed.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 400,
+                  "message": "Insufficient balance",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           },
@@ -462,7 +845,13 @@
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "Invalid or inactive API key.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           },
@@ -470,7 +859,27 @@
             "description": "Authenticated, but not permitted to perform this action.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 403,
+                  "message": "This action requires a verified identity. Complete individual KYC verification first.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The requested resource could not be found.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 404,
+                  "message": "Bank account not found.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           }
@@ -504,7 +913,13 @@
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "Invalid or inactive API key.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           }
@@ -527,12 +942,39 @@
           }
         },
         "responses": {
-          "201": { "description": "Customer created successfully." },
+          "201": {
+            "description": "Customer created successfully.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Customer" },
+                "example": {
+                  "id": "3c1e6a2a-2b3c-4d5e-8f9a-1a2b3c4d5e6f",
+                  "business_id": "8e2f6b2a-df9c-4c2a-9a0a-9e6a2a2b6a11",
+                  "mode": "test",
+                  "email": "john@example.com",
+                  "phone": "+2348012345678",
+                  "first_name": "John",
+                  "last_name": "Doe",
+                  "status": "active",
+                  "cc_customer_id": "cus_8f3c1a2b4d5e",
+                  "metadata": { "plan": "premium", "region": "NG" },
+                  "created_at": "2026-09-01T10:15:00.000Z",
+                  "updated_at": "2026-09-01T10:15:00.000Z"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Validation failed or the request body/params were malformed.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 400,
+                  "message": "email must be an email",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           },
@@ -540,7 +982,13 @@
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "Invalid or inactive API key.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           },
@@ -548,7 +996,13 @@
             "description": "The resource already exists or is in a conflicting state.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 409,
+                  "message": "Customer with email 'john@example.com' already exists.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           }
@@ -580,12 +1034,53 @@
           }
         ],
         "responses": {
-          "200": { "description": "Customers retrieved successfully." },
+          "200": {
+            "description": "Customers retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "data": [
+                      {
+                        "id": "3c1e6a2a-2b3c-4d5e-8f9a-1a2b3c4d5e6f",
+                        "business_id": "8e2f6b2a-df9c-4c2a-9a0a-9e6a2a2b6a11",
+                        "mode": "test",
+                        "email": "john@example.com",
+                        "phone": "+2348012345678",
+                        "first_name": "John",
+                        "last_name": "Doe",
+                        "status": "active",
+                        "cc_customer_id": "cus_8f3c1a2b4d5e",
+                        "metadata": { "plan": "premium", "region": "NG" },
+                        "created_at": "2026-09-01T10:15:00.000Z",
+                        "updated_at": "2026-09-01T10:15:00.000Z",
+                        "has_paid": true
+                      }
+                    ],
+                    "meta": {
+                      "total": 1,
+                      "page": 1,
+                      "limit": 20,
+                      "total_pages": 1,
+                      "has_next": false,
+                      "has_prev": false
+                    }
+                  }
+                }
+              }
+            }
+          },
           "401": {
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "Invalid or inactive API key.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           }
@@ -608,12 +1103,39 @@
           }
         ],
         "responses": {
-          "200": { "description": "Customer retrieved successfully." },
+          "200": {
+            "description": "Customer retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Customer" },
+                "example": {
+                  "id": "3c1e6a2a-2b3c-4d5e-8f9a-1a2b3c4d5e6f",
+                  "business_id": "8e2f6b2a-df9c-4c2a-9a0a-9e6a2a2b6a11",
+                  "mode": "test",
+                  "email": "john@example.com",
+                  "phone": "+2348012345678",
+                  "first_name": "John",
+                  "last_name": "Doe",
+                  "status": "active",
+                  "cc_customer_id": "cus_8f3c1a2b4d5e",
+                  "metadata": { "plan": "premium", "region": "NG" },
+                  "created_at": "2026-09-01T10:15:00.000Z",
+                  "updated_at": "2026-09-01T10:15:00.000Z"
+                }
+              }
+            }
+          },
           "401": {
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "Invalid or inactive API key.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           },
@@ -621,7 +1143,13 @@
             "description": "The requested resource could not be found.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 404,
+                  "message": "Customer not found.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           }
@@ -650,12 +1178,39 @@
           }
         },
         "responses": {
-          "200": { "description": "Customer updated successfully." },
+          "200": {
+            "description": "Customer updated successfully.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Customer" },
+                "example": {
+                  "id": "3c1e6a2a-2b3c-4d5e-8f9a-1a2b3c4d5e6f",
+                  "business_id": "8e2f6b2a-df9c-4c2a-9a0a-9e6a2a2b6a11",
+                  "mode": "test",
+                  "email": "john@example.com",
+                  "phone": "+2348012345678",
+                  "first_name": "John",
+                  "last_name": "Doe",
+                  "status": "active",
+                  "cc_customer_id": "cus_8f3c1a2b4d5e",
+                  "metadata": { "plan": "premium", "region": "NG" },
+                  "created_at": "2026-09-01T10:15:00.000Z",
+                  "updated_at": "2026-09-01T10:15:00.000Z"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Validation failed or the request body/params were malformed.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 400,
+                  "message": "email must be an email",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           },
@@ -663,7 +1218,13 @@
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "Invalid or inactive API key.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           },
@@ -671,7 +1232,13 @@
             "description": "The requested resource could not be found.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 404,
+                  "message": "Customer not found.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           }
@@ -692,12 +1259,25 @@
           }
         ],
         "responses": {
-          "200": { "description": "Customer deleted successfully." },
+          "200": {
+            "description": "Customer deleted successfully.",
+            "content": {
+              "application/json": {
+                "schema": { "example": { "message": "Customer deleted." } }
+              }
+            }
+          },
           "401": {
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "Invalid or inactive API key.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           },
@@ -705,7 +1285,13 @@
             "description": "The requested resource could not be found.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 404,
+                  "message": "Customer not found.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           }
@@ -729,12 +1315,47 @@
           }
         ],
         "responses": {
-          "200": { "description": "Deposit account retrieved successfully." },
+          "200": {
+            "description": "Deposit account retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "id": "67063f653b4a1f6c7a60ec57",
+                    "staticDepositAddresses": [
+                      {
+                        "chain": "tron",
+                        "address": "TXkPqR7YbAaHqZ5t5fRZ9Zk3f2NcQvJ9f2A",
+                        "createdAt": "2026-09-01T10:15:00.000Z"
+                      }
+                    ],
+                    "ngnVirtualAccounts": [
+                      {
+                        "currency": "NGN",
+                        "accountNumber": "0123456789",
+                        "accountName": "John Doe",
+                        "bankName": "Wema Bank",
+                        "bankCode": "035",
+                        "accountReference": "dex_ngn_67063f65",
+                        "createdAt": "2026-09-01T10:15:00.000Z"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
           "400": {
             "description": "Validation failed or the request body/params were malformed.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 400,
+                  "message": "Customer is not synced with payment provider.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           },
@@ -742,7 +1363,13 @@
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "Invalid or inactive API key.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           },
@@ -750,7 +1377,13 @@
             "description": "The requested resource could not be found.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 404,
+                  "message": "Customer not found.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           }
@@ -775,13 +1408,42 @@
         },
         "responses": {
           "201": {
-            "description": "Off-ramp transaction created successfully."
+            "description": "Off-ramp transaction created successfully.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SwapRecord" },
+                "example": {
+                  "id": "550e8400-e29b-41d4-a716-446655440000",
+                  "business_id": "8e2f6b2a-df9c-4c2a-9a0a-9e6a2a2b6a11",
+                  "mode": "test",
+                  "cc_swap_id": "swap_7f3a1b2c3d4e",
+                  "from_currency": "USDT",
+                  "to_currency": "NGN",
+                  "source_amount": 10,
+                  "target_amount": 15234.56,
+                  "status": "pending",
+                  "type": "offramp",
+                  "metadata": {
+                    "recipientId": "rec_6a0ce75269321c4cb5eafe7d",
+                    "quotationId": "quote_9f2a1b3c4d5e"
+                  },
+                  "created_at": "2026-09-01T10:15:00.000Z",
+                  "updated_at": "2026-09-01T10:15:00.000Z"
+                }
+              }
+            }
           },
           "400": {
             "description": "Validation failed or the request body/params were malformed.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 400,
+                  "message": "Failed to initiate offramp.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           },
@@ -789,7 +1451,13 @@
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "Invalid or inactive API key.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           }
@@ -817,13 +1485,73 @@
         ],
         "responses": {
           "200": {
-            "description": "Off-ramp transaction retrieved successfully."
+            "description": "Off-ramp transaction retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "id": "550e8400-e29b-41d4-a716-446655440000",
+                    "status": "completed",
+                    "swap": {
+                      "id": "550e8400-e29b-41d4-a716-446655440000",
+                      "business_id": "8e2f6b2a-df9c-4c2a-9a0a-9e6a2a2b6a11",
+                      "mode": "test",
+                      "cc_swap_id": "swap_7f3a1b2c3d4e",
+                      "from_currency": "USDT",
+                      "to_currency": "NGN",
+                      "source_amount": 10,
+                      "target_amount": 15234.56,
+                      "status": "completed",
+                      "type": "offramp",
+                      "metadata": {
+                        "recipientId": "rec_6a0ce75269321c4cb5eafe7d",
+                        "quotationId": "quote_9f2a1b3c4d5e"
+                      },
+                      "created_at": "2026-09-01T10:15:00.000Z",
+                      "updated_at": "2026-09-01T10:15:00.000Z"
+                    },
+                    "transaction": {
+                      "id": "2b6a2a2b-6a11-4c2a-9a0a-9e6a2a2b6a99",
+                      "business_id": "8e2f6b2a-df9c-4c2a-9a0a-9e6a2a2b6a11",
+                      "mode": "test",
+                      "direction": "outbound",
+                      "crypto_asset": "USDT",
+                      "net_amount": 10,
+                      "network": "Tron",
+                      "deposit_type": null,
+                      "from_address": null,
+                      "to_address": "TXkPqR7YbAaHqZ5t5fRZ9Zk3f2NcQvJ9f2A",
+                      "tx_hash": null,
+                      "amount": 15234.56,
+                      "currency": "NGN",
+                      "fee": 50,
+                      "status": "completed",
+                      "provider_reference": "cc_tx_8f2a1b3c",
+                      "cc_transaction_id": "cc_tx_8f2a1b3c",
+                      "description": "Offramp payout",
+                      "metadata": {
+                        "swapRecordId": "550e8400-e29b-41d4-a716-446655440000"
+                      },
+                      "completed_at": "2026-09-01T10:20:00.000Z",
+                      "created_at": "2026-09-01T10:15:00.000Z",
+                      "updated_at": "2026-09-01T10:20:00.000Z"
+                    }
+                  }
+                }
+              }
+            }
           },
           "401": {
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "Invalid or inactive API key.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           },
@@ -831,7 +1559,13 @@
             "description": "The requested resource could not be found.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 404,
+                  "message": "Offramp transaction not found.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           }
@@ -846,12 +1580,35 @@
         "operationId": "WebhooksController_findOne",
         "parameters": [],
         "responses": {
-          "200": { "description": "Webhook endpoint retrieved successfully." },
+          "200": {
+            "description": "Webhook endpoint retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "configured": true,
+                    "id": "6a0ce75269321c4cb5eafe7d",
+                    "url": "https://example.com/webhooks/dexxify",
+                    "secret": "whsec_9f3a1b2c9d0e4f5a6b7c8d9e0f1a2b3c",
+                    "is_active": true,
+                    "created_at": "2026-09-01T10:15:00.000Z",
+                    "updated_at": "2026-09-01T10:15:00.000Z"
+                  }
+                }
+              }
+            }
+          },
           "401": {
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "Invalid or inactive API key.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           }
@@ -872,12 +1629,35 @@
           }
         },
         "responses": {
-          "200": { "description": "Webhook endpoint saved successfully." },
+          "200": {
+            "description": "Webhook endpoint saved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "configured": true,
+                    "id": "6a0ce75269321c4cb5eafe7d",
+                    "url": "https://example.com/webhooks/dexxify",
+                    "secret": "whsec_9f3a1b2c9d0e4f5a6b7c8d9e0f1a2b3c",
+                    "is_active": true,
+                    "created_at": "2026-09-01T10:15:00.000Z",
+                    "updated_at": "2026-09-01T10:15:00.000Z"
+                  }
+                }
+              }
+            }
+          },
           "400": {
             "description": "Validation failed or the request body/params were malformed.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 400,
+                  "message": "url is required to create a webhook endpoint.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           },
@@ -885,7 +1665,13 @@
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "Invalid or inactive API key.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           }
@@ -898,12 +1684,25 @@
         "operationId": "WebhooksController_remove",
         "parameters": [],
         "responses": {
-          "200": { "description": "Webhook endpoint deleted successfully." },
+          "200": {
+            "description": "Webhook endpoint deleted successfully.",
+            "content": {
+              "application/json": {
+                "schema": { "example": { "deleted": true } }
+              }
+            }
+          },
           "401": {
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "Invalid or inactive API key.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           },
@@ -911,7 +1710,13 @@
             "description": "The requested resource could not be found.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 404,
+                  "message": "Webhook endpoint not found.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           }
@@ -951,12 +1756,49 @@
           }
         ],
         "responses": {
-          "200": { "description": "Webhook events retrieved successfully." },
+          "200": {
+            "description": "Webhook events retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "data": [
+                      {
+                        "id": "3c1e6a2a-2b3c-4d5e-8f9a-1a2b3c4d5e6f",
+                        "event_type": "payment_session.completed",
+                        "status": "delivered",
+                        "attempts": 1,
+                        "response_status": 200,
+                        "last_attempt_at": "2026-09-24T12:00:05.000Z",
+                        "next_retry_at": null,
+                        "delivered_at": "2026-09-24T12:00:05.000Z",
+                        "created_at": "2026-09-24T12:00:00.000Z"
+                      }
+                    ],
+                    "meta": {
+                      "total": 1,
+                      "page": 1,
+                      "limit": 20,
+                      "total_pages": 1,
+                      "has_next": false,
+                      "has_prev": false
+                    }
+                  }
+                }
+              }
+            }
+          },
           "401": {
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "Invalid or inactive API key.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           }
@@ -979,12 +1821,63 @@
           }
         ],
         "responses": {
-          "200": { "description": "Webhook event retrieved successfully." },
+          "200": {
+            "description": "Webhook event retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "id": "3c1e6a2a-2b3c-4d5e-8f9a-1a2b3c4d5e6f",
+                    "event_type": "payment_session.completed",
+                    "status": "delivered",
+                    "attempts": 1,
+                    "response_status": 200,
+                    "last_attempt_at": "2026-09-24T12:00:05.000Z",
+                    "next_retry_at": null,
+                    "delivered_at": "2026-09-24T12:00:05.000Z",
+                    "created_at": "2026-09-24T12:00:00.000Z",
+                    "webhook_endpoint_id": "6a0ce75269321c4cb5eafe7d",
+                    "business_id": "8e2f6b2a-df9c-4c2a-9a0a-9e6a2a2b6a11",
+                    "payload": {
+                      "event": "payment_session.completed",
+                      "data": {
+                        "reference": "ps_4f2a9c1e",
+                        "status": "completed"
+                      },
+                      "timestamp": "2026-09-24T12:00:00.000Z",
+                      "webhook_id": "6a0ce75269321c4cb5eafe7d"
+                    },
+                    "response_body": "OK"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed or the request body/params were malformed.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 400,
+                  "message": "Validation failed (uuid is expected)",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
+              }
+            }
+          },
           "401": {
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "Invalid or inactive API key.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           },
@@ -992,7 +1885,13 @@
             "description": "The requested resource could not be found.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 404,
+                  "message": "Webhook event not found.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           }
@@ -1015,12 +1914,40 @@
           }
         },
         "responses": {
-          "201": { "description": "API key created successfully." },
+          "201": {
+            "description": "API key created successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "id": "6a0ce752-6932-4c1c-b5ea-fe7d12345678",
+                    "user_id": "3c1e6a2a-2b3c-4d5e-8f9a-1a2b3c4d5e6f",
+                    "business_id": "8e2f6b2a-df9c-4c2a-9a0a-9e6a2a2b6a11",
+                    "key_prefix": "dex_test_Ab",
+                    "label": "Mobile App Key",
+                    "mode": "test",
+                    "is_active": true,
+                    "last_used_at": null,
+                    "ip_whitelist": null,
+                    "expires_at": null,
+                    "created_at": "2026-09-01T10:15:00.000Z",
+                    "key": "dex_test_AbCdEfGhIjKlMnOpQrStUvWxYz0123456789"
+                  }
+                }
+              }
+            }
+          },
           "400": {
             "description": "Validation failed or the request body/params were malformed.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 400,
+                  "message": "Maximum 5 active test API keys allowed.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           },
@@ -1028,7 +1955,13 @@
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "Invalid or inactive API key.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           }
@@ -1041,12 +1974,38 @@
         "operationId": "DashboardController_listApiKeys",
         "parameters": [],
         "responses": {
-          "200": { "description": "API keys retrieved successfully." },
+          "200": {
+            "description": "API keys retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": [
+                    {
+                      "id": "6a0ce752-6932-4c1c-b5ea-fe7d12345678",
+                      "key_prefix": "dex_test_Ab",
+                      "label": "Mobile App Key",
+                      "mode": "test",
+                      "is_active": true,
+                      "last_used_at": null,
+                      "ip_whitelist": null,
+                      "created_at": "2026-09-01T10:15:00.000Z"
+                    }
+                  ]
+                }
+              }
+            }
+          },
           "401": {
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "Invalid or inactive API key.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           }
@@ -1077,12 +2036,35 @@
           }
         },
         "responses": {
-          "200": { "description": "API key updated successfully." },
+          "200": {
+            "description": "API key updated successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "id": "6a0ce752-6932-4c1c-b5ea-fe7d12345678",
+                    "key_prefix": "dex_test_Ab",
+                    "label": "Updated Mobile App Key",
+                    "mode": "test",
+                    "is_active": true,
+                    "ip_whitelist": ["192.168.1.1", "10.0.0.1"],
+                    "last_used_at": null
+                  }
+                }
+              }
+            }
+          },
           "401": {
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "Invalid or inactive API key.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           },
@@ -1090,7 +2072,13 @@
             "description": "The requested resource could not be found.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 404,
+                  "message": "API key not found.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           }
@@ -1111,12 +2099,30 @@
           }
         ],
         "responses": {
-          "200": { "description": "API key revoked successfully." },
+          "200": {
+            "description": "API key revoked successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "revoked": true,
+                    "id": "6a0ce752-6932-4c1c-b5ea-fe7d12345678"
+                  }
+                }
+              }
+            }
+          },
           "401": {
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "Invalid or inactive API key.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           },
@@ -1124,7 +2130,13 @@
             "description": "The requested resource could not be found.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 404,
+                  "message": "API key not found.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           }
@@ -1139,12 +2151,33 @@
         "operationId": "MiscController_getBanks",
         "parameters": [],
         "responses": {
-          "200": { "description": "Supported banks retrieved successfully." },
+          "200": {
+            "description": "Supported banks retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "banks": [
+                      { "code": "305", "name": "OPay" },
+                      { "code": "044", "name": "Access Bank" }
+                    ],
+                    "cached": true
+                  }
+                }
+              }
+            }
+          },
           "401": {
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "Invalid or inactive API key.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           }
@@ -1164,12 +2197,41 @@
           }
         },
         "responses": {
-          "201": { "description": "Bank account added successfully." },
+          "201": {
+            "description": "Bank account added successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "id": "rcp_8f3c1a2b4d5e",
+                    "label": "My OpayBank",
+                    "details": {
+                      "accountNumber": "8065924354",
+                      "bankCode": "305",
+                      "accountName": "John Doe",
+                      "bankName": "OPay",
+                      "currency": "NGN",
+                      "accountType": "individual"
+                    },
+                    "isDefault": false,
+                    "isTrusted": false,
+                    "local_id": "9f2b6b2a-df9c-4c2a-9a0a-9e6a2a2b6a99"
+                  }
+                }
+              }
+            }
+          },
           "401": {
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "Invalid or inactive API key.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           },
@@ -1177,7 +2239,13 @@
             "description": "The resource already exists or is in a conflicting state.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 409,
+                  "message": "Bank account already added",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           }
@@ -1191,12 +2259,47 @@
         "operationId": "MiscController_getSavedBanks",
         "parameters": [],
         "responses": {
-          "200": { "description": "Saved banks retrieved successfully." },
+          "200": {
+            "description": "Saved banks retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Bank" }
+                },
+                "example": [
+                  {
+                    "id": "9f2b6b2a-df9c-4c2a-9a0a-9e6a2a2b6a99",
+                    "provider_recipient_id": "rcp_8f3c1a2b4d5e",
+                    "business_id": "8e2f6b2a-df9c-4c2a-9a0a-9e6a2a2b6a11",
+                    "mode": "test",
+                    "account_name": "John Doe",
+                    "account_number": "8065924354",
+                    "bank_code": "305",
+                    "bank_name": "OPay",
+                    "currency": "NGN",
+                    "label": "My OpayBank",
+                    "is_trusted": false,
+                    "type": "individual",
+                    "primary": false,
+                    "created_at": "2026-09-01T10:15:00.000Z",
+                    "updated_at": "2026-09-01T10:15:00.000Z"
+                  }
+                ]
+              }
+            }
+          },
           "401": {
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "Invalid or inactive API key.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           }
@@ -1217,12 +2320,42 @@
           }
         ],
         "responses": {
-          "200": { "description": "Saved bank retrieved successfully." },
+          "200": {
+            "description": "Saved bank retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Bank" },
+                "example": {
+                  "id": "9f2b6b2a-df9c-4c2a-9a0a-9e6a2a2b6a99",
+                  "provider_recipient_id": "rcp_8f3c1a2b4d5e",
+                  "business_id": "8e2f6b2a-df9c-4c2a-9a0a-9e6a2a2b6a11",
+                  "mode": "test",
+                  "account_name": "John Doe",
+                  "account_number": "8065924354",
+                  "bank_code": "305",
+                  "bank_name": "OPay",
+                  "currency": "NGN",
+                  "label": "My OpayBank",
+                  "is_trusted": false,
+                  "type": "individual",
+                  "primary": false,
+                  "created_at": "2026-09-01T10:15:00.000Z",
+                  "updated_at": "2026-09-01T10:15:00.000Z"
+                }
+              }
+            }
+          },
           "401": {
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "Invalid or inactive API key.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           }
@@ -1244,12 +2377,25 @@
           }
         ],
         "responses": {
-          "200": { "description": "Bank account deleted successfully." },
+          "200": {
+            "description": "Bank account deleted successfully.",
+            "content": {
+              "application/json": {
+                "schema": { "example": { "message": "Bank account deleted." } }
+              }
+            }
+          },
           "401": {
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "Invalid or inactive API key.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           },
@@ -1257,7 +2403,13 @@
             "description": "The requested resource could not be found.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 404,
+                  "message": "Bank not found",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           }
@@ -1279,12 +2431,33 @@
           }
         },
         "responses": {
-          "201": { "description": "Bank account verified successfully." },
+          "201": {
+            "description": "Bank account verified successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "data": {
+                      "accountNumber": "2249098732",
+                      "bankCode": "033",
+                      "accountName": "ADAEZE CHIOMA NWOSU"
+                    }
+                  }
+                }
+              }
+            }
+          },
           "401": {
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "Invalid or inactive API key.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           }
@@ -1298,7 +2471,25 @@
         "operationId": "MiscController_getSupportedDepositAssets",
         "parameters": [],
         "responses": {
-          "200": { "description": "Supported assets retrieved successfully." }
+          "200": {
+            "description": "Supported assets retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "data": {
+                      "bitcoin": ["BTC"],
+                      "ethereum": ["ETH", "USDT", "USDC"],
+                      "bsc": ["BNB", "USDT"],
+                      "tron": ["USDT", "TRX"],
+                      "solana": ["SOL", "USDC"],
+                      "base": ["USDC"]
+                    }
+                  }
+                }
+              }
+            }
+          }
         },
         "summary": "Get supported blockchain and assets",
         "tags": ["Misc - Banks & Assets"]
@@ -1318,13 +2509,28 @@
         },
         "responses": {
           "201": {
-            "description": "Crypto conversion rate retrieved successfully."
+            "description": "Crypto conversion rate retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "data": { "from": "USDT", "to": "NGN", "rate": 1550.25 }
+                  }
+                }
+              }
+            }
           },
           "401": {
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "Invalid or inactive API key.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           }
@@ -1355,13 +2561,34 @@
         },
         "responses": {
           "201": {
-            "description": "Estimated payment amount calculated successfully."
+            "description": "Estimated payment amount calculated successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "data": {
+                      "asset": "USDT",
+                      "amount": "100",
+                      "currency": "NGN",
+                      "estimatedAmount": "64.5",
+                      "fee": "0.32"
+                    }
+                  }
+                }
+              }
+            }
           },
           "401": {
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "Invalid or inactive API key.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           }
@@ -1386,12 +2613,48 @@
           }
         },
         "responses": {
-          "201": { "description": "Payment session created successfully." },
+          "201": {
+            "description": "Payment session created successfully.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PaymentSession" },
+                "example": {
+                  "id": "3c1e6a2a-2b3c-4d5e-8f9a-1a2b3c4d5e6f",
+                  "business_id": "8e2f6b2a-df9c-4c2a-9a0a-9e6a2a2b6a11",
+                  "mode": "test",
+                  "customer_id": "9b1c2d3e-4f5a-6b7c-8d9e-0f1a2b3c4d5e",
+                  "reference": "ps_4f2a9c1e",
+                  "amount": 50000,
+                  "amount_paid": null,
+                  "currency": "NGN",
+                  "deposit_address": null,
+                  "crypto_asset": null,
+                  "network": null,
+                  "status": "pending",
+                  "payment_page_id": null,
+                  "invoice_id": null,
+                  "transaction_id": null,
+                  "provider_session_reference": "cc_ps_7f3a1b2c",
+                  "metadata": { "order_id": "ord_xyz" },
+                  "expires_at": "2026-09-24T13:00:00.000Z",
+                  "completed_at": null,
+                  "created_at": "2026-09-24T12:00:00.000Z",
+                  "updated_at": "2026-09-24T12:00:00.000Z"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Validation failed or the request body/params were malformed.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 400,
+                  "message": "amount must be a positive number",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           },
@@ -1399,7 +2662,13 @@
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "Invalid or inactive API key.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           }
@@ -1444,12 +2713,61 @@
           }
         ],
         "responses": {
-          "200": { "description": "Payment sessions retrieved successfully." },
+          "200": {
+            "description": "Payment sessions retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "data": [
+                      {
+                        "id": "3c1e6a2a-2b3c-4d5e-8f9a-1a2b3c4d5e6f",
+                        "business_id": "8e2f6b2a-df9c-4c2a-9a0a-9e6a2a2b6a11",
+                        "mode": "test",
+                        "customer_id": "9b1c2d3e-4f5a-6b7c-8d9e-0f1a2b3c4d5e",
+                        "reference": "ps_4f2a9c1e",
+                        "amount": 50000,
+                        "amount_paid": null,
+                        "currency": "NGN",
+                        "deposit_address": null,
+                        "crypto_asset": null,
+                        "network": null,
+                        "status": "pending",
+                        "payment_page_id": null,
+                        "invoice_id": null,
+                        "transaction_id": null,
+                        "provider_session_reference": "cc_ps_7f3a1b2c",
+                        "metadata": { "order_id": "ord_xyz" },
+                        "expires_at": "2026-09-24T13:00:00.000Z",
+                        "completed_at": null,
+                        "created_at": "2026-09-24T12:00:00.000Z",
+                        "updated_at": "2026-09-24T12:00:00.000Z"
+                      }
+                    ],
+                    "meta": {
+                      "total": 1,
+                      "page": 1,
+                      "limit": 20,
+                      "total_pages": 1,
+                      "has_next": false,
+                      "has_prev": false
+                    }
+                  }
+                }
+              }
+            }
+          },
           "401": {
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "Invalid or inactive API key.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           }
@@ -1472,12 +2790,62 @@
           }
         ],
         "responses": {
-          "200": { "description": "Payment session retrieved successfully." },
+          "200": {
+            "description": "Payment session retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PaymentSession" },
+                "example": {
+                  "id": "3c1e6a2a-2b3c-4d5e-8f9a-1a2b3c4d5e6f",
+                  "business_id": "8e2f6b2a-df9c-4c2a-9a0a-9e6a2a2b6a11",
+                  "mode": "test",
+                  "customer_id": "9b1c2d3e-4f5a-6b7c-8d9e-0f1a2b3c4d5e",
+                  "reference": "ps_4f2a9c1e",
+                  "amount": 50000,
+                  "amount_paid": null,
+                  "currency": "NGN",
+                  "deposit_address": null,
+                  "crypto_asset": null,
+                  "network": null,
+                  "status": "pending",
+                  "payment_page_id": null,
+                  "invoice_id": null,
+                  "transaction_id": null,
+                  "provider_session_reference": "cc_ps_7f3a1b2c",
+                  "metadata": { "order_id": "ord_xyz" },
+                  "expires_at": "2026-09-24T13:00:00.000Z",
+                  "completed_at": null,
+                  "created_at": "2026-09-24T12:00:00.000Z",
+                  "updated_at": "2026-09-24T12:00:00.000Z",
+                  "customer": {
+                    "id": "9b1c2d3e-4f5a-6b7c-8d9e-0f1a2b3c4d5e",
+                    "business_id": "8e2f6b2a-df9c-4c2a-9a0a-9e6a2a2b6a11",
+                    "mode": "test",
+                    "email": "hansen@gmail.com",
+                    "phone": null,
+                    "first_name": "Billy",
+                    "last_name": "James",
+                    "status": "active",
+                    "cc_customer_id": "cc_cus_9a1b2c3d",
+                    "metadata": {},
+                    "created_at": "2026-09-24T12:00:00.000Z",
+                    "updated_at": "2026-09-24T12:00:00.000Z"
+                  }
+                }
+              }
+            }
+          },
           "400": {
             "description": "Validation failed or the request body/params were malformed.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 400,
+                  "message": "Validation failed (uuid is expected)",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           },
@@ -1485,7 +2853,13 @@
             "description": "The requested resource could not be found.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 404,
+                  "message": "Payment session not found.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           }
@@ -1508,12 +2882,58 @@
           }
         ],
         "responses": {
-          "200": { "description": "Payment session retrieved successfully." },
+          "200": {
+            "description": "Payment session retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "id": "3c1e6a2a-2b3c-4d5e-8f9a-1a2b3c4d5e6f",
+                    "business_id": "8e2f6b2a-df9c-4c2a-9a0a-9e6a2a2b6a11",
+                    "mode": "test",
+                    "customer_id": "9b1c2d3e-4f5a-6b7c-8d9e-0f1a2b3c4d5e",
+                    "reference": "ps_4f2a9c1e",
+                    "amount": 50000,
+                    "amount_paid": null,
+                    "currency": "NGN",
+                    "deposit_address": null,
+                    "crypto_asset": null,
+                    "network": null,
+                    "status": "pending",
+                    "payment_page_id": null,
+                    "invoice_id": null,
+                    "transaction_id": null,
+                    "provider_session_reference": "cc_ps_7f3a1b2c",
+                    "metadata": { "order_id": "ord_xyz" },
+                    "expires_at": "2026-09-24T13:00:00.000Z",
+                    "completed_at": null,
+                    "created_at": "2026-09-24T12:00:00.000Z",
+                    "updated_at": "2026-09-24T12:00:00.000Z",
+                    "cc": {
+                      "asset": "USDT",
+                      "chain": "tron",
+                      "amount": "50000",
+                      "currency": "NGN",
+                      "cryptoAmount": "31.25",
+                      "rate": "1600.00",
+                      "reference": "cs-abc123"
+                    }
+                  }
+                }
+              }
+            }
+          },
           "401": {
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "Invalid or inactive API key.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           },
@@ -1521,7 +2941,13 @@
             "description": "The requested resource could not be found.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 404,
+                  "message": "Payment session not found.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           }
@@ -1555,12 +2981,51 @@
           }
         },
         "responses": {
-          "201": { "description": "Deposit address generated successfully." },
+          "201": {
+            "description": "Deposit address generated successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "session": {
+                      "id": "3c1e6a2a-2b3c-4d5e-8f9a-1a2b3c4d5e6f",
+                      "business_id": "8e2f6b2a-df9c-4c2a-9a0a-9e6a2a2b6a11",
+                      "mode": "test",
+                      "customer_id": "9b1c2d3e-4f5a-6b7c-8d9e-0f1a2b3c4d5e",
+                      "reference": "ps_4f2a9c1e",
+                      "amount": 50000,
+                      "amount_paid": null,
+                      "currency": "NGN",
+                      "deposit_address": "TXkPqR7YbAaHqZ5t5fRZ9Zk3f2NcQvJ9f2A",
+                      "crypto_asset": "USDT",
+                      "network": "Tron",
+                      "status": "pending",
+                      "payment_page_id": null,
+                      "invoice_id": null,
+                      "transaction_id": null,
+                      "provider_session_reference": "cc_ps_7f3a1b2c",
+                      "metadata": { "order_id": "ord_xyz" },
+                      "expires_at": "2026-09-24T13:00:00.000Z",
+                      "completed_at": null,
+                      "created_at": "2026-09-24T12:00:00.000Z",
+                      "updated_at": "2026-09-24T12:00:00.000Z"
+                    }
+                  }
+                }
+              }
+            }
+          },
           "400": {
             "description": "Validation failed or the request body/params were malformed.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 400,
+                  "message": "Bad request.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           },
@@ -1568,7 +3033,13 @@
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "Invalid or inactive API key.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           },
@@ -1576,7 +3047,13 @@
             "description": "The requested resource could not be found.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 404,
+                  "message": "Payment session not found.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           }
@@ -1600,13 +3077,38 @@
           }
         },
         "responses": {
-          "200": { "description": "Payment estimate calculated successfully." },
+          "200": {
+            "description": "Payment estimate calculated successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "data": {
+                      "asset": "USDT",
+                      "chain": "tron",
+                      "amount": "50000",
+                      "currency": "NGN",
+                      "cryptoAmount": "31.25",
+                      "rate": "1600.00",
+                      "reference": "cs-abc123"
+                    }
+                  }
+                }
+              }
+            }
+          },
           "201": { "description": "" },
           "400": {
             "description": "Validation failed or the request body/params were malformed.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 400,
+                  "message": "Asset TON is not supported by CoincircuitMCP.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           },
@@ -1614,7 +3116,13 @@
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "Invalid or inactive API key.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           }
@@ -1637,12 +3145,48 @@
           }
         ],
         "responses": {
-          "200": { "description": "Payment session cancelled successfully." },
+          "200": {
+            "description": "Payment session cancelled successfully.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PaymentSession" },
+                "example": {
+                  "id": "3c1e6a2a-2b3c-4d5e-8f9a-1a2b3c4d5e6f",
+                  "business_id": "8e2f6b2a-df9c-4c2a-9a0a-9e6a2a2b6a11",
+                  "mode": "test",
+                  "customer_id": "9b1c2d3e-4f5a-6b7c-8d9e-0f1a2b3c4d5e",
+                  "reference": "ps_4f2a9c1e",
+                  "amount": 50000,
+                  "amount_paid": null,
+                  "currency": "NGN",
+                  "deposit_address": null,
+                  "crypto_asset": null,
+                  "network": null,
+                  "status": "failed",
+                  "payment_page_id": null,
+                  "invoice_id": null,
+                  "transaction_id": null,
+                  "provider_session_reference": "cc_ps_7f3a1b2c",
+                  "metadata": { "order_id": "ord_xyz" },
+                  "expires_at": "2026-09-24T13:00:00.000Z",
+                  "completed_at": null,
+                  "created_at": "2026-09-24T12:00:00.000Z",
+                  "updated_at": "2026-09-24T12:00:00.000Z"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Validation failed or the request body/params were malformed.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 400,
+                  "message": "Cannot cancel a session with status 'completed'.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           },
@@ -1650,7 +3194,13 @@
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "Invalid or inactive API key.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           },
@@ -1658,7 +3208,13 @@
             "description": "The requested resource could not be found.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 404,
+                  "message": "Payment session not found.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           }
@@ -1682,12 +3238,55 @@
           }
         },
         "responses": {
-          "201": { "description": "Invoice created successfully." },
+          "201": {
+            "description": "Invoice created successfully.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Invoice" },
+                "example": {
+                  "id": "9b1d6a2a-2b3c-4d5e-8f9a-1a2b3c4d5e70",
+                  "business_id": "8e2f6b2a-df9c-4c2a-9a0a-9e6a2a2b6a11",
+                  "mode": "test",
+                  "customer_id": "3c1e6a2a-2b3c-4d5e-8f9a-1a2b3c4d5e6f",
+                  "invoice_number": "INV-AB12CD34EF",
+                  "status": "sent",
+                  "currency": "USD",
+                  "line_items": [
+                    {
+                      "description": "Consulting services",
+                      "quantity": 2,
+                      "unit_price": 500,
+                      "amount": 1000
+                    }
+                  ],
+                  "subtotal": 1000,
+                  "tax_rate": 7.5,
+                  "tax_amount": 75,
+                  "discount_amount": 50,
+                  "total": 1025,
+                  "due_date": "2026-07-01T00:00:00.000Z",
+                  "paid_at": null,
+                  "notes": "Thank you for your business.",
+                  "provider_invoice_reference": null,
+                  "cc_invoice_url": null,
+                  "metadata": { "order_ref": "ord_123" },
+                  "created_at": "2026-09-01T10:15:00.000Z",
+                  "updated_at": "2026-09-01T10:15:00.000Z"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Validation failed or the request body/params were malformed.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 400,
+                  "message": "Each line item amount must be greater than ₦3,000 for NGN invoices (got ₦2,000 for \"Consulting services\").",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           },
@@ -1695,7 +3294,13 @@
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "Invalid or inactive API key.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           }
@@ -1745,12 +3350,68 @@
           }
         ],
         "responses": {
-          "200": { "description": "Invoices retrieved successfully." },
+          "200": {
+            "description": "Invoices retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "data": [
+                      {
+                        "id": "9b1d6a2a-2b3c-4d5e-8f9a-1a2b3c4d5e70",
+                        "business_id": "8e2f6b2a-df9c-4c2a-9a0a-9e6a2a2b6a11",
+                        "mode": "test",
+                        "customer_id": "3c1e6a2a-2b3c-4d5e-8f9a-1a2b3c4d5e6f",
+                        "invoice_number": "INV-AB12CD34EF",
+                        "status": "sent",
+                        "currency": "USD",
+                        "line_items": [
+                          {
+                            "description": "Consulting services",
+                            "quantity": 2,
+                            "unit_price": 500,
+                            "amount": 1000
+                          }
+                        ],
+                        "subtotal": 1000,
+                        "tax_rate": 7.5,
+                        "tax_amount": 75,
+                        "discount_amount": 50,
+                        "total": 1025,
+                        "due_date": "2026-07-01T00:00:00.000Z",
+                        "paid_at": null,
+                        "notes": "Thank you for your business.",
+                        "provider_invoice_reference": null,
+                        "cc_invoice_url": null,
+                        "metadata": { "order_ref": "ord_123" },
+                        "created_at": "2026-09-01T10:15:00.000Z",
+                        "updated_at": "2026-09-01T10:15:00.000Z"
+                      }
+                    ],
+                    "meta": {
+                      "total": 1,
+                      "page": 1,
+                      "limit": 20,
+                      "total_pages": 1,
+                      "has_next": false,
+                      "has_prev": false
+                    }
+                  }
+                }
+              }
+            }
+          },
           "401": {
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "Invalid or inactive API key.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           }
@@ -1774,12 +3435,69 @@
           }
         ],
         "responses": {
-          "200": { "description": "Invoice retrieved successfully." },
+          "200": {
+            "description": "Invoice retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Invoice" },
+                "example": {
+                  "id": "9b1d6a2a-2b3c-4d5e-8f9a-1a2b3c4d5e70",
+                  "business_id": "8e2f6b2a-df9c-4c2a-9a0a-9e6a2a2b6a11",
+                  "mode": "test",
+                  "customer_id": "3c1e6a2a-2b3c-4d5e-8f9a-1a2b3c4d5e6f",
+                  "invoice_number": "INV-AB12CD34EF",
+                  "status": "sent",
+                  "currency": "USD",
+                  "line_items": [
+                    {
+                      "description": "Consulting services",
+                      "quantity": 2,
+                      "unit_price": 500,
+                      "amount": 1000
+                    }
+                  ],
+                  "subtotal": 1000,
+                  "tax_rate": 7.5,
+                  "tax_amount": 75,
+                  "discount_amount": 50,
+                  "total": 1025,
+                  "due_date": "2026-07-01T00:00:00.000Z",
+                  "paid_at": null,
+                  "notes": "Thank you for your business.",
+                  "provider_invoice_reference": null,
+                  "cc_invoice_url": null,
+                  "metadata": { "order_ref": "ord_123" },
+                  "created_at": "2026-09-01T10:15:00.000Z",
+                  "updated_at": "2026-09-01T10:15:00.000Z",
+                  "customer": {
+                    "id": "3c1e6a2a-2b3c-4d5e-8f9a-1a2b3c4d5e6f",
+                    "business_id": "8e2f6b2a-df9c-4c2a-9a0a-9e6a2a2b6a11",
+                    "mode": "test",
+                    "email": "john@example.com",
+                    "phone": "08012345678",
+                    "first_name": "John",
+                    "last_name": "Doe",
+                    "status": "active",
+                    "cc_customer_id": null,
+                    "metadata": {},
+                    "created_at": "2026-09-01T10:15:00.000Z",
+                    "updated_at": "2026-09-01T10:15:00.000Z"
+                  }
+                }
+              }
+            }
+          },
           "401": {
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "Invalid or inactive API key.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           },
@@ -1787,7 +3505,13 @@
             "description": "The requested resource could not be found.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 404,
+                  "message": "Invoice not found.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           }
@@ -1811,12 +3535,69 @@
           }
         ],
         "responses": {
-          "200": { "description": "Invoice retrieved successfully." },
+          "200": {
+            "description": "Invoice retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Invoice" },
+                "example": {
+                  "id": "9b1d6a2a-2b3c-4d5e-8f9a-1a2b3c4d5e70",
+                  "business_id": "8e2f6b2a-df9c-4c2a-9a0a-9e6a2a2b6a11",
+                  "mode": "test",
+                  "customer_id": "3c1e6a2a-2b3c-4d5e-8f9a-1a2b3c4d5e6f",
+                  "invoice_number": "INV-AB12CD34EF",
+                  "status": "sent",
+                  "currency": "USD",
+                  "line_items": [
+                    {
+                      "description": "Consulting services",
+                      "quantity": 2,
+                      "unit_price": 500,
+                      "amount": 1000
+                    }
+                  ],
+                  "subtotal": 1000,
+                  "tax_rate": 7.5,
+                  "tax_amount": 75,
+                  "discount_amount": 50,
+                  "total": 1025,
+                  "due_date": "2026-07-01T00:00:00.000Z",
+                  "paid_at": null,
+                  "notes": "Thank you for your business.",
+                  "provider_invoice_reference": null,
+                  "cc_invoice_url": null,
+                  "metadata": { "order_ref": "ord_123" },
+                  "created_at": "2026-09-01T10:15:00.000Z",
+                  "updated_at": "2026-09-01T10:15:00.000Z",
+                  "customer": {
+                    "id": "3c1e6a2a-2b3c-4d5e-8f9a-1a2b3c4d5e6f",
+                    "business_id": "8e2f6b2a-df9c-4c2a-9a0a-9e6a2a2b6a11",
+                    "mode": "test",
+                    "email": "john@example.com",
+                    "phone": "08012345678",
+                    "first_name": "John",
+                    "last_name": "Doe",
+                    "status": "active",
+                    "cc_customer_id": null,
+                    "metadata": {},
+                    "created_at": "2026-09-01T10:15:00.000Z",
+                    "updated_at": "2026-09-01T10:15:00.000Z"
+                  }
+                }
+              }
+            }
+          },
           "404": {
             "description": "The requested resource could not be found.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 404,
+                  "message": "Invoice not found.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           }
@@ -1848,12 +3629,48 @@
           }
         },
         "responses": {
-          "201": { "description": "Payment session created successfully." },
+          "201": {
+            "description": "Payment session created successfully.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PaymentSession" },
+                "example": {
+                  "id": "6a0ce752-6932-4c1c-b5ea-fe7d12345678",
+                  "business_id": "8e2f6b2a-df9c-4c2a-9a0a-9e6a2a2b6a11",
+                  "mode": "test",
+                  "customer_id": "3c1e6a2a-2b3c-4d5e-8f9a-1a2b3c4d5e6f",
+                  "reference": "ps_4f9a1a2b3c4d",
+                  "amount": 1025,
+                  "amount_paid": null,
+                  "currency": "USD",
+                  "deposit_address": "TXkPqR7YbAaHqZ5t5fRZ9Zk3f2NcQvJ9f2A",
+                  "crypto_asset": "USDT",
+                  "network": "Tron",
+                  "status": "pending",
+                  "payment_page_id": null,
+                  "invoice_id": "9b1d6a2a-2b3c-4d5e-8f9a-1a2b3c4d5e70",
+                  "transaction_id": null,
+                  "provider_session_reference": "cc_sess_8f2a1b3c",
+                  "metadata": { "invoice_number": "INV-AB12CD34EF" },
+                  "expires_at": "2026-09-01T10:45:00.000Z",
+                  "completed_at": null,
+                  "created_at": "2026-09-01T10:15:00.000Z",
+                  "updated_at": "2026-09-01T10:15:00.000Z"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Validation failed or the request body/params were malformed.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 400,
+                  "message": "Invoice is already paid.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           },
@@ -1861,7 +3678,13 @@
             "description": "The requested resource could not be found.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 404,
+                  "message": "Invoice not found.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           }
@@ -1884,12 +3707,55 @@
           }
         ],
         "responses": {
-          "200": { "description": "Invoice marked as paid successfully." },
+          "200": {
+            "description": "Invoice marked as paid successfully.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Invoice" },
+                "example": {
+                  "id": "9b1d6a2a-2b3c-4d5e-8f9a-1a2b3c4d5e70",
+                  "business_id": "8e2f6b2a-df9c-4c2a-9a0a-9e6a2a2b6a11",
+                  "mode": "test",
+                  "customer_id": "3c1e6a2a-2b3c-4d5e-8f9a-1a2b3c4d5e6f",
+                  "invoice_number": "INV-AB12CD34EF",
+                  "status": "paid",
+                  "currency": "USD",
+                  "line_items": [
+                    {
+                      "description": "Consulting services",
+                      "quantity": 2,
+                      "unit_price": 500,
+                      "amount": 1000
+                    }
+                  ],
+                  "subtotal": 1000,
+                  "tax_rate": 7.5,
+                  "tax_amount": 75,
+                  "discount_amount": 50,
+                  "total": 1025,
+                  "due_date": "2026-07-01T00:00:00.000Z",
+                  "paid_at": "2026-09-01T12:00:00.000Z",
+                  "notes": "Thank you for your business.",
+                  "provider_invoice_reference": null,
+                  "cc_invoice_url": null,
+                  "metadata": { "order_ref": "ord_123" },
+                  "created_at": "2026-09-01T10:15:00.000Z",
+                  "updated_at": "2026-09-01T10:15:00.000Z"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Validation failed or the request body/params were malformed.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 400,
+                  "message": "Cannot mark invoice as paid from status 'paid'.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           },
@@ -1897,7 +3763,13 @@
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "Invalid or inactive API key.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           },
@@ -1905,7 +3777,13 @@
             "description": "The requested resource could not be found.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 404,
+                  "message": "Invoice not found.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           }
@@ -1928,12 +3806,55 @@
           }
         ],
         "responses": {
-          "200": { "description": "Invoice cancelled successfully." },
+          "200": {
+            "description": "Invoice cancelled successfully.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Invoice" },
+                "example": {
+                  "id": "9b1d6a2a-2b3c-4d5e-8f9a-1a2b3c4d5e70",
+                  "business_id": "8e2f6b2a-df9c-4c2a-9a0a-9e6a2a2b6a11",
+                  "mode": "test",
+                  "customer_id": "3c1e6a2a-2b3c-4d5e-8f9a-1a2b3c4d5e6f",
+                  "invoice_number": "INV-AB12CD34EF",
+                  "status": "cancelled",
+                  "currency": "USD",
+                  "line_items": [
+                    {
+                      "description": "Consulting services",
+                      "quantity": 2,
+                      "unit_price": 500,
+                      "amount": 1000
+                    }
+                  ],
+                  "subtotal": 1000,
+                  "tax_rate": 7.5,
+                  "tax_amount": 75,
+                  "discount_amount": 50,
+                  "total": 1025,
+                  "due_date": "2026-07-01T00:00:00.000Z",
+                  "paid_at": null,
+                  "notes": "Thank you for your business.",
+                  "provider_invoice_reference": null,
+                  "cc_invoice_url": null,
+                  "metadata": { "order_ref": "ord_123" },
+                  "created_at": "2026-09-01T10:15:00.000Z",
+                  "updated_at": "2026-09-01T10:15:00.000Z"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Validation failed or the request body/params were malformed.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 400,
+                  "message": "Cannot cancel an invoice with status 'paid'.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           },
@@ -1941,7 +3862,13 @@
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "Invalid or inactive API key.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           },
@@ -1949,7 +3876,13 @@
             "description": "The requested resource could not be found.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 404,
+                  "message": "Invoice not found.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           }
@@ -1972,12 +3905,55 @@
           }
         ],
         "responses": {
-          "200": { "description": "Invoice voided successfully." },
+          "200": {
+            "description": "Invoice voided successfully.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Invoice" },
+                "example": {
+                  "id": "9b1d6a2a-2b3c-4d5e-8f9a-1a2b3c4d5e70",
+                  "business_id": "8e2f6b2a-df9c-4c2a-9a0a-9e6a2a2b6a11",
+                  "mode": "test",
+                  "customer_id": "3c1e6a2a-2b3c-4d5e-8f9a-1a2b3c4d5e6f",
+                  "invoice_number": "INV-AB12CD34EF",
+                  "status": "void",
+                  "currency": "USD",
+                  "line_items": [
+                    {
+                      "description": "Consulting services",
+                      "quantity": 2,
+                      "unit_price": 500,
+                      "amount": 1000
+                    }
+                  ],
+                  "subtotal": 1000,
+                  "tax_rate": 7.5,
+                  "tax_amount": 75,
+                  "discount_amount": 50,
+                  "total": 1025,
+                  "due_date": "2026-07-01T00:00:00.000Z",
+                  "paid_at": null,
+                  "notes": "Thank you for your business.",
+                  "provider_invoice_reference": null,
+                  "cc_invoice_url": null,
+                  "metadata": { "order_ref": "ord_123" },
+                  "created_at": "2026-09-01T10:15:00.000Z",
+                  "updated_at": "2026-09-01T10:15:00.000Z"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Validation failed or the request body/params were malformed.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 400,
+                  "message": "Only paid invoices can be voided.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           },
@@ -1985,7 +3961,13 @@
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "Invalid or inactive API key.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           },
@@ -1993,7 +3975,13 @@
             "description": "The requested resource could not be found.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 404,
+                  "message": "Invoice not found.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           }
@@ -2034,12 +4022,35 @@
           }
         ],
         "responses": {
-          "200": { "description": "Swap estimate retrieved successfully." },
+          "200": {
+            "description": "Swap estimate retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "data": {
+                      "fromCurrency": "USDT",
+                      "toCurrency": "NGN",
+                      "amount": "100.00",
+                      "estimatedAmount": "156000.00",
+                      "rate": "1560.00"
+                    }
+                  }
+                }
+              }
+            }
+          },
           "400": {
             "description": "Validation failed or the request body/params were malformed.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 400,
+                  "message": "fromCurrency must be one of the following values: NGN, USDT, USDC, ETH, BNB, SOL, TRX",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           },
@@ -2047,7 +4058,13 @@
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "Invalid or inactive API key.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           }
@@ -2073,12 +4090,39 @@
           }
         },
         "responses": {
-          "201": { "description": "Swap quotation created successfully." },
+          "201": {
+            "description": "Swap quotation created successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "data": {
+                      "id": "quo_7f3a1b2c9d0e",
+                      "fromCurrency": "USDT",
+                      "toCurrency": "NGN",
+                      "sourceAmount": "100.00",
+                      "targetAmount": "156000.00",
+                      "rate": "1560.00",
+                      "status": "pending",
+                      "expiresAt": "2026-09-24T12:00:15.000Z",
+                      "createdAt": "2026-09-24T12:00:00.000Z"
+                    }
+                  }
+                }
+              }
+            }
+          },
           "400": {
             "description": "Validation failed or the request body/params were malformed.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 400,
+                  "message": "fromCurrency must be one of the following values: NGN, USDT, USDC",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           },
@@ -2086,7 +4130,13 @@
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "Invalid or inactive API key.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           }
@@ -2109,12 +4159,39 @@
           }
         ],
         "responses": {
-          "200": { "description": "Swap quotation retrieved successfully." },
+          "200": {
+            "description": "Swap quotation retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "data": {
+                      "id": "quo_7f3a1b2c9d0e",
+                      "fromCurrency": "USDT",
+                      "toCurrency": "NGN",
+                      "sourceAmount": "100.00",
+                      "targetAmount": "156000.00",
+                      "rate": "1560.00",
+                      "status": "pending",
+                      "expiresAt": "2026-09-24T12:00:15.000Z",
+                      "createdAt": "2026-09-24T12:00:00.000Z"
+                    }
+                  }
+                }
+              }
+            }
+          },
           "400": {
             "description": "Validation failed or the request body/params were malformed.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 400,
+                  "message": "Swap quotation not found or has expired.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           },
@@ -2122,7 +4199,13 @@
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "Invalid or inactive API key.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           }
@@ -2146,12 +4229,36 @@
           }
         ],
         "responses": {
-          "201": { "description": "Swap executed successfully." },
+          "201": {
+            "description": "Swap executed successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "data": {
+                      "id": "swp_9a1b2c3d4e5f",
+                      "fromCurrency": "USDT",
+                      "toCurrency": "NGN",
+                      "sourceAmount": "100.00",
+                      "targetAmount": "156000.00",
+                      "status": "completed"
+                    }
+                  }
+                }
+              }
+            }
+          },
           "400": {
             "description": "Validation failed or the request body/params were malformed.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 400,
+                  "message": "Swap quotation has expired. Create a new quotation and execute within 15 seconds.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           },
@@ -2159,7 +4266,13 @@
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "Invalid or inactive API key.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           },
@@ -2167,7 +4280,13 @@
             "description": "Authenticated, but not permitted to perform this action.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 403,
+                  "message": "This action requires a verified identity. Complete individual KYC verification first.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           }
@@ -2219,12 +4338,53 @@
           }
         ],
         "responses": {
-          "200": { "description": "Swap history retrieved successfully." },
+          "200": {
+            "description": "Swap history retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "data": [
+                      {
+                        "id": "6a0ce75269321c4cb5eafe7d",
+                        "business_id": "8e2f6b2a-df9c-4c2a-9a0a-9e6a2a2b6a11",
+                        "mode": "test",
+                        "cc_swap_id": "swp_9a1b2c3d4e5f",
+                        "from_currency": "USDT",
+                        "to_currency": "NGN",
+                        "source_amount": 100,
+                        "target_amount": 156000,
+                        "status": "completed",
+                        "type": "manual",
+                        "metadata": {},
+                        "created_at": "2026-09-24T12:00:00.000Z",
+                        "updated_at": "2026-09-24T12:00:00.000Z"
+                      }
+                    ],
+                    "meta": {
+                      "total": 1,
+                      "page": 1,
+                      "limit": 10,
+                      "total_pages": 1,
+                      "has_next": false,
+                      "has_prev": false
+                    }
+                  }
+                }
+              }
+            }
+          },
           "401": {
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "Invalid or inactive API key.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           }
@@ -2247,12 +4407,40 @@
           }
         ],
         "responses": {
-          "200": { "description": "Swap retrieved successfully." },
+          "200": {
+            "description": "Swap retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SwapRecord" },
+                "example": {
+                  "id": "6a0ce75269321c4cb5eafe7d",
+                  "business_id": "8e2f6b2a-df9c-4c2a-9a0a-9e6a2a2b6a11",
+                  "mode": "test",
+                  "cc_swap_id": "swp_9a1b2c3d4e5f",
+                  "from_currency": "USDT",
+                  "to_currency": "NGN",
+                  "source_amount": 100,
+                  "target_amount": 156000,
+                  "status": "completed",
+                  "type": "manual",
+                  "metadata": {},
+                  "created_at": "2026-09-24T12:00:00.000Z",
+                  "updated_at": "2026-09-24T12:00:00.000Z"
+                }
+              }
+            }
+          },
           "401": {
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "Invalid or inactive API key.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           },
@@ -2260,7 +4448,13 @@
             "description": "The requested resource could not be found.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 404,
+                  "message": "Swap not found.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           }
@@ -2298,12 +4492,35 @@
           }
         ],
         "responses": {
-          "200": { "description": "Refund estimate calculated successfully." },
+          "200": {
+            "description": "Refund estimate calculated successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "data": {
+                      "amount": "50.00",
+                      "fee": "0.50",
+                      "totalDeducted": "50.50",
+                      "currency": "USD",
+                      "feePaidBy": "merchant"
+                    }
+                  }
+                }
+              }
+            }
+          },
           "401": {
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "Invalid or inactive API key.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           },
@@ -2311,7 +4528,13 @@
             "description": "The requested resource could not be found.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 404,
+                  "message": "Refund not found for the given reference.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           }
@@ -2384,12 +4607,45 @@
           }
         ],
         "responses": {
-          "200": { "description": "Refunds retrieved successfully." },
+          "200": {
+            "description": "Refunds retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "data": [
+                      {
+                        "id": "ref_8f3c1a2b4d5e6f7a",
+                        "sessionReference": "CS_9f8e7d6c5b4a",
+                        "amount": "50.00",
+                        "currency": "USD",
+                        "asset": "USDT",
+                        "chain": "tron",
+                        "refundAddress": "TXyz1234567890abcdef",
+                        "feePaidBy": "merchant",
+                        "fee": "0.50",
+                        "reason": "Customer requested refund",
+                        "status": "pending",
+                        "createdAt": "2026-09-17T12:00:00.000Z",
+                        "updatedAt": "2026-09-17T12:00:00.000Z"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
           "401": {
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "Invalid or inactive API key.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           }
@@ -2412,12 +4668,43 @@
           }
         ],
         "responses": {
-          "200": { "description": "Refund retrieved successfully." },
+          "200": {
+            "description": "Refund retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "data": {
+                      "id": "ref_8f3c1a2b4d5e6f7a",
+                      "sessionReference": "CS_9f8e7d6c5b4a",
+                      "amount": "50.00",
+                      "currency": "USD",
+                      "asset": "USDT",
+                      "chain": "tron",
+                      "refundAddress": "TXyz1234567890abcdef",
+                      "feePaidBy": "merchant",
+                      "fee": "0.50",
+                      "reason": "Customer requested refund",
+                      "status": "pending",
+                      "createdAt": "2026-09-17T12:00:00.000Z",
+                      "updatedAt": "2026-09-17T12:00:00.000Z"
+                    }
+                  }
+                }
+              }
+            }
+          },
           "401": {
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "Invalid or inactive API key.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           },
@@ -2425,7 +4712,13 @@
             "description": "The requested resource could not be found.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 404,
+                  "message": "Refund not found.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           }
@@ -2457,12 +4750,43 @@
           }
         },
         "responses": {
-          "201": { "description": "Refund initiated successfully." },
+          "201": {
+            "description": "Refund initiated successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "data": {
+                      "id": "ref_8f3c1a2b4d5e6f7a",
+                      "sessionReference": "CS_9f8e7d6c5b4a",
+                      "amount": "50.00",
+                      "currency": "USD",
+                      "asset": "USDT",
+                      "chain": "tron",
+                      "refundAddress": "TXyz1234567890abcdef",
+                      "feePaidBy": "merchant",
+                      "fee": "0.50",
+                      "reason": "Customer requested refund",
+                      "status": "pending",
+                      "createdAt": "2026-09-17T12:00:00.000Z",
+                      "updatedAt": "2026-09-17T12:00:00.000Z"
+                    }
+                  }
+                }
+              }
+            }
+          },
           "400": {
             "description": "Validation failed or the request body/params were malformed.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 400,
+                  "message": "refundAddress should not be empty",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           },
@@ -2470,7 +4794,13 @@
             "description": "Missing, invalid, or expired authentication.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "Invalid or inactive API key.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           },
@@ -2478,7 +4808,13 @@
             "description": "The requested resource could not be found.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" },
+                "example": {
+                  "success": false,
+                  "status": 404,
+                  "message": "Payment session not found.",
+                  "timestamp": "2026-09-17T12:00:00.000Z"
+                }
               }
             }
           }
@@ -2523,7 +4859,286 @@
           }
         }
       },
-      "DepositAccount": { "type": "object", "properties": {} },
+      "BusinessUser": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "user_id": { "type": "string" },
+          "business_id": { "type": "string" },
+          "role": { "type": "string", "enum": ["owner", "admin", "staff"] },
+          "status": {
+            "type": "string",
+            "enum": ["pending", "active", "suspended"]
+          },
+          "invited_by_user_id": { "type": "string", "nullable": true },
+          "invite_token": { "type": "string", "nullable": true },
+          "invite_expires_at": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "joined_at": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "user": { "$ref": "#/components/schemas/User" },
+          "business": { "$ref": "#/components/schemas/Business" },
+          "created_at": { "format": "date-time", "type": "string" },
+          "updated_at": { "format": "date-time", "type": "string" }
+        },
+        "required": [
+          "id",
+          "user_id",
+          "business_id",
+          "role",
+          "status",
+          "invited_by_user_id",
+          "invite_token",
+          "invite_expires_at",
+          "joined_at",
+          "user",
+          "business",
+          "created_at",
+          "updated_at"
+        ]
+      },
+      "ApiKey": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "user_id": { "type": "string" },
+          "business_id": { "type": "string" },
+          "key_hash": { "type": "string" },
+          "key_prefix": { "type": "string" },
+          "label": { "type": "string" },
+          "mode": { "type": "string" },
+          "is_active": { "type": "boolean" },
+          "last_used_at": { "format": "date-time", "type": "string" },
+          "ip_whitelist": { "type": "array", "items": { "type": "string" } },
+          "expires_at": { "format": "date-time", "type": "string" },
+          "created_at": { "format": "date-time", "type": "string" },
+          "user": { "$ref": "#/components/schemas/User" },
+          "business": { "$ref": "#/components/schemas/Business" }
+        },
+        "required": [
+          "id",
+          "user_id",
+          "business_id",
+          "key_hash",
+          "key_prefix",
+          "label",
+          "mode",
+          "is_active",
+          "last_used_at",
+          "ip_whitelist",
+          "expires_at",
+          "created_at",
+          "user",
+          "business"
+        ]
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "email": { "type": "string" },
+          "password_hash": { "type": "string", "nullable": true },
+          "first_name": { "type": "string" },
+          "last_name": { "type": "string" },
+          "phone": { "type": "string", "nullable": true },
+          "status": {
+            "type": "string",
+            "enum": ["active", "suspended", "pending"]
+          },
+          "subscription_plan": {
+            "type": "string",
+            "enum": ["free", "starter", "pro", "enterprise"]
+          },
+          "theme_preference": { "type": "string", "nullable": true },
+          "email_verified_at": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "last_active_business_id": { "type": "string", "nullable": true },
+          "created_at": { "format": "date-time", "type": "string" },
+          "updated_at": { "format": "date-time", "type": "string" },
+          "owned_businesses": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Business" }
+          },
+          "business_memberships": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/BusinessUser" }
+          },
+          "api_keys": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ApiKey" }
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "password_hash",
+          "first_name",
+          "last_name",
+          "phone",
+          "status",
+          "subscription_plan",
+          "theme_preference",
+          "email_verified_at",
+          "last_active_business_id",
+          "created_at",
+          "updated_at",
+          "owned_businesses",
+          "business_memberships",
+          "api_keys"
+        ]
+      },
+      "Business": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "owner_user_id": { "type": "string" },
+          "name": { "type": "string" },
+          "email": { "type": "string" },
+          "type": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "ecommerce",
+              "saas",
+              "marketplace",
+              "fintech",
+              "healthcare",
+              "education",
+              "logistics",
+              "real_estate",
+              "travel",
+              "food_and_beverage",
+              "media_and_entertainment",
+              "gaming",
+              "retail",
+              "professional_services",
+              "nonprofit",
+              "freelance",
+              "other"
+            ]
+          },
+          "support_email": { "type": "string", "nullable": true },
+          "logo_url": { "type": "string", "nullable": true },
+          "show_branding_on_checkout": { "type": "boolean" },
+          "website_url": { "type": "string", "nullable": true },
+          "settlement_currency": {
+            "type": "string",
+            "enum": ["NGN", "USDT", "USDC"]
+          },
+          "default_payout_method": {
+            "type": "string",
+            "enum": ["crypto", "bank"]
+          },
+          "instant_payouts_enabled": { "type": "boolean" },
+          "notification_preferences": { "type": "object" },
+          "owner": { "$ref": "#/components/schemas/User" },
+          "members": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/BusinessUser" }
+          },
+          "created_at": { "format": "date-time", "type": "string" },
+          "updated_at": { "format": "date-time", "type": "string" }
+        },
+        "required": [
+          "id",
+          "owner_user_id",
+          "name",
+          "email",
+          "type",
+          "support_email",
+          "logo_url",
+          "show_branding_on_checkout",
+          "website_url",
+          "settlement_currency",
+          "default_payout_method",
+          "instant_payouts_enabled",
+          "notification_preferences",
+          "owner",
+          "members",
+          "created_at",
+          "updated_at"
+        ]
+      },
+      "Customer": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "business_id": { "type": "string" },
+          "mode": { "type": "object" },
+          "email": { "type": "string" },
+          "phone": { "type": "string" },
+          "first_name": { "type": "string" },
+          "last_name": { "type": "string" },
+          "status": { "enum": ["active", "inactive"], "type": "string" },
+          "cc_customer_id": { "type": "string", "nullable": true },
+          "metadata": { "type": "object" },
+          "created_at": { "format": "date-time", "type": "string" },
+          "updated_at": { "format": "date-time", "type": "string" },
+          "business": { "$ref": "#/components/schemas/Business" }
+        },
+        "required": [
+          "id",
+          "business_id",
+          "mode",
+          "email",
+          "phone",
+          "first_name",
+          "last_name",
+          "status",
+          "cc_customer_id",
+          "metadata",
+          "created_at",
+          "updated_at",
+          "business"
+        ]
+      },
+      "DepositAccount": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "business_id": { "type": "string" },
+          "mode": { "type": "object" },
+          "customer_id": { "type": "string", "nullable": true },
+          "status": { "enum": ["active", "inactive"], "type": "string" },
+          "deposit_addresses": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "ngn_virtual_accounts": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "created_at": { "format": "date-time", "type": "string" },
+          "updated_at": { "format": "date-time", "type": "string" },
+          "business": { "$ref": "#/components/schemas/Business" },
+          "customer": {
+            "nullable": true,
+            "allOf": [{ "$ref": "#/components/schemas/Customer" }]
+          }
+        },
+        "required": [
+          "id",
+          "business_id",
+          "mode",
+          "customer_id",
+          "status",
+          "deposit_addresses",
+          "ngn_virtual_accounts",
+          "created_at",
+          "updated_at",
+          "business",
+          "customer"
+        ]
+      },
       "ErrorResponseDto": {
         "type": "object",
         "properties": {
@@ -2638,9 +5253,9 @@
       "InitiateFiatWithdrawalDto": {
         "type": "object",
         "properties": {
-          "bank_id": {
+          "recipient_id": {
             "type": "string",
-            "description": "Bank ID",
+            "description": "Provider recipient ID for the bank account, returned as `id` from POST /misc/banks",
             "example": "6a0ce75269321c4cb5eafe7d"
           },
           "amount": {
@@ -2653,14 +5268,9 @@
             "type": "string",
             "description": "Optional note that appears on bank statement",
             "example": "Dexxify Payout"
-          },
-          "pin": {
-            "type": "string",
-            "description": "Pin on the dashboard",
-            "example": "3847"
           }
         },
-        "required": ["bank_id", "amount"]
+        "required": ["recipient_id", "amount"]
       },
       "CreateCustomerDto": {
         "type": "object",
@@ -2712,6 +5322,44 @@
           }
         },
         "required": ["crypto_asset", "crypto_amount", "recipient_id"]
+      },
+      "SwapRecord": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "business_id": { "type": "string" },
+          "mode": { "type": "object" },
+          "cc_swap_id": { "type": "string" },
+          "from_currency": { "type": "string" },
+          "to_currency": { "type": "string" },
+          "source_amount": { "type": "number" },
+          "target_amount": { "type": "number", "nullable": true },
+          "status": {
+            "enum": ["pending", "completed", "failed"],
+            "type": "string"
+          },
+          "type": { "enum": ["manual", "offramp"], "type": "string" },
+          "metadata": { "type": "object" },
+          "created_at": { "format": "date-time", "type": "string" },
+          "updated_at": { "format": "date-time", "type": "string" },
+          "business": { "$ref": "#/components/schemas/Business" }
+        },
+        "required": [
+          "id",
+          "business_id",
+          "mode",
+          "cc_swap_id",
+          "from_currency",
+          "to_currency",
+          "source_amount",
+          "target_amount",
+          "status",
+          "type",
+          "metadata",
+          "created_at",
+          "updated_at",
+          "business"
+        ]
       },
       "SaveWebhookDto": {
         "type": "object",
@@ -2779,6 +5427,45 @@
           }
         },
         "required": ["accountNumber", "bankCode", "isDefault"]
+      },
+      "Bank": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "provider_recipient_id": { "type": "string" },
+          "business_id": { "type": "string" },
+          "mode": { "type": "object" },
+          "account_name": { "type": "string" },
+          "account_number": { "type": "string" },
+          "bank_code": { "type": "string" },
+          "bank_name": { "type": "string" },
+          "currency": { "type": "string" },
+          "label": { "type": "string" },
+          "is_trusted": { "type": "boolean" },
+          "type": { "type": "string" },
+          "primary": { "type": "boolean" },
+          "created_at": { "format": "date-time", "type": "string" },
+          "updated_at": { "format": "date-time", "type": "string" },
+          "business": { "$ref": "#/components/schemas/Business" }
+        },
+        "required": [
+          "id",
+          "provider_recipient_id",
+          "business_id",
+          "mode",
+          "account_name",
+          "account_number",
+          "bank_code",
+          "bank_name",
+          "currency",
+          "label",
+          "is_trusted",
+          "type",
+          "primary",
+          "created_at",
+          "updated_at",
+          "business"
+        ]
       },
       "VerifyBankAccountDto": {
         "type": "object",
@@ -2889,6 +5576,194 @@
           }
         },
         "required": ["amount", "currency"]
+      },
+      "Invoice": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "business_id": { "type": "string" },
+          "mode": { "type": "object" },
+          "customer_id": { "type": "string", "nullable": true },
+          "invoice_number": { "type": "string" },
+          "status": {
+            "enum": [
+              "draft",
+              "sent",
+              "viewed",
+              "paid",
+              "overdue",
+              "cancelled",
+              "void"
+            ],
+            "type": "string"
+          },
+          "currency": { "type": "string" },
+          "line_items": { "type": "array", "items": { "type": "object" } },
+          "subtotal": { "type": "number" },
+          "tax_rate": { "type": "number" },
+          "tax_amount": { "type": "number" },
+          "discount_amount": { "type": "number" },
+          "total": { "type": "number" },
+          "due_date": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "paid_at": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "notes": { "type": "string", "nullable": true },
+          "provider_invoice_reference": { "type": "string", "nullable": true },
+          "cc_invoice_url": { "type": "string", "nullable": true },
+          "metadata": { "type": "object" },
+          "created_at": { "format": "date-time", "type": "string" },
+          "updated_at": { "format": "date-time", "type": "string" },
+          "business": { "$ref": "#/components/schemas/Business" },
+          "customer": { "$ref": "#/components/schemas/Customer" }
+        },
+        "required": [
+          "id",
+          "business_id",
+          "mode",
+          "customer_id",
+          "invoice_number",
+          "status",
+          "currency",
+          "line_items",
+          "subtotal",
+          "tax_rate",
+          "tax_amount",
+          "discount_amount",
+          "total",
+          "due_date",
+          "paid_at",
+          "notes",
+          "provider_invoice_reference",
+          "cc_invoice_url",
+          "metadata",
+          "created_at",
+          "updated_at",
+          "business",
+          "customer"
+        ]
+      },
+      "PaymentSession": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "business_id": { "type": "string" },
+          "mode": { "type": "object" },
+          "customer_id": { "type": "string", "nullable": true },
+          "reference": { "type": "string" },
+          "amount": { "type": "number", "nullable": true },
+          "amount_paid": { "type": "number", "nullable": true },
+          "currency": { "type": "string" },
+          "deposit_address": { "type": "string", "nullable": true },
+          "crypto_asset": {
+            "nullable": true,
+            "enum": ["BTC", "TRX", "BNB", "TON", "USDT", "ETH", "USDC", "SOL"],
+            "type": "string"
+          },
+          "network": {
+            "nullable": true,
+            "enum": [
+              "Bitcoin",
+              "Binance_Smart_Chain",
+              "Ethereum",
+              "Solana",
+              "Tron",
+              "Base",
+              "Arbitrum",
+              "TON"
+            ],
+            "type": "string"
+          },
+          "status": {
+            "enum": ["pending", "completed", "failed", "expired", "partial"],
+            "type": "string"
+          },
+          "payment_page_id": { "type": "string", "nullable": true },
+          "invoice_id": { "type": "string", "nullable": true },
+          "transaction_id": { "type": "string", "nullable": true },
+          "provider_session_reference": { "type": "string", "nullable": true },
+          "metadata": { "type": "object" },
+          "expires_at": { "format": "date-time", "type": "string" },
+          "completed_at": { "format": "date-time", "type": "string" },
+          "created_at": { "format": "date-time", "type": "string" },
+          "updated_at": { "format": "date-time", "type": "string" },
+          "business": { "$ref": "#/components/schemas/Business" },
+          "customer": { "$ref": "#/components/schemas/Customer" },
+          "payment_page": { "$ref": "#/components/schemas/PaymentPage" },
+          "invoice": { "$ref": "#/components/schemas/Invoice" }
+        },
+        "required": [
+          "id",
+          "business_id",
+          "mode",
+          "customer_id",
+          "reference",
+          "amount",
+          "amount_paid",
+          "currency",
+          "deposit_address",
+          "crypto_asset",
+          "network",
+          "status",
+          "payment_page_id",
+          "invoice_id",
+          "transaction_id",
+          "provider_session_reference",
+          "metadata",
+          "expires_at",
+          "completed_at",
+          "created_at",
+          "updated_at",
+          "business",
+          "customer",
+          "payment_page",
+          "invoice"
+        ]
+      },
+      "PaymentPage": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "business_id": { "type": "string" },
+          "mode": { "type": "object" },
+          "title": { "type": "string" },
+          "description": { "type": "string", "nullable": true },
+          "slug": { "type": "string" },
+          "currency": { "type": "string" },
+          "amount": { "type": "number", "nullable": true },
+          "status": {
+            "type": "string",
+            "enum": ["draft", "active", "inactive"]
+          },
+          "created_at": { "format": "date-time", "type": "string" },
+          "updated_at": { "format": "date-time", "type": "string" },
+          "business": { "$ref": "#/components/schemas/Business" },
+          "payment_sessions": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/PaymentSession" }
+          }
+        },
+        "required": [
+          "id",
+          "business_id",
+          "mode",
+          "title",
+          "description",
+          "slug",
+          "currency",
+          "amount",
+          "status",
+          "created_at",
+          "updated_at",
+          "business",
+          "payment_sessions"
+        ]
       },
       "GenerateDepositAddressDto": {
         "type": "object",
